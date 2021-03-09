@@ -1,14 +1,11 @@
 package org.crue.hercules.sgi.eti.service.impl;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.TipoMemoriaNotFoundException;
 import org.crue.hercules.sgi.eti.model.TipoMemoria;
 import org.crue.hercules.sgi.eti.repository.TipoMemoriaRepository;
 import org.crue.hercules.sgi.eti.repository.specification.TipoMemoriaSpecifications;
 import org.crue.hercules.sgi.eti.service.TipoMemoriaService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -52,15 +49,13 @@ public class TipoMemoriaServiceImpl implements TipoMemoriaService {
    * @param query  información del filtro.
    * @return el listado de entidades {@link TipoMemoria} paginadas y filtradas.
    */
-  public Page<TipoMemoria> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAllTipoMemoria(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<TipoMemoria> specByQuery = new QuerySpecification<TipoMemoria>(query);
-    Specification<TipoMemoria> specActivos = TipoMemoriaSpecifications.activos();
-
-    Specification<TipoMemoria> specs = Specification.where(specActivos).and(specByQuery);
+  public Page<TipoMemoria> findAll(String query, Pageable paging) {
+    log.debug("findAllTipoMemoria(String query,Pageable paging) - start");
+    Specification<TipoMemoria> specs = TipoMemoriaSpecifications.activos()
+        .and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<TipoMemoria> returnValue = tipoMemoriaRepository.findAll(specs, paging);
-    log.debug("findAllTipoMemoria(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAllTipoMemoria(String query,Pageable paging) - end");
     return returnValue;
   }
 

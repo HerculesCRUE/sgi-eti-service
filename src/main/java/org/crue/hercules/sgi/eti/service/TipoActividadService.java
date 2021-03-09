@@ -1,11 +1,7 @@
 package org.crue.hercules.sgi.eti.service;
 
-import org.crue.hercules.sgi.eti.model.TipoActividad;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
-
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.TipoActividadNotFoundException;
+import org.crue.hercules.sgi.eti.model.TipoActividad;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -36,7 +32,7 @@ public interface TipoActividadService {
    * @param query    la información del filtro.
    * @return la lista de entidades {@link TipoActividad} paginadas y/o filtradas.
    */
-  Page<TipoActividad> findAll(List<QueryCriteria> query, Pageable pageable);
+  Page<TipoActividad> findAll(String query, Pageable pageable);
 
   /**
    * Obtiene {@link TipoActividad} por id.

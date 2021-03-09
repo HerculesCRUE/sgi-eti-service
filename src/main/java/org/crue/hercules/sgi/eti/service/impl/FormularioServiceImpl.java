@@ -1,13 +1,10 @@
 package org.crue.hercules.sgi.eti.service.impl;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.FormularioNotFoundException;
 import org.crue.hercules.sgi.eti.model.Formulario;
 import org.crue.hercules.sgi.eti.repository.FormularioRepository;
 import org.crue.hercules.sgi.eti.service.FormularioService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -51,14 +48,12 @@ public class FormularioServiceImpl implements FormularioService {
    * @param query  información del filtro.
    * @return el listado de entidades {@link Formulario} paginadas y filtradas.
    */
-  public Page<Formulario> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAllFormulario(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<Formulario> specByQuery = new QuerySpecification<Formulario>(query);
-
-    Specification<Formulario> specs = Specification.where(specByQuery);
+  public Page<Formulario> findAll(String query, Pageable paging) {
+    log.debug("findAllFormulario(String query,Pageable paging) - start");
+    Specification<Formulario> specs = SgiRSQLJPASupport.toSpecification(query);
 
     Page<Formulario> returnValue = formularioRepository.findAll(specs, paging);
-    log.debug("findAllFormulario(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAllFormulario(String query,Pageable paging) - end");
     return returnValue;
   }
 

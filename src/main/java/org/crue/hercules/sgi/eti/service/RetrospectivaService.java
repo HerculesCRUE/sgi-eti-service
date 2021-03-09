@@ -1,11 +1,7 @@
 package org.crue.hercules.sgi.eti.service;
 
-import org.crue.hercules.sgi.eti.model.Retrospectiva;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
-
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.RetrospectivaNotFoundException;
+import org.crue.hercules.sgi.eti.model.Retrospectiva;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -36,7 +32,7 @@ public interface RetrospectivaService {
    * @param query    la información del filtro.
    * @return la lista de entidades {@link Retrospectiva} paginadas y/o filtradas.
    */
-  Page<Retrospectiva> findAll(List<QueryCriteria> query, Pageable pageable);
+  Page<Retrospectiva> findAll(String query, Pageable pageable);
 
   /**
    * Obtiene {@link Retrospectiva} por id.

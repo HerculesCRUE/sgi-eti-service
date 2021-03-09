@@ -16,12 +16,21 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Test de integracion de TipoMemoria.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off
+  "classpath:scripts/tipo_memoria.sql" 
+// @formatter:on
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class TipoMemoriaIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -38,8 +47,6 @@ public class TipoMemoriaIT extends BaseIT {
     return request;
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void getTipoMemoria_WithId_ReturnsTipoMemoria() throws Exception {
     final ResponseEntity<TipoMemoria> response = restTemplate.exchange(
@@ -51,15 +58,13 @@ public class TipoMemoriaIT extends BaseIT {
     final TipoMemoria tipoMemoria = response.getBody();
 
     Assertions.assertThat(tipoMemoria.getId()).isEqualTo(1L);
-    Assertions.assertThat(tipoMemoria.getNombre()).isEqualTo("TipoMemoria1");
+    Assertions.assertThat(tipoMemoria.getNombre()).isEqualTo("TipoMemoria001");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void addTipoMemoria_ReturnsTipoMemoria() throws Exception {
 
-    TipoMemoria nuevoTipoMemoria = new TipoMemoria(1L, "TipoMemoria1", Boolean.TRUE);
+    TipoMemoria nuevoTipoMemoria = new TipoMemoria(1L, "TipoMemoria001", Boolean.TRUE);
 
     final ResponseEntity<TipoMemoria> response = restTemplate.exchange(TIPO_MEMORIA_CONTROLLER_BASE_PATH,
         HttpMethod.POST, buildRequest(null, nuevoTipoMemoria), TipoMemoria.class);
@@ -68,8 +73,6 @@ public class TipoMemoriaIT extends BaseIT {
     Assertions.assertThat(response.getBody()).isEqualTo(nuevoTipoMemoria);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeTipoMemoria_Success() throws Exception {
 
@@ -84,26 +87,24 @@ public class TipoMemoriaIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeTipoMemoria_DoNotGetTipoMemoria() throws Exception {
     restTemplate.delete(TIPO_MEMORIA_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, 1L);
 
+    // when: Delete con id no existente
+    long id = 12L;
     final ResponseEntity<TipoMemoria> response = restTemplate.exchange(
         TIPO_MEMORIA_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.GET, buildRequest(null, null),
-        TipoMemoria.class, 1L);
+        TipoMemoria.class, id);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void replaceTipoMemoria_ReturnsTipoMemoria() throws Exception {
 
-    TipoMemoria replaceTipoMemoria = generarMockTipoMemoria(1L, "TipoMemoria1");
+    TipoMemoria replaceTipoMemoria = generarMockTipoMemoria(1L, "TipoMemoria001");
 
     final ResponseEntity<TipoMemoria> response = restTemplate.exchange(
         TIPO_MEMORIA_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.PUT, buildRequest(null, replaceTipoMemoria),
@@ -118,8 +119,6 @@ public class TipoMemoriaIT extends BaseIT {
     Assertions.assertThat(tipoMemoria.getActivo()).isEqualTo(replaceTipoMemoria.getActivo());
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPaging_ReturnsTipoMemoriaSubList() throws Exception {
     // when: Obtiene la page=3 con pagesize=10
@@ -143,18 +142,16 @@ public class TipoMemoriaIT extends BaseIT {
     Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("8");
 
     // Contiene de nombre='TipoMemoria6' a 'TipoMemoria8'
-    Assertions.assertThat(tipoMemorias.get(0).getNombre()).isEqualTo("TipoMemoria6");
-    Assertions.assertThat(tipoMemorias.get(1).getNombre()).isEqualTo("TipoMemoria7");
-    Assertions.assertThat(tipoMemorias.get(2).getNombre()).isEqualTo("TipoMemoria8");
+    Assertions.assertThat(tipoMemorias.get(0).getNombre()).isEqualTo("TipoMemoria006");
+    Assertions.assertThat(tipoMemorias.get(1).getNombre()).isEqualTo("TipoMemoria007");
+    Assertions.assertThat(tipoMemorias.get(2).getNombre()).isEqualTo("TipoMemoria008");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSearchQuery_ReturnsFilteredTipoMemoriaList() throws Exception {
     // when: Búsqueda por nombre like e id equals
     Long id = 5L;
-    String query = "nombre~TipoMemoria%,id:" + id;
+    String query = "nombre=ke=TipoMemoria;id==" + id;
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_MEMORIA_CONTROLLER_BASE_PATH).queryParam("q", query).build(false)
         .toUri();
@@ -173,12 +170,10 @@ public class TipoMemoriaIT extends BaseIT {
     Assertions.assertThat(tipoMemorias.get(0).getNombre()).startsWith("TipoMemoria");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSortQuery_ReturnsOrderedTipoMemoriaList() throws Exception {
     // when: Ordenación por nombre desc
-    String query = "nombre-";
+    String query = "nombre,desc";
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_MEMORIA_CONTROLLER_BASE_PATH).queryParam("s", query).build(false)
         .toUri();
@@ -200,8 +195,6 @@ public class TipoMemoriaIT extends BaseIT {
     }
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPagingSortingAndFiltering_ReturnsTipoMemoriaSubList() throws Exception {
     // when: Obtiene page=3 con pagesize=10
@@ -209,9 +202,9 @@ public class TipoMemoriaIT extends BaseIT {
     headers.add("X-Page", "0");
     headers.add("X-Page-Size", "3");
     // when: Ordena por nombre desc
-    String sort = "nombre-";
+    String sort = "nombre,desc";
     // when: Filtra por nombre like e id equals
-    String filter = "nombre~%00%";
+    String filter = "nombre=ke=00";
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_MEMORIA_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .queryParam("q", filter).build(false).toUri();
@@ -228,13 +221,13 @@ public class TipoMemoriaIT extends BaseIT {
     HttpHeaders responseHeaders = response.getHeaders();
     Assertions.assertThat(responseHeaders.getFirst("X-Page")).isEqualTo("0");
     Assertions.assertThat(responseHeaders.getFirst("X-Page-Size")).isEqualTo("3");
-    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("3");
+    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("8");
 
-    // Contiene nombre='TipoMemoria001', 'TipoMemoria002',
-    // 'TipoMemoria003'
-    Assertions.assertThat(tipoMemorias.get(0).getNombre()).isEqualTo("TipoMemoria" + String.format("%03d", 3));
-    Assertions.assertThat(tipoMemorias.get(1).getNombre()).isEqualTo("TipoMemoria" + String.format("%03d", 2));
-    Assertions.assertThat(tipoMemorias.get(2).getNombre()).isEqualTo("TipoMemoria" + String.format("%03d", 1));
+    // Contiene nombre='TipoMemoria008', 'TipoMemoria007',
+    // 'TipoMemoria006'
+    Assertions.assertThat(tipoMemorias.get(0).getNombre()).isEqualTo("TipoMemoria" + String.format("%03d", 8));
+    Assertions.assertThat(tipoMemorias.get(1).getNombre()).isEqualTo("TipoMemoria" + String.format("%03d", 7));
+    Assertions.assertThat(tipoMemorias.get(2).getNombre()).isEqualTo("TipoMemoria" + String.format("%03d", 6));
 
   }
 

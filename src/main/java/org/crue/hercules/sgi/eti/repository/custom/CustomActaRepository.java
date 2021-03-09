@@ -1,9 +1,6 @@
 package org.crue.hercules.sgi.eti.repository.custom;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.dto.ActaWithNumEvaluaciones;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -21,6 +18,6 @@ public interface CustomActaRepository {
    * @param query    la información del filtro.
    * @return la lista de {@link ActaWithNumEvaluaciones} paginadas y/o filtradas.
    */
-  Page<ActaWithNumEvaluaciones> findAllActaWithNumEvaluaciones(List<QueryCriteria> query, Pageable pageable);
+  Page<ActaWithNumEvaluaciones> findAllActaWithNumEvaluaciones(String query, Pageable pageable);
 
 }

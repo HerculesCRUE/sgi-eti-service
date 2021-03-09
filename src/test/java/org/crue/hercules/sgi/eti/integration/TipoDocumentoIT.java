@@ -17,12 +17,22 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Test de integracion de TipoDocumento.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off  
+  "classpath:scripts/formulario.sql", 
+  "classpath:scripts/tipo_documento.sql" 
+// @formatter:on
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class TipoDocumentoIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -39,8 +49,6 @@ public class TipoDocumentoIT extends BaseIT {
     return request;
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void getTipoDocumento_WithId_ReturnsTipoDocumento() throws Exception {
 
@@ -62,8 +70,6 @@ public class TipoDocumentoIT extends BaseIT {
     Assertions.assertThat(tipoDocumento.getFormulario()).isEqualTo(formulario);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void addTipoDocumento_ReturnsTipoDocumento() throws Exception {
 
@@ -76,8 +82,6 @@ public class TipoDocumentoIT extends BaseIT {
     Assertions.assertThat(response.getBody()).isEqualTo(nuevoTipoDocumento);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeTipoDocumento_Success() throws Exception {
 
@@ -92,22 +96,18 @@ public class TipoDocumentoIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeTipoDocumento_DoNotGetTipoDocumento() throws Exception {
     restTemplate.delete(TIPO_DOCUMENTO_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, 1L);
 
     final ResponseEntity<TipoDocumento> response = restTemplate.exchange(
         TIPO_DOCUMENTO_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.GET, buildRequest(null, null),
-        TipoDocumento.class, 1L);
+        TipoDocumento.class, 12L);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void replaceTipoDocumento_ReturnsTipoDocumento() throws Exception {
 
@@ -132,8 +132,6 @@ public class TipoDocumentoIT extends BaseIT {
     Assertions.assertThat(tipoDocumento.getActivo()).isEqualTo(replaceTipoDocumento.getActivo());
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPaging_ReturnsTipoDocumentoSubList() throws Exception {
     // when: Obtiene la page=3 con pagesize=10
@@ -162,13 +160,11 @@ public class TipoDocumentoIT extends BaseIT {
     Assertions.assertThat(tipoDocumentos.get(2).getNombre()).isEqualTo("TipoDocumento8");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSearchQuery_ReturnsFilteredTipoDocumentoList() throws Exception {
     // when: Búsqueda por nombre like e id equals
     Long id = 5L;
-    String query = "nombre~TipoDocumento%,id:" + id;
+    String query = "nombre=ke=TipoDocumento;id==" + id;
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_DOCUMENTO_CONTROLLER_BASE_PATH).queryParam("q", query)
         .build(false).toUri();
@@ -187,12 +183,10 @@ public class TipoDocumentoIT extends BaseIT {
     Assertions.assertThat(tipoDocumentos.get(0).getNombre()).startsWith("TipoDocumento");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSortQuery_ReturnsOrderedTipoDocumentoList() throws Exception {
     // when: Ordenación por nombre desc
-    String query = "nombre-";
+    String query = "nombre,desc";
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_DOCUMENTO_CONTROLLER_BASE_PATH).queryParam("s", query)
         .build(false).toUri();
@@ -210,12 +204,10 @@ public class TipoDocumentoIT extends BaseIT {
     for (int i = 0; i < 8; i++) {
       TipoDocumento tipoDocumento = tipoDocumentos.get(i);
       Assertions.assertThat(tipoDocumento.getId()).isEqualTo(8 - i);
-      Assertions.assertThat(tipoDocumento.getNombre()).isEqualTo("TipoDocumento" + String.format("%03d", 8 - i));
+      Assertions.assertThat(tipoDocumento.getNombre()).isEqualTo("TipoDocumento" + String.format("%d", 8 - i));
     }
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPagingSortingAndFiltering_ReturnsTipoDocumentoSubList() throws Exception {
     // when: Obtiene page=3 con pagesize=10
@@ -223,9 +215,9 @@ public class TipoDocumentoIT extends BaseIT {
     headers.add("X-Page", "0");
     headers.add("X-Page-Size", "3");
     // when: Ordena por nombre desc
-    String sort = "nombre-";
+    String sort = "nombre,desc";
     // when: Filtra por nombre like e id equals
-    String filter = "nombre~%00%";
+    String filter = "nombre=ke=TipoDocumento";
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_DOCUMENTO_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .queryParam("q", filter).build(false).toUri();
@@ -242,13 +234,13 @@ public class TipoDocumentoIT extends BaseIT {
     HttpHeaders responseHeaders = response.getHeaders();
     Assertions.assertThat(responseHeaders.getFirst("X-Page")).isEqualTo("0");
     Assertions.assertThat(responseHeaders.getFirst("X-Page-Size")).isEqualTo("3");
-    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("3");
+    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("8");
 
-    // Contiene nombre='TipoDocumento001', 'TipoDocumento002',
-    // 'TipoDocumento003'
-    Assertions.assertThat(tipoDocumentos.get(0).getNombre()).isEqualTo("TipoDocumento" + String.format("%03d", 3));
-    Assertions.assertThat(tipoDocumentos.get(1).getNombre()).isEqualTo("TipoDocumento" + String.format("%03d", 2));
-    Assertions.assertThat(tipoDocumentos.get(2).getNombre()).isEqualTo("TipoDocumento" + String.format("%03d", 1));
+    // Contiene nombre='TipoDocumento8', 'TipoDocumento7',
+    // 'TipoDocumento6'
+    Assertions.assertThat(tipoDocumentos.get(0).getNombre()).isEqualTo("TipoDocumento" + String.format("%d", 8));
+    Assertions.assertThat(tipoDocumentos.get(1).getNombre()).isEqualTo("TipoDocumento" + String.format("%d", 7));
+    Assertions.assertThat(tipoDocumentos.get(2).getNombre()).isEqualTo("TipoDocumento" + String.format("%d", 6));
 
   }
 

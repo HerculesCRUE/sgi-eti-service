@@ -1,6 +1,5 @@
 package org.crue.hercules.sgi.eti.service.impl;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.crue.hercules.sgi.eti.exceptions.ConflictoInteresNotFoundException;
@@ -9,8 +8,7 @@ import org.crue.hercules.sgi.eti.model.Evaluador;
 import org.crue.hercules.sgi.eti.repository.ConflictoInteresRepository;
 import org.crue.hercules.sgi.eti.repository.EvaluadorRepository;
 import org.crue.hercules.sgi.eti.service.ConflictoInteresService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -63,15 +61,13 @@ public class ConflictoInteresServiceImpl implements ConflictoInteresService {
    * @return el listado de entidades {@link ConflictoInteres} paginadas y
    *         filtradas.
    */
-  public Page<ConflictoInteres> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAllConflictoInteres(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<ConflictoInteres> specByQuery = new QuerySpecification<ConflictoInteres>(query);
-
-    Specification<ConflictoInteres> specs = Specification.where(specByQuery);
+  public Page<ConflictoInteres> findAll(String query, Pageable paging) {
+    log.debug("findAllConflictoInteres(String query,Pageable paging) - start");
+    Specification<ConflictoInteres> specs = SgiRSQLJPASupport.toSpecification(query);
 
     Page<ConflictoInteres> returnValue = conflictoInteresRepository.findAll(specs, paging);
 
-    log.debug("findAllConflictoInteres(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAllConflictoInteres(String query,Pageable paging) - end");
     return returnValue;
   }
 

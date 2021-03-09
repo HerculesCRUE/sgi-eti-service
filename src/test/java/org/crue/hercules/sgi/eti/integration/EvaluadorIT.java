@@ -21,12 +21,30 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Test de integracion de Evaluador.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off  
+  "classpath:scripts/formulario.sql", 
+  "classpath:scripts/tipo_actividad.sql",
+  "classpath:scripts/tipo_memoria.sql", 
+  "classpath:scripts/estado_retrospectiva.sql",
+  "classpath:scripts/tipo_convocatoria_reunion.sql", 
+  "classpath:scripts/tipo_evaluacion.sql",
+  "classpath:scripts/formacion_especifica.sql", 
+  "classpath:scripts/tipo_tarea.sql",
+  "classpath:scripts/tipo_estado_memoria.sql", 
+  "classpath:scripts/evaluador.sql" 
+// @formatter:on  
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class EvaluadorIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -45,8 +63,6 @@ public class EvaluadorIT extends BaseIT {
     return request;
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void getEvaluador_WithId_ReturnsEvaluador() throws Exception {
 
@@ -54,25 +70,23 @@ public class EvaluadorIT extends BaseIT {
     headers.set("Authorization", String.format("bearer %s", tokenBuilder.buildToken("user", "ETI-EVR-E", "ETI-EVR-V")));
 
     final ResponseEntity<Evaluador> response = restTemplate.exchange(EVALUADOR_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID,
-        HttpMethod.GET, buildRequest(headers, null), Evaluador.class, 1L);
+        HttpMethod.GET, buildRequest(headers, null), Evaluador.class, 2L);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
     final Evaluador evaluador = response.getBody();
 
-    Assertions.assertThat(evaluador.getId()).isEqualTo(1L);
-    Assertions.assertThat(evaluador.getResumen()).isEqualTo("Evaluador1");
+    Assertions.assertThat(evaluador.getId()).isEqualTo(2L);
+    Assertions.assertThat(evaluador.getResumen()).isEqualTo("Evaluador2");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void addEvaluador_ReturnsEvaluador() throws Exception {
 
     Evaluador nuevoEvaluador = new Evaluador();
     nuevoEvaluador.setResumen("Evaluador1");
-    nuevoEvaluador.setComite(new Comite(2L, "Comite2", new Formulario(2L, "M20", "Descripcion"), Boolean.TRUE));
-    nuevoEvaluador.setCargoComite(new CargoComite(2L, "CargoComite2", Boolean.TRUE));
+    nuevoEvaluador.setComite(new Comite(1L, "Comite1", new Formulario(1L, "M10", "Descripcion"), Boolean.TRUE));
+    nuevoEvaluador.setCargoComite(new CargoComite(1L, "CargoComite1", Boolean.TRUE));
     nuevoEvaluador.setPersonaRef("user-001");
     nuevoEvaluador.setActivo(Boolean.TRUE);
 
@@ -85,13 +99,11 @@ public class EvaluadorIT extends BaseIT {
     Assertions.assertThat(response.getBody().getId()).isNotNull();
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeEvaluador_Success() throws Exception {
 
     // when: Delete con id existente
-    long id = 1L;
+    long id = 2L;
 
     HttpHeaders headers = new HttpHeaders();
     headers.set("Authorization", String.format("bearer %s", tokenBuilder.buildToken("user", "ETI-EVR-B", "ETI-EVR-V")));
@@ -104,8 +116,6 @@ public class EvaluadorIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeEvaluador_DoNotGetEvaluador() throws Exception {
 
@@ -122,18 +132,16 @@ public class EvaluadorIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void replaceEvaluador_ReturnsEvaluador() throws Exception {
 
-    Evaluador replaceEvaluador = generarMockEvaluador(1L, "Evaluador1");
+    Evaluador replaceEvaluador = generarMockEvaluador(2L, "Evaluador2");
 
     HttpHeaders headers = new HttpHeaders();
     headers.set("Authorization", String.format("bearer %s", tokenBuilder.buildToken("user", "ETI-EVR-E")));
 
     final ResponseEntity<Evaluador> response = restTemplate.exchange(EVALUADOR_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID,
-        HttpMethod.PUT, buildRequest(headers, replaceEvaluador), Evaluador.class, 1L);
+        HttpMethod.PUT, buildRequest(headers, replaceEvaluador), Evaluador.class, 2L);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
@@ -144,8 +152,6 @@ public class EvaluadorIT extends BaseIT {
     Assertions.assertThat(evaluador.getActivo()).isEqualTo(replaceEvaluador.getActivo());
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPaging_ReturnsEvaluadorSubList() throws Exception {
     // when: Obtiene la page=3 con pagesize=10
@@ -164,24 +170,21 @@ public class EvaluadorIT extends BaseIT {
     // correcta en el header
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     final List<Evaluador> evaluadores = response.getBody();
-    Assertions.assertThat(evaluadores.size()).isEqualTo(3);
+    Assertions.assertThat(evaluadores.size()).isEqualTo(2);
     Assertions.assertThat(response.getHeaders().getFirst("X-Page")).isEqualTo("1");
     Assertions.assertThat(response.getHeaders().getFirst("X-Page-Size")).isEqualTo("5");
-    Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("8");
+    Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("7");
 
-    // Contiene de resumen='Evaluador6' a 'Evaluador8'
-    Assertions.assertThat(evaluadores.get(0).getResumen()).isEqualTo("Evaluador6");
-    Assertions.assertThat(evaluadores.get(1).getResumen()).isEqualTo("Evaluador7");
-    Assertions.assertThat(evaluadores.get(2).getResumen()).isEqualTo("Evaluador8");
+    // Contiene de resumen='Evaluador7' a 'Evaluador8'
+    Assertions.assertThat(evaluadores.get(0).getResumen()).isEqualTo("Evaluador7");
+    Assertions.assertThat(evaluadores.get(1).getResumen()).isEqualTo("Evaluador8");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSearchQuery_ReturnsFilteredEvaluadorList() throws Exception {
     // when: Búsqueda por resumen like e id equals
     Long id = 5L;
-    String query = "resumen~Evaluador%,id:" + id;
+    String query = "resumen=ke=Evaluador;id==" + id;
 
     URI uri = UriComponentsBuilder.fromUriString(EVALUADOR_CONTROLLER_BASE_PATH).queryParam("q", query).build(false)
         .toUri();
@@ -203,12 +206,10 @@ public class EvaluadorIT extends BaseIT {
     Assertions.assertThat(evaluadores.get(0).getResumen()).startsWith("Evaluador");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSortQuery_ReturnsOrderedEvaluadorList() throws Exception {
     // when: Ordenación por resumen desc
-    String query = "resumen-";
+    String query = "resumen,desc";
 
     URI uri = UriComponentsBuilder.fromUriString(EVALUADOR_CONTROLLER_BASE_PATH).queryParam("s", query).build(false)
         .toUri();
@@ -225,16 +226,14 @@ public class EvaluadorIT extends BaseIT {
     // correcta en el header
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     final List<Evaluador> evaluadores = response.getBody();
-    Assertions.assertThat(evaluadores.size()).isEqualTo(8);
-    for (int i = 0; i < 8; i++) {
+    Assertions.assertThat(evaluadores.size()).isEqualTo(7);
+    for (int i = 0; i < 7; i++) {
       Evaluador evaluador = evaluadores.get(i);
       Assertions.assertThat(evaluador.getId()).isEqualTo(8 - i);
-      Assertions.assertThat(evaluador.getResumen()).isEqualTo("Evaluador" + String.format("%03d", 8 - i));
+      Assertions.assertThat(evaluador.getResumen()).isEqualTo("Evaluador" + String.format("%d", 8 - i));
     }
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPagingSortingAndFiltering_ReturnsEvaluadorSubList() throws Exception {
     // when: Obtiene page=3 con pagesize=10
@@ -243,9 +242,9 @@ public class EvaluadorIT extends BaseIT {
     headers.add("X-Page", "0");
     headers.add("X-Page-Size", "3");
     // when: Ordena por resumen desc
-    String sort = "resumen-";
+    String sort = "resumen,desc";
     // when: Filtra por resumen like e id equals
-    String filter = "resumen~%00%";
+    String filter = "resumen=ke=Evaluador";
 
     URI uri = UriComponentsBuilder.fromUriString(EVALUADOR_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .queryParam("q", filter).build(false).toUri();
@@ -262,17 +261,15 @@ public class EvaluadorIT extends BaseIT {
     HttpHeaders responseHeaders = response.getHeaders();
     Assertions.assertThat(responseHeaders.getFirst("X-Page")).isEqualTo("0");
     Assertions.assertThat(responseHeaders.getFirst("X-Page-Size")).isEqualTo("3");
-    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("3");
+    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("7");
 
-    // Contiene resumen='Evaluador001', 'Evaluador002',
-    // 'Evaluador003'
-    Assertions.assertThat(evaluadores.get(0).getResumen()).isEqualTo("Evaluador" + String.format("%03d", 3));
-    Assertions.assertThat(evaluadores.get(1).getResumen()).isEqualTo("Evaluador" + String.format("%03d", 2));
-    Assertions.assertThat(evaluadores.get(2).getResumen()).isEqualTo("Evaluador" + String.format("%03d", 1));
+    // Contiene resumen='Evaluador8', 'Evaluador7',
+    // 'Evaluador6'
+    Assertions.assertThat(evaluadores.get(0).getResumen()).isEqualTo("Evaluador" + String.format("%d", 8));
+    Assertions.assertThat(evaluadores.get(1).getResumen()).isEqualTo("Evaluador" + String.format("%d", 7));
+    Assertions.assertThat(evaluadores.get(2).getResumen()).isEqualTo("Evaluador" + String.format("%d", 6));
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findByEvaluadorPersonaRef_Unlimited_ReturnsEmptyEvaluacionList() throws Exception {
     // when: Obtiene la page=1 con pagesize=5
@@ -291,8 +288,6 @@ public class EvaluadorIT extends BaseIT {
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findEvaluacionesEnSeguimiento_Unlimited_ReturnsEmptyEvaluacionList() throws Exception {
     // when: Obtiene la page=1 con pagesize=5
@@ -311,8 +306,6 @@ public class EvaluadorIT extends BaseIT {
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findEvaluacionesEnSeguimiento_Unlimited_ReturnsEvaluacionList() throws Exception {
     // when: Obtiene la page=1 con pagesize=5
@@ -333,8 +326,6 @@ public class EvaluadorIT extends BaseIT {
     Assertions.assertThat(evaluaciones.size()).isEqualTo(1);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAllByComiteSinconflictoInteresesMemoria_Unlimited_ReturnsEvaluadorSubList() throws Exception {
 
@@ -355,17 +346,15 @@ public class EvaluadorIT extends BaseIT {
     // correcta en el header
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     final List<Evaluador> evaluadores = response.getBody();
-    Assertions.assertThat(evaluadores.size()).isEqualTo(4);
+    Assertions.assertThat(evaluadores.size()).isEqualTo(7);
 
     // Contiene los evaluadores con Resumen 'Evaluador001', 'Evaluador002' y
     // 'Evaluador003'
-    Assertions.assertThat(evaluadores.get(0).getResumen()).isEqualTo("Evaluador001");
-    Assertions.assertThat(evaluadores.get(1).getResumen()).isEqualTo("Evaluador003");
-    Assertions.assertThat(evaluadores.get(2).getResumen()).isEqualTo("Evaluador005");
+    Assertions.assertThat(evaluadores.get(0).getResumen()).isEqualTo("Evaluador2");
+    Assertions.assertThat(evaluadores.get(1).getResumen()).isEqualTo("Evaluador3");
+    Assertions.assertThat(evaluadores.get(2).getResumen()).isEqualTo("Evaluador4");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAllByComiteSinconflictoInteresesMemoria_WithPaging_ReturnsEvaluadorSubList() throws Exception {
 
@@ -395,7 +384,7 @@ public class EvaluadorIT extends BaseIT {
     Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("4");
 
     // Contiene de resumen='Evaluador005'
-    Assertions.assertThat(evaluadores.get(0).getResumen()).isEqualTo("Evaluador005");
+    Assertions.assertThat(evaluadores.get(0).getResumen()).isEqualTo("Evaluador4");
   }
 
   /**

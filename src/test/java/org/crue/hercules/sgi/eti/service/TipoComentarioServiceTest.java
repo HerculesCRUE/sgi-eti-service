@@ -11,12 +11,10 @@ import org.crue.hercules.sgi.eti.repository.TipoComentarioRepository;
 import org.crue.hercules.sgi.eti.service.impl.TipoComentarioServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -27,7 +25,6 @@ import org.springframework.data.jpa.domain.Specification;
 /**
  * TipoComentarioServiceTest
  */
-@ExtendWith(MockitoExtension.class)
 public class TipoComentarioServiceTest extends BaseServiceTest {
 
   @Mock
@@ -163,6 +160,22 @@ public class TipoComentarioServiceTest extends BaseServiceTest {
     Assertions.assertThatCode(
         // when: Delete con id existente
         () -> tipoComentarioService.delete(1L))
+        // then: No se lanza ninguna excepción
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  public void deleteAll_DeleteAllTipoComentario() {
+    // given: One hundred TipoComentario
+    List<TipoComentario> tipoComentarios = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      tipoComentarios.add(generarMockTipoComentario(Long.valueOf(i), "TipoComentario" + String.format("%03d", i)));
+    }
+    BDDMockito.doNothing().when(tipoComentarioRepository).deleteAll();
+
+    Assertions.assertThatCode(
+        // when: Delete all
+        () -> tipoComentarioService.deleteAll())
         // then: No se lanza ninguna excepción
         .doesNotThrowAnyException();
   }

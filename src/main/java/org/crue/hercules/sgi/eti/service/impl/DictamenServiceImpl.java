@@ -9,8 +9,7 @@ import org.crue.hercules.sgi.eti.model.Dictamen;
 import org.crue.hercules.sgi.eti.repository.DictamenRepository;
 import org.crue.hercules.sgi.eti.repository.specification.DictamenSpecifications;
 import org.crue.hercules.sgi.eti.service.DictamenService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -54,15 +53,12 @@ public class DictamenServiceImpl implements DictamenService {
    * @param query  información del filtro.
    * @return el listado de entidades {@link Dictamen} paginadas y filtradas.
    */
-  public Page<Dictamen> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAllDictamen(List<QueryCriteria> query, Pageable paging) - start");
-    Specification<Dictamen> specByQuery = new QuerySpecification<Dictamen>(query);
-    Specification<Dictamen> specActivos = DictamenSpecifications.activos();
-
-    Specification<Dictamen> specs = Specification.where(specActivos).and(specByQuery);
+  public Page<Dictamen> findAll(String query, Pageable paging) {
+    log.debug("findAllDictamen(String query, Pageable paging) - start");
+    Specification<Dictamen> specs = DictamenSpecifications.activos().and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<Dictamen> returnValue = dictamenRepository.findAll(specs, paging);
-    log.debug("findAllDictamen(List<QueryCriteria> query, Pageable paging) - end");
+    log.debug("findAllDictamen(String query, Pageable paging) - end");
     return returnValue;
   }
 

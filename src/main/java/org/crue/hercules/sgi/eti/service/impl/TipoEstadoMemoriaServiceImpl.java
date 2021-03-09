@@ -1,14 +1,11 @@
 package org.crue.hercules.sgi.eti.service.impl;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.TipoEstadoMemoriaNotFoundException;
 import org.crue.hercules.sgi.eti.model.TipoEstadoMemoria;
 import org.crue.hercules.sgi.eti.repository.TipoEstadoMemoriaRepository;
 import org.crue.hercules.sgi.eti.repository.specification.TipoEstadoMemoriaSpecifications;
 import org.crue.hercules.sgi.eti.service.TipoEstadoMemoriaService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -54,15 +51,13 @@ public class TipoEstadoMemoriaServiceImpl implements TipoEstadoMemoriaService {
    * @return el listado de entidades {@link TipoEstadoMemoria} paginadas y
    *         filtradas.
    */
-  public Page<TipoEstadoMemoria> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAllTipoEstadoMemoria(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<TipoEstadoMemoria> specByQuery = new QuerySpecification<TipoEstadoMemoria>(query);
-    Specification<TipoEstadoMemoria> specActivos = TipoEstadoMemoriaSpecifications.activos();
-
-    Specification<TipoEstadoMemoria> specs = Specification.where(specActivos).and(specByQuery);
+  public Page<TipoEstadoMemoria> findAll(String query, Pageable paging) {
+    log.debug("findAllTipoEstadoMemoria(String query,Pageable paging) - start");
+    Specification<TipoEstadoMemoria> specs = TipoEstadoMemoriaSpecifications.activos()
+        .and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<TipoEstadoMemoria> returnValue = tipoEstadoMemoriaRepository.findAll(specs, paging);
-    log.debug("findAllTipoEstadoMemoria(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAllTipoEstadoMemoria(String query,Pageable paging) - end");
     return returnValue;
   }
 

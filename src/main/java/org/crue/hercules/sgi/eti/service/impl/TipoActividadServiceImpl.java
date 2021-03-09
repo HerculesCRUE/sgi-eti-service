@@ -1,14 +1,11 @@
 package org.crue.hercules.sgi.eti.service.impl;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.TipoActividadNotFoundException;
 import org.crue.hercules.sgi.eti.model.TipoActividad;
 import org.crue.hercules.sgi.eti.repository.TipoActividadRepository;
 import org.crue.hercules.sgi.eti.repository.specification.TipoActividadSpecifications;
 import org.crue.hercules.sgi.eti.service.TipoActividadService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -52,15 +49,13 @@ public class TipoActividadServiceImpl implements TipoActividadService {
    * @param query  información del filtro.
    * @return el listado de entidades {@link TipoActividad} paginadas y filtradas.
    */
-  public Page<TipoActividad> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAllTipoActividad(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<TipoActividad> specByQuery = new QuerySpecification<TipoActividad>(query);
-    Specification<TipoActividad> specActivos = TipoActividadSpecifications.activos();
-
-    Specification<TipoActividad> specs = Specification.where(specActivos).and(specByQuery);
+  public Page<TipoActividad> findAll(String query, Pageable paging) {
+    log.debug("findAllTipoActividad(String query,Pageable paging) - start");
+    Specification<TipoActividad> specs = TipoActividadSpecifications.activos()
+        .and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<TipoActividad> returnValue = tipoActividadRepository.findAll(specs, paging);
-    log.debug("findAllTipoActividad(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAllTipoActividad(String query,Pageable paging) - end");
     return returnValue;
   }
 

@@ -1,7 +1,5 @@
 package org.crue.hercules.sgi.eti.controller;
 
-import java.util.List;
-
 import javax.validation.Valid;
 
 import org.crue.hercules.sgi.eti.dto.ConvocatoriaReunionDatosGenerales;
@@ -11,7 +9,6 @@ import org.crue.hercules.sgi.eti.model.Evaluacion;
 import org.crue.hercules.sgi.eti.service.AsistentesService;
 import org.crue.hercules.sgi.eti.service.ConvocatoriaReunionService;
 import org.crue.hercules.sgi.eti.service.EvaluacionService;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.crue.hercules.sgi.framework.exception.NotFoundException;
 import org.crue.hercules.sgi.framework.web.bind.annotation.RequestPageable;
 import org.springframework.data.domain.Page;
@@ -137,19 +134,18 @@ public class ConvocatoriaReunionController {
    * Obtiene las entidades {@link ConvocatoriaReunion} filtradas y paginadas según
    * los criterios de búsqueda.
    *
-   * @param query  filtro de {@link QueryCriteria}.
+   * @param query  filtro de búsqueda.
    * @param paging pageable
    * @return el listado de entidades {@link ConvocatoriaReunion} paginadas y
    *         filtradas.
    */
   @GetMapping()
   @PreAuthorize("hasAnyAuthorityForAnyUO('ETI-ACT-C', 'ETI-CNV-V')")
-  ResponseEntity<Page<ConvocatoriaReunion>> findAll(
-      @RequestParam(name = "q", required = false) List<QueryCriteria> query,
+  ResponseEntity<Page<ConvocatoriaReunion>> findAll(@RequestParam(name = "q", required = false) String query,
       @RequestPageable(sort = "s") Pageable paging) {
-    log.debug("findAll(List<QueryCriteria> query, Pageable paging - start");
+    log.debug("findAll(String query, Pageable paging - start");
     Page<ConvocatoriaReunion> page = convocatoriaReunionService.findAll(query, paging);
-    log.debug("findAll(List<QueryCriteria> query, Pageable paging - end");
+    log.debug("findAll(String query, Pageable paging - end");
     if (page.isEmpty()) {
       return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }

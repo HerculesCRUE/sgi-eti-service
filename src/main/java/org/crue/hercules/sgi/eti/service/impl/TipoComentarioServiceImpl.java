@@ -1,14 +1,11 @@
 package org.crue.hercules.sgi.eti.service.impl;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.TipoComentarioNotFoundException;
 import org.crue.hercules.sgi.eti.model.TipoComentario;
 import org.crue.hercules.sgi.eti.repository.TipoComentarioRepository;
 import org.crue.hercules.sgi.eti.repository.specification.TipoComentarioSpecifications;
 import org.crue.hercules.sgi.eti.service.TipoComentarioService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -52,15 +49,13 @@ public class TipoComentarioServiceImpl implements TipoComentarioService {
    * @param query  información del filtro.
    * @return el listado de entidades {@link TipoComentario} paginadas y filtradas.
    */
-  public Page<TipoComentario> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAllTipoComentario(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<TipoComentario> specByQuery = new QuerySpecification<TipoComentario>(query);
-    Specification<TipoComentario> specActivos = TipoComentarioSpecifications.activos();
-
-    Specification<TipoComentario> specs = Specification.where(specActivos).and(specByQuery);
+  public Page<TipoComentario> findAll(String query, Pageable paging) {
+    log.debug("findAllTipoComentario(String query,Pageable paging) - start");
+    Specification<TipoComentario> specs = TipoComentarioSpecifications.activos()
+        .and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<TipoComentario> returnValue = tipoComentarioRepository.findAll(specs, paging);
-    log.debug("findAllTipoComentario(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAllTipoComentario(String query,Pageable paging) - end");
     return returnValue;
   }
 

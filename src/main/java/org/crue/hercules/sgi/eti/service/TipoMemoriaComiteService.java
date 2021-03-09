@@ -1,13 +1,9 @@
 package org.crue.hercules.sgi.eti.service;
 
+import org.crue.hercules.sgi.eti.exceptions.TipoMemoriaComiteNotFoundException;
 import org.crue.hercules.sgi.eti.model.Comite;
 import org.crue.hercules.sgi.eti.model.TipoMemoria;
 import org.crue.hercules.sgi.eti.model.TipoMemoriaComite;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
-
-import java.util.List;
-
-import org.crue.hercules.sgi.eti.exceptions.TipoMemoriaComiteNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -40,7 +36,7 @@ public interface TipoMemoriaComiteService {
    * @return la lista de entidades {@link TipoMemoriaComite} paginadas y/o
    *         filtradas.
    */
-  Page<TipoMemoriaComite> findAll(List<QueryCriteria> query, Pageable pageable);
+  Page<TipoMemoriaComite> findAll(String query, Pageable pageable);
 
   /**
    * Obtiene {@link TipoMemoriaComite} por id.

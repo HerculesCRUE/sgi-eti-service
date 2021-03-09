@@ -68,8 +68,7 @@ public class Memoria extends BaseEntity {
   private String titulo;
 
   /** Referencia usuario */
-  @Column(name = "persona_ref", length = 250, nullable = false)
-  @NotNull
+  @Column(name = "persona_ref", length = 250, nullable = true)
   private String personaRef;
 
   /** Tipo Memoria */
@@ -104,7 +103,7 @@ public class Memoria extends BaseEntity {
   private Integer version;
 
   /** Código órgano competente */
-  @Column(name = "cod_organo_competente", nullable = true)
+  @Column(name = "cod_organo_competente", length = 250, nullable = true)
   private String codOrganoCompetente;
 
   /** Activo */

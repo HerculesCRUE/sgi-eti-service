@@ -1,4 +1,5 @@
 server:
+  port : 4280
   error:
     whitelabel:
       # Disble the default error page displayed in browsers in case of a server error
@@ -72,9 +73,9 @@ spring:
     #frameoptions:
       #enable: false
   # H2 console
-  #h2:
-    #console:
-      #enabled: true
+  h2:
+    console:
+      enabled: false
       #path: /h2-console
       #settings:
         #web-allow-others: true

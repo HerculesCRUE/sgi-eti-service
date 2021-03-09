@@ -1,14 +1,11 @@
 package org.crue.hercules.sgi.eti.service.impl;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.BloqueNotFoundException;
 import org.crue.hercules.sgi.eti.model.Bloque;
 import org.crue.hercules.sgi.eti.model.Formulario;
 import org.crue.hercules.sgi.eti.repository.BloqueRepository;
 import org.crue.hercules.sgi.eti.service.BloqueService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -45,14 +42,12 @@ public class BloqueServiceImpl implements BloqueService {
    * @param query  información del filtro.
    * @return el listado de entidades {@link Bloque} paginadas y filtradas.
    */
-  public Page<Bloque> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAll(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<Bloque> specByQuery = new QuerySpecification<Bloque>(query);
-
-    Specification<Bloque> specs = Specification.where(specByQuery);
+  public Page<Bloque> findAll(String query, Pageable paging) {
+    log.debug("findAll(String query,Pageable paging) - start");
+    Specification<Bloque> specs = SgiRSQLJPASupport.toSpecification(query);
 
     Page<Bloque> returnValue = bloqueRepository.findAll(specs, paging);
-    log.debug("findAll(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAll(String query,Pageable paging) - end");
     return returnValue;
   }
 

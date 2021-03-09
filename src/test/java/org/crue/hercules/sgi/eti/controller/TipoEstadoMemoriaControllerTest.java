@@ -1,6 +1,5 @@
 package org.crue.hercules.sgi.eti.controller;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,7 +9,6 @@ import org.assertj.core.api.Assertions;
 import org.crue.hercules.sgi.eti.exceptions.TipoEstadoMemoriaNotFoundException;
 import org.crue.hercules.sgi.eti.model.TipoEstadoMemoria;
 import org.crue.hercules.sgi.eti.service.TipoEstadoMemoriaService;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -29,7 +27,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * TipoEstadoMemoriaControllerTest
@@ -175,8 +172,7 @@ public class TipoEstadoMemoriaControllerTest extends BaseControllerTest {
           .add(generarMockTipoEstadoMemoria(Long.valueOf(i), "TipoEstadoMemoria" + String.format("%03d", i)));
     }
 
-    BDDMockito.given(
-        tipoEstadoMemoriaService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(tipoEstadoMemoriaService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willReturn(new PageImpl<>(tipoEstadoMemorias));
 
     // when: find unlimited
@@ -191,6 +187,24 @@ public class TipoEstadoMemoriaControllerTest extends BaseControllerTest {
 
   @Test
   @WithMockUser(username = "user", authorities = { "ETI-TIPOESTADOMEMORIA-VER" })
+  public void findAll_ReturnsNoContent() throws Exception {
+    // given: TipoEstadoMemoria empty
+    List<TipoEstadoMemoria> tipoEstadoMemorias = new ArrayList<>();
+
+    BDDMockito.given(tipoEstadoMemoriaService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
+        .willReturn(new PageImpl<>(tipoEstadoMemorias));
+
+    // when: find unlimited
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(TIPO_ESTADO_MEMORIA_CONTROLLER_BASE_PATH)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print())
+        // then: Devuelve error No Content
+        .andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-TIPOESTADOMEMORIA-VER" })
   public void findAll_WithPaging_ReturnsTipoEstadoMemoriaSubList() throws Exception {
     // given: One hundred TipoEstadoMemoria
     List<TipoEstadoMemoria> tipoEstadoMemorias = new ArrayList<>();
@@ -199,8 +213,7 @@ public class TipoEstadoMemoriaControllerTest extends BaseControllerTest {
           .add(generarMockTipoEstadoMemoria(Long.valueOf(i), "TipoEstadoMemoria" + String.format("%03d", i)));
     }
 
-    BDDMockito.given(
-        tipoEstadoMemoriaService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(tipoEstadoMemoriaService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willAnswer(new Answer<Page<TipoEstadoMemoria>>() {
           @Override
           public Page<TipoEstadoMemoria> answer(InvocationOnMock invocation) throws Throwable {
@@ -254,66 +267,14 @@ public class TipoEstadoMemoriaControllerTest extends BaseControllerTest {
     }
     String query = "nombre~TipoEstadoMemoria%,id:5";
 
-    BDDMockito.given(
-        tipoEstadoMemoriaService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(tipoEstadoMemoriaService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willAnswer(new Answer<Page<TipoEstadoMemoria>>() {
           @Override
           public Page<TipoEstadoMemoria> answer(InvocationOnMock invocation) throws Throwable {
-            List<QueryCriteria> queryCriterias = invocation.<List<QueryCriteria>>getArgument(0);
-
             List<TipoEstadoMemoria> content = new ArrayList<>();
             for (TipoEstadoMemoria tipoEstadoMemoria : tipoEstadoMemorias) {
-              boolean add = true;
-              for (QueryCriteria queryCriteria : queryCriterias) {
-                Field field = ReflectionUtils.findField(TipoEstadoMemoria.class, queryCriteria.getKey());
-                field.setAccessible(true);
-                String fieldValue = ReflectionUtils.getField(field, tipoEstadoMemoria).toString();
-                switch (queryCriteria.getOperation()) {
-                  case EQUALS:
-                    if (!fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) > 0)) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) >= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LIKE:
-                    if (!fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) < 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) <= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_EQUALS:
-                    if (fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_LIKE:
-                    if (fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  default:
-                    break;
-                }
-              }
-              if (add) {
+              if (tipoEstadoMemoria.getNombre().startsWith("TipoEstadoMemoria")
+                  && tipoEstadoMemoria.getId().equals(5L)) {
                 content.add(tipoEstadoMemoria);
               }
             }

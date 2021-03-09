@@ -1,13 +1,10 @@
 package org.crue.hercules.sgi.eti.service.impl;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.model.TipoInvestigacionTutelada;
 import org.crue.hercules.sgi.eti.repository.TipoInvestigacionTuteladaRepository;
 import org.crue.hercules.sgi.eti.repository.specification.TipoInvestigacionTuteladaSpecifications;
 import org.crue.hercules.sgi.eti.service.TipoInvestigacionTuteladaService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -38,15 +35,13 @@ public class TipoInvestigacionTuteladaServiceImpl implements TipoInvestigacionTu
    * @return el listado de entidades {@link TipoInvestigacionTutelada} paginadas y
    *         filtradas.
    */
-  public Page<TipoInvestigacionTutelada> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAllTipoInvestigacionTutelada(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<TipoInvestigacionTutelada> specByQuery = new QuerySpecification<TipoInvestigacionTutelada>(query);
-    Specification<TipoInvestigacionTutelada> specActivos = TipoInvestigacionTuteladaSpecifications.activos();
-
-    Specification<TipoInvestigacionTutelada> specs = Specification.where(specActivos).and(specByQuery);
+  public Page<TipoInvestigacionTutelada> findAll(String query, Pageable paging) {
+    log.debug("findAllTipoInvestigacionTutelada(String query,Pageable paging) - start");
+    Specification<TipoInvestigacionTutelada> specs = TipoInvestigacionTuteladaSpecifications.activos()
+        .and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<TipoInvestigacionTutelada> returnValue = tipoInvestigacionTuteladaRepository.findAll(specs, paging);
-    log.debug("findAllTipoInvestigacionTutelada(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAllTipoInvestigacionTutelada(String query,Pageable paging) - end");
     return returnValue;
   }
 

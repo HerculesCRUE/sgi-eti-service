@@ -16,12 +16,21 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Test de integracion de TipoTarea.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off
+  "classpath:scripts/tipo_tarea.sql" 
+// @formatter:on
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class TipoTareaIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -38,8 +47,6 @@ public class TipoTareaIT extends BaseIT {
     return request;
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void getTipoTarea_WithId_ReturnsTipoTarea() throws Exception {
     final ResponseEntity<TipoTarea> response = restTemplate.exchange(
@@ -55,7 +62,6 @@ public class TipoTareaIT extends BaseIT {
     Assertions.assertThat(tipoTarea.getActivo()).as("activo").isEqualTo(true);
   }
 
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void addTipoTarea_ReturnsTipoTarea() throws Exception {
 
@@ -68,8 +74,6 @@ public class TipoTareaIT extends BaseIT {
     Assertions.assertThat(response.getBody()).isEqualTo(nuevoTipoTarea);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeTipoTarea_Success() throws Exception {
     // when: Delete con id existente
@@ -82,8 +86,6 @@ public class TipoTareaIT extends BaseIT {
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeTipoTarea_DoNotGetTipoTarea() throws Exception {
     restTemplate.exchange(TIPO_TAREA_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.DELETE,
@@ -96,8 +98,6 @@ public class TipoTareaIT extends BaseIT {
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void replaceTipoTarea_ReturnsTipoTarea() throws Exception {
 
@@ -116,8 +116,6 @@ public class TipoTareaIT extends BaseIT {
     Assertions.assertThat(tipoTarea.getActivo()).as("activo").isEqualTo(replaceTipoTarea.getActivo());
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPaging_ReturnsTipoTareaSubList() throws Exception {
     // when: Obtiene la page=0 con pagesize=2
@@ -144,13 +142,11 @@ public class TipoTareaIT extends BaseIT {
     Assertions.assertThat(tiposTarea.get(1).getNombre()).isEqualTo("Eutanasia");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSearchQuery_ReturnsFilteredTipoTareaList() throws Exception {
     // when: Búsqueda por nombre like e id equals
     Long id = 1L;
-    String query = "nombre~%proyecto%,id:" + id;
+    String query = "nombre=ke=proyecto;id==" + id;
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_TAREA_CONTROLLER_BASE_PATH).queryParam("q", query).build(false)
         .toUri();
@@ -168,12 +164,10 @@ public class TipoTareaIT extends BaseIT {
     Assertions.assertThat(tiposTarea.get(0).getNombre()).startsWith("Diseño de proyecto y procedimientos");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSortQuery_ReturnsOrderedTipoTareaList() throws Exception {
     // when: Ordenación por nombre desc
-    String query = "nombre-";
+    String query = "nombre,desc";
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_TAREA_CONTROLLER_BASE_PATH).queryParam("s", query).build(false)
         .toUri();
@@ -193,8 +187,6 @@ public class TipoTareaIT extends BaseIT {
     Assertions.assertThat(tiposTarea.get(1).getNombre()).as("1.nombre").isEqualTo("Eutanasia");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPagingSortingAndFiltering_ReturnsTipoTareaSubList() throws Exception {
     // when: Obtiene page=0 con pagesize=4
@@ -202,9 +194,9 @@ public class TipoTareaIT extends BaseIT {
     headers.add("X-Page", "0");
     headers.add("X-Page-Size", "4");
     // when: Ordena por nombre desc
-    String sort = "nombre-";
+    String sort = "nombre,desc";
     // when: Filtra por nombre like
-    String filter = "nombre~%de%";
+    String filter = "nombre=ke=de";
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_TAREA_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .queryParam("q", filter).build(false).toUri();

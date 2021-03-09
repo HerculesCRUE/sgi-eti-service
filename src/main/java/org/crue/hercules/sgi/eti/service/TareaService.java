@@ -1,14 +1,11 @@
 package org.crue.hercules.sgi.eti.service;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.dto.TareaWithIsEliminable;
 import org.crue.hercules.sgi.eti.exceptions.TareaNotFoundException;
 import org.crue.hercules.sgi.eti.model.EquipoTrabajo;
 import org.crue.hercules.sgi.eti.model.Memoria;
 import org.crue.hercules.sgi.eti.model.PeticionEvaluacion;
 import org.crue.hercules.sgi.eti.model.Tarea;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -40,7 +37,7 @@ public interface TareaService {
    * @param query    la información del filtro.
    * @return la lista de entidades {@link Tarea} paginadas y/o filtradas.
    */
-  Page<Tarea> findAll(List<QueryCriteria> query, Pageable pageable);
+  Page<Tarea> findAll(String query, Pageable pageable);
 
   /**
    * Obtiene {@link Tarea} por id.

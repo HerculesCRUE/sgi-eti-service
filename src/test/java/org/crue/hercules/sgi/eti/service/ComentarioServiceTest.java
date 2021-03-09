@@ -1,5 +1,6 @@
 package org.crue.hercules.sgi.eti.service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -11,10 +12,12 @@ import org.crue.hercules.sgi.eti.model.Apartado;
 import org.crue.hercules.sgi.eti.model.Bloque;
 import org.crue.hercules.sgi.eti.model.Comentario;
 import org.crue.hercules.sgi.eti.model.Comite;
+import org.crue.hercules.sgi.eti.model.EstadoRetrospectiva;
 import org.crue.hercules.sgi.eti.model.Evaluacion;
 import org.crue.hercules.sgi.eti.model.Evaluador;
 import org.crue.hercules.sgi.eti.model.Formulario;
 import org.crue.hercules.sgi.eti.model.Memoria;
+import org.crue.hercules.sgi.eti.model.Retrospectiva;
 import org.crue.hercules.sgi.eti.model.TipoComentario;
 import org.crue.hercules.sgi.eti.model.TipoEstadoMemoria;
 import org.crue.hercules.sgi.eti.model.TipoEvaluacion;
@@ -23,12 +26,10 @@ import org.crue.hercules.sgi.eti.repository.EvaluacionRepository;
 import org.crue.hercules.sgi.eti.service.impl.ComentarioServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -38,7 +39,6 @@ import org.springframework.data.domain.Pageable;
 /**
  * ComentarioServiceTest
  */
-@ExtendWith(MockitoExtension.class)
 public class ComentarioServiceTest extends BaseServiceTest {
 
   @Mock
@@ -316,6 +316,166 @@ public class ComentarioServiceTest extends BaseServiceTest {
   }
 
   @Test
+  public void createComentarioGestor_MemoriaEstadoEnEvaluacion() {
+    final Long evaluacionId = 12L;
+    final Long tipoEvaluacionId = 1L; // Retrospectiva
+    final Long estadoMemoriaId = 5L; // En evaluación
+    final String nombreComite = "comite1";
+    final Long estadoRetrospectivaId = 2L; // Completada
+    final Long formularioId = 6L;
+
+    BDDMockito.given(evaluacionRepository.findById(evaluacionId))
+        .willReturn(Optional.of(generarMockEvaluacionVariable(evaluacionId, tipoEvaluacionId, estadoMemoriaId,
+            nombreComite, estadoRetrospectivaId)));
+
+    final Comentario comentario = new Comentario();
+    Formulario formulario = new Formulario(formularioId, "Nombre", "Descripcion");
+    Bloque bloque = new Bloque(1L, formulario, "Bloque1", 1);
+    Apartado apartado = new Apartado();
+    apartado.setId(1L);
+    apartado.setBloque(bloque);
+    comentario.setEvaluacion(null);
+    comentario.setApartado(apartado);
+
+    final Comentario comentarioNew = new Comentario();
+    BDDMockito.given(comentarioRepository.save(comentario)).willReturn(comentarioNew);
+
+    // when: se crea el comentario a la evaluación
+    final Comentario comentarioCreado = comentarioService.createComentarioGestor(evaluacionId, comentario);
+
+    // then: Comprobamos que se crea el comentario correctamente.
+    Assertions.assertThat(comentarioCreado).isNotNull();
+  }
+
+  @Test
+  public void createComentarioGestor_MemoriaEstadoEnEvaluacionSegAnual() {
+    final Long evaluacionId = 12L;
+    final Long tipoEvaluacionId = 2L; // Memoria
+    final Long estadoMemoriaId = 13L; // En evaluación seguimiento anual
+    final String nombreComite = "CEEA";
+    final Long estadoRetrospectivaId = 2L; // Completada
+    final Long formularioId = 2L;
+
+    BDDMockito.given(evaluacionRepository.findById(evaluacionId))
+        .willReturn(Optional.of(generarMockEvaluacionVariable(evaluacionId, tipoEvaluacionId, estadoMemoriaId,
+            nombreComite, estadoRetrospectivaId)));
+
+    final Comentario comentario = new Comentario();
+    Formulario formulario = new Formulario(formularioId, "Nombre", "Descripcion");
+    Bloque bloque = new Bloque(1L, formulario, "Bloque1", 1);
+    Apartado apartado = new Apartado();
+    apartado.setId(1L);
+    apartado.setBloque(bloque);
+    comentario.setEvaluacion(null);
+    comentario.setApartado(apartado);
+
+    final Comentario comentarioNew = new Comentario();
+    BDDMockito.given(comentarioRepository.save(comentario)).willReturn(comentarioNew);
+
+    // when: se crea el comentario a la evaluación
+    final Comentario comentarioCreado = comentarioService.createComentarioGestor(evaluacionId, comentario);
+
+    // then: Comprobamos que se crea el comentario correctamente.
+    Assertions.assertThat(comentarioCreado).isNotNull();
+  }
+
+  @Test
+  public void createComentarioGestor_MemoriaEstadoEnSecretariaSegFinalAclaraciones() {
+    final Long evaluacionId = 12L;
+    final Long tipoEvaluacionId = 2L; // Memoria
+    final Long estadoMemoriaId = 18L; // En Secretaria Seg Final Aclaraciones
+    final String nombreComite = "CEIAB";
+    final Long estadoRetrospectivaId = 2L; // Completada
+    final Long formularioId = 3L;
+
+    BDDMockito.given(evaluacionRepository.findById(evaluacionId))
+        .willReturn(Optional.of(generarMockEvaluacionVariable(evaluacionId, tipoEvaluacionId, estadoMemoriaId,
+            nombreComite, estadoRetrospectivaId)));
+
+    final Comentario comentario = new Comentario();
+    Formulario formulario = new Formulario(formularioId, "Nombre", "Descripcion");
+    Bloque bloque = new Bloque(1L, formulario, "Bloque1", 1);
+    Apartado apartado = new Apartado();
+    apartado.setId(1L);
+    apartado.setBloque(bloque);
+    comentario.setEvaluacion(null);
+    comentario.setApartado(apartado);
+
+    final Comentario comentarioNew = new Comentario();
+    BDDMockito.given(comentarioRepository.save(comentario)).willReturn(comentarioNew);
+
+    // when: se crea el comentario a la evaluación
+    final Comentario comentarioCreado = comentarioService.createComentarioGestor(evaluacionId, comentario);
+
+    // then: Comprobamos que se crea el comentario correctamente.
+    Assertions.assertThat(comentarioCreado).isNotNull();
+  }
+
+  @Test
+  public void createComentarioGestor_MemoriaEstadoEnEvaluacionSegFinal() {
+    final Long evaluacionId = 12L;
+    final Long tipoEvaluacionId = 3L; // Seguimiento anual
+    final Long estadoMemoriaId = 19L; // En Evaluacion Seg Final
+    final String nombreComite = "comite1";
+    final Long estadoRetrospectivaId = 2L; // Completada
+    final Long formularioId = 4L;
+
+    BDDMockito.given(evaluacionRepository.findById(evaluacionId))
+        .willReturn(Optional.of(generarMockEvaluacionVariable(evaluacionId, tipoEvaluacionId, estadoMemoriaId,
+            nombreComite, estadoRetrospectivaId)));
+
+    final Comentario comentario = new Comentario();
+    Formulario formulario = new Formulario(formularioId, "Nombre", "Descripcion");
+    Bloque bloque = new Bloque(1L, formulario, "Bloque1", 1);
+    Apartado apartado = new Apartado();
+    apartado.setId(1L);
+    apartado.setBloque(bloque);
+    comentario.setEvaluacion(null);
+    comentario.setApartado(apartado);
+
+    final Comentario comentarioNew = new Comentario();
+    BDDMockito.given(comentarioRepository.save(comentario)).willReturn(comentarioNew);
+
+    // when: se crea el comentario a la evaluación
+    final Comentario comentarioCreado = comentarioService.createComentarioGestor(evaluacionId, comentario);
+
+    // then: Comprobamos que se crea el comentario correctamente.
+    Assertions.assertThat(comentarioCreado).isNotNull();
+  }
+
+  @Test
+  public void createComentarioGestor_RetrospectivaEstadoEnEvaluacion() {
+    final Long evaluacionId = 12L;
+    final Long tipoEvaluacionId = 4L; // Seguimiento final
+    final Long estadoMemoriaId = 1L; // En Elaboración
+    final String nombreComite = "comite1";
+    final Long estadoRetrospectivaId = 4L; // En evaluacion
+    final Long formularioId = 5L;
+
+    BDDMockito.given(evaluacionRepository.findById(evaluacionId))
+        .willReturn(Optional.of(generarMockEvaluacionVariable(evaluacionId, tipoEvaluacionId, estadoMemoriaId,
+            nombreComite, estadoRetrospectivaId)));
+
+    final Comentario comentario = new Comentario();
+    Formulario formulario = new Formulario(formularioId, "Nombre", "Descripcion");
+    Bloque bloque = new Bloque(1L, formulario, "Bloque1", 1);
+    Apartado apartado = new Apartado();
+    apartado.setId(1L);
+    apartado.setBloque(bloque);
+    comentario.setEvaluacion(null);
+    comentario.setApartado(apartado);
+
+    final Comentario comentarioNew = new Comentario();
+    BDDMockito.given(comentarioRepository.save(comentario)).willReturn(comentarioNew);
+
+    // when: se crea el comentario a la evaluación
+    final Comentario comentarioCreado = comentarioService.createComentarioGestor(evaluacionId, comentario);
+
+    // then: Comprobamos que se crea el comentario correctamente.
+    Assertions.assertThat(comentarioCreado).isNotNull();
+  }
+
+  @Test
   public void createComentarioEvaluadorValid() {
     // given: EL id de la evaluación es válido
     final Long evaluacionId = 12L;
@@ -336,6 +496,64 @@ public class ComentarioServiceTest extends BaseServiceTest {
     Assertions.assertThat(comentarioCreado).isNotNull();
     Assertions.assertThat(comentarioCreado.getId()).isNotNull();
 
+  }
+
+  @Test
+  public void createComentarioEvaluador_UsuarioIsEvaluador1() {
+    // given: Una evaluación con un evaluador1
+    final Long evaluacionId = 12L;
+    final String personaRef = "user-002";
+
+    Evaluacion evaluacion = generarMockEvaluacion(evaluacionId);
+    final Evaluador evaluador1 = new Evaluador();
+    evaluador1.setPersonaRef(personaRef);
+    evaluacion.setEvaluador1(evaluador1);
+
+    BDDMockito.given(evaluacionRepository.findById(evaluacionId))
+        .willReturn(Optional.of(generarMockEvaluacion(evaluacionId)));
+
+    final Comentario comentario = generarMockComentario(null, "texto", 1L);
+    comentario.setEvaluacion(null);
+    final Comentario comentarioNew = generarMockComentario(12L, "texto", 1L);
+
+    BDDMockito.given(comentarioRepository.save(comentario)).willReturn(comentarioNew);
+
+    // when: se crea el comentario a la evaluación con la personaRef "user-002"
+    final Comentario comentarioCreado = comentarioService.createComentarioEvaluador(evaluacionId, comentario,
+        personaRef);
+
+    // then: Comprobamos que se crea el comentario correctamente.
+    Assertions.assertThat(comentarioCreado).isNotNull();
+    Assertions.assertThat(comentarioCreado.getId()).isNotNull();
+  }
+
+  @Test
+  public void createComentarioEvaluador_UsuarioIsEvaluador2() {
+    // given: Una evaluación con un evaluador2
+    final Long evaluacionId = 12L;
+    final String personaRef = "user-002";
+
+    Evaluacion evaluacion = generarMockEvaluacion(evaluacionId);
+    final Evaluador evaluador2 = new Evaluador();
+    evaluador2.setPersonaRef(personaRef);
+    evaluacion.setEvaluador2(evaluador2);
+
+    BDDMockito.given(evaluacionRepository.findById(evaluacionId))
+        .willReturn(Optional.of(generarMockEvaluacion(evaluacionId)));
+
+    final Comentario comentario = generarMockComentario(null, "texto", 1L);
+    comentario.setEvaluacion(null);
+    final Comentario comentarioNew = generarMockComentario(12L, "texto", 1L);
+
+    BDDMockito.given(comentarioRepository.save(comentario)).willReturn(comentarioNew);
+
+    // when: se crea el comentario a la evaluación con la personaRef "user-002"
+    final Comentario comentarioCreado = comentarioService.createComentarioEvaluador(evaluacionId, comentario,
+        personaRef);
+
+    // then: Comprobamos que se crea el comentario correctamente.
+    Assertions.assertThat(comentarioCreado).isNotNull();
+    Assertions.assertThat(comentarioCreado.getId()).isNotNull();
   }
 
   @Test
@@ -516,6 +734,171 @@ public class ComentarioServiceTest extends BaseServiceTest {
   }
 
   @Test
+  public void updateComentarioGestor_MemoriaEstadoEnEvaluacion() {
+    final Long evaluacionId = 12L;
+    final Long tipoEvaluacionId = 1L; // Retrospectiva
+    final Long estadoMemoriaId = 5L; // En evaluación
+    final String nombreComite = "comite1";
+    final Long estadoRetrospectivaId = 2L; // Completada
+    final Long formularioId = 6L;
+
+    Evaluacion evaluacion = generarMockEvaluacionVariable(evaluacionId, tipoEvaluacionId, estadoMemoriaId, nombreComite,
+        estadoRetrospectivaId);
+
+    final Comentario comentario = new Comentario();
+    Formulario formulario = new Formulario(formularioId, "Nombre", "Descripcion");
+    Bloque bloque = new Bloque(1L, formulario, "Bloque1", 1);
+    Apartado apartado = new Apartado();
+    TipoComentario tipoComentario = new TipoComentario(1L, "GESTOR", Boolean.TRUE);
+    apartado.setId(1L);
+    apartado.setBloque(bloque);
+    comentario.setId(12L);
+    comentario.setEvaluacion(evaluacion);
+    comentario.setApartado(apartado);
+    comentario.setTipoComentario(tipoComentario);
+
+    BDDMockito.given(evaluacionRepository.findById(12L)).willReturn(Optional.of(evaluacion));
+    BDDMockito.given(comentarioRepository.save(comentario)).willReturn(comentario);
+    BDDMockito.given(comentarioRepository.findById(evaluacionId)).willReturn(Optional.of(comentario));
+
+    final Comentario resultados = comentarioService.updateComentarioGestor(evaluacionId, comentario);
+
+    Assertions.assertThat(resultados != null);
+  }
+
+  @Test
+  public void updateComentarioGestor_MemoriaEstadoEnEvaluacionSegAnual() {
+    final Long evaluacionId = 12L;
+    final Long tipoEvaluacionId = 2L; // Memoria
+    final Long estadoMemoriaId = 13L; // En evaluación seguimiento anual
+    final String nombreComite = "CEEA";
+    final Long estadoRetrospectivaId = 2L; // Completada
+    final Long formularioId = 2L;
+
+    Evaluacion evaluacion = generarMockEvaluacionVariable(evaluacionId, tipoEvaluacionId, estadoMemoriaId, nombreComite,
+        estadoRetrospectivaId);
+
+    final Comentario comentario = new Comentario();
+    Formulario formulario = new Formulario(formularioId, "Nombre", "Descripcion");
+    Bloque bloque = new Bloque(1L, formulario, "Bloque1", 1);
+    Apartado apartado = new Apartado();
+    TipoComentario tipoComentario = new TipoComentario(1L, "GESTOR", Boolean.TRUE);
+    apartado.setId(1L);
+    apartado.setBloque(bloque);
+    comentario.setId(12L);
+    comentario.setEvaluacion(evaluacion);
+    comentario.setApartado(apartado);
+    comentario.setTipoComentario(tipoComentario);
+
+    BDDMockito.given(evaluacionRepository.findById(12L)).willReturn(Optional.of(evaluacion));
+    BDDMockito.given(comentarioRepository.save(comentario)).willReturn(comentario);
+    BDDMockito.given(comentarioRepository.findById(evaluacionId)).willReturn(Optional.of(comentario));
+
+    final Comentario resultados = comentarioService.updateComentarioGestor(evaluacionId, comentario);
+
+    Assertions.assertThat(resultados != null);
+  }
+
+  @Test
+  public void updateComentarioGestor_MemoriaEstadoEnSecretariaSegFinalAclaraciones() {
+    final Long evaluacionId = 12L;
+    final Long tipoEvaluacionId = 2L; // Memoria
+    final Long estadoMemoriaId = 18L; // En Secretaria Seg Final Aclaraciones
+    final String nombreComite = "CEIAB";
+    final Long estadoRetrospectivaId = 2L; // Completada
+    final Long formularioId = 3L;
+
+    Evaluacion evaluacion = generarMockEvaluacionVariable(evaluacionId, tipoEvaluacionId, estadoMemoriaId, nombreComite,
+        estadoRetrospectivaId);
+
+    final Comentario comentario = new Comentario();
+    Formulario formulario = new Formulario(formularioId, "Nombre", "Descripcion");
+    Bloque bloque = new Bloque(1L, formulario, "Bloque1", 1);
+    Apartado apartado = new Apartado();
+    TipoComentario tipoComentario = new TipoComentario(1L, "GESTOR", Boolean.TRUE);
+    apartado.setId(1L);
+    apartado.setBloque(bloque);
+    comentario.setId(12L);
+    comentario.setEvaluacion(evaluacion);
+    comentario.setApartado(apartado);
+    comentario.setTipoComentario(tipoComentario);
+
+    BDDMockito.given(evaluacionRepository.findById(12L)).willReturn(Optional.of(evaluacion));
+    BDDMockito.given(comentarioRepository.save(comentario)).willReturn(comentario);
+    BDDMockito.given(comentarioRepository.findById(evaluacionId)).willReturn(Optional.of(comentario));
+
+    final Comentario resultados = comentarioService.updateComentarioGestor(evaluacionId, comentario);
+
+    Assertions.assertThat(resultados != null);
+  }
+
+  @Test
+  public void updateComentarioGestor_MemoriaEstadoEnEvaluacionSegFinal() {
+    final Long evaluacionId = 12L;
+    final Long tipoEvaluacionId = 3L; // Seguimiento anual
+    final Long estadoMemoriaId = 19L; // En Evaluacion Seg Final
+    final String nombreComite = "comite1";
+    final Long estadoRetrospectivaId = 2L; // Completada
+    final Long formularioId = 4L;
+
+    Evaluacion evaluacion = generarMockEvaluacionVariable(evaluacionId, tipoEvaluacionId, estadoMemoriaId, nombreComite,
+        estadoRetrospectivaId);
+
+    final Comentario comentario = new Comentario();
+    Formulario formulario = new Formulario(formularioId, "Nombre", "Descripcion");
+    Bloque bloque = new Bloque(1L, formulario, "Bloque1", 1);
+    Apartado apartado = new Apartado();
+    TipoComentario tipoComentario = new TipoComentario(1L, "GESTOR", Boolean.TRUE);
+    apartado.setId(1L);
+    apartado.setBloque(bloque);
+    comentario.setId(12L);
+    comentario.setEvaluacion(evaluacion);
+    comentario.setApartado(apartado);
+    comentario.setTipoComentario(tipoComentario);
+
+    BDDMockito.given(evaluacionRepository.findById(12L)).willReturn(Optional.of(evaluacion));
+    BDDMockito.given(comentarioRepository.save(comentario)).willReturn(comentario);
+    BDDMockito.given(comentarioRepository.findById(evaluacionId)).willReturn(Optional.of(comentario));
+
+    final Comentario resultados = comentarioService.updateComentarioGestor(evaluacionId, comentario);
+
+    Assertions.assertThat(resultados != null);
+  }
+
+  @Test
+  public void updateComentarioGestor_RetrospectivaEstadoEnEvaluacion() {
+    final Long evaluacionId = 12L;
+    final Long tipoEvaluacionId = 4L; // Seguimiento final
+    final Long estadoMemoriaId = 1L; // En Elaboración
+    final String nombreComite = "comite1";
+    final Long estadoRetrospectivaId = 4L; // En evaluacion
+    final Long formularioId = 5L;
+
+    Evaluacion evaluacion = generarMockEvaluacionVariable(evaluacionId, tipoEvaluacionId, estadoMemoriaId, nombreComite,
+        estadoRetrospectivaId);
+
+    final Comentario comentario = new Comentario();
+    Formulario formulario = new Formulario(formularioId, "Nombre", "Descripcion");
+    Bloque bloque = new Bloque(1L, formulario, "Bloque1", 1);
+    Apartado apartado = new Apartado();
+    TipoComentario tipoComentario = new TipoComentario(1L, "GESTOR", Boolean.TRUE);
+    apartado.setId(1L);
+    apartado.setBloque(bloque);
+    comentario.setId(12L);
+    comentario.setEvaluacion(evaluacion);
+    comentario.setApartado(apartado);
+    comentario.setTipoComentario(tipoComentario);
+
+    BDDMockito.given(evaluacionRepository.findById(12L)).willReturn(Optional.of(evaluacion));
+    BDDMockito.given(comentarioRepository.save(comentario)).willReturn(comentario);
+    BDDMockito.given(comentarioRepository.findById(evaluacionId)).willReturn(Optional.of(comentario));
+
+    final Comentario resultados = comentarioService.updateComentarioGestor(evaluacionId, comentario);
+
+    Assertions.assertThat(resultados != null);
+  }
+
+  @Test
   public void updateComentarioGestor_Success() {
     // given: EL id de la evaluación es válido
     final Long evaluacionId = 12L;
@@ -612,6 +995,60 @@ public class ComentarioServiceTest extends BaseServiceTest {
   }
 
   @Test
+  public void updateComentarioEvaluador_UsuarioIsEvaluador1() {
+    // given: Una evaluación con un evaluador1
+    final Long evaluacionId = 12L;
+    final String personaRef = "user-002";
+
+    Evaluacion evaluacion = generarMockEvaluacion(evaluacionId);
+    final Evaluador evaluador1 = new Evaluador();
+    evaluador1.setPersonaRef(personaRef);
+    evaluacion.setEvaluador1(evaluador1);
+
+    BDDMockito.given(evaluacionRepository.findById(evaluacionId))
+        .willReturn(Optional.of(generarMockEvaluacion(evaluacionId)));
+
+    final Comentario comentario = generarMockComentario(12L, "texto", 2L);
+    comentario.setEvaluacion(generarMockEvaluacion(evaluacionId));
+    BDDMockito.given(comentarioRepository.save(comentario)).willReturn(comentario);
+
+    BDDMockito.given(comentarioRepository.findById(evaluacionId)).willReturn(Optional.of(comentario));
+
+    // when: se modifica el comentario a la evaluación con la personaRef "user-002"
+    final Comentario resultados = comentarioService.updateComentarioEvaluador(evaluacionId, comentario, personaRef);
+
+    // then: obtenemos una lista de comentarios actualizados
+    Assertions.assertThat(resultados != null);
+  }
+
+  @Test
+  public void updateComentarioEvaluador_UsuarioIsEvaluador2() {
+    // given: Una evaluación con un evaluador2
+    final Long evaluacionId = 12L;
+    final String personaRef = "user-002";
+
+    Evaluacion evaluacion = generarMockEvaluacion(evaluacionId);
+    final Evaluador evaluador2 = new Evaluador();
+    evaluador2.setPersonaRef(personaRef);
+    evaluacion.setEvaluador1(evaluador2);
+
+    BDDMockito.given(evaluacionRepository.findById(evaluacionId))
+        .willReturn(Optional.of(generarMockEvaluacion(evaluacionId)));
+
+    final Comentario comentario = generarMockComentario(12L, "texto", 2L);
+    comentario.setEvaluacion(generarMockEvaluacion(evaluacionId));
+    BDDMockito.given(comentarioRepository.save(comentario)).willReturn(comentario);
+
+    BDDMockito.given(comentarioRepository.findById(evaluacionId)).willReturn(Optional.of(comentario));
+
+    // when: se modifica el comentario a la evaluación con la personaRef "user-002"
+    final Comentario resultados = comentarioService.updateComentarioEvaluador(evaluacionId, comentario, personaRef);
+
+    // then: obtenemos una lista de comentarios actualizados
+    Assertions.assertThat(resultados != null);
+  }
+
+  @Test
   public void updateComentarioEvaluador_Success() {
     // given: EL id de la evaluación es válido
     final Long evaluacionId = 12L;
@@ -645,6 +1082,22 @@ public class ComentarioServiceTest extends BaseServiceTest {
       // then: se debe lanzar una excepción
     } catch (final IllegalArgumentException e) {
       Assertions.assertThat(e.getMessage()).isEqualTo("Evaluación id no puede ser null para eliminar un comentario.");
+    }
+  }
+
+  @Test
+  public void deleteComentarioGestor_EvaluacionNotExists() {
+    // given: EL id de la evaluación es válido pero no existe
+    final Long evaluacionId = 12L;
+    final Long comentarioId = 1L;
+
+    try {
+      // when: se quiere eliminar comentario
+      comentarioService.deleteComentarioGestor(evaluacionId, comentarioId);
+      Assertions.fail("El id de la Evaluación debe existir para eliminar un comentario.");
+      // then: se debe lanzar una excepción
+    } catch (final EvaluacionNotFoundException e) {
+      Assertions.assertThat(e.getMessage()).isEqualTo("Evaluacion " + evaluacionId + " does not exist.");
     }
   }
 
@@ -720,6 +1173,131 @@ public class ComentarioServiceTest extends BaseServiceTest {
   }
 
   @Test
+  public void deleteComentarioGestor_MemoriaEstadoEnEvaluacion() {
+    final Long evaluacionId = 12L;
+    final Long comentarioId = 1L;
+    final Long tipoEvaluacionId = 1L; // Retrospectiva
+    final Long estadoMemoriaId = 5L; // En evaluación
+    final String nombreComite = "comite1";
+    final Long estadoRetrospectivaId = 2L; // Completada
+
+    BDDMockito.given(evaluacionRepository.findById(12L))
+        .willReturn(Optional.of(generarMockEvaluacionVariable(evaluacionId, tipoEvaluacionId, estadoMemoriaId,
+            nombreComite, estadoRetrospectivaId)));
+
+    BDDMockito.given(comentarioRepository.findById(comentarioId))
+        .willReturn(Optional.of(generarMockComentario(comentarioId, "", 1L)));
+
+    try {
+      comentarioService.deleteComentarioGestor(evaluacionId, comentarioId);
+      Assertions.fail("El comentario no pertenece a la evaluación recibida");
+      // then: se debe lanzar una excepción
+    } catch (final IllegalArgumentException e) {
+      Assertions.assertThat(e.getMessage()).isEqualTo("El comentario no pertenece a la evaluación recibida");
+    }
+  }
+
+  @Test
+  public void deleteComentarioGestor_MemoriaEstadoEnEvaluacionSegAnual() {
+    final Long evaluacionId = 12L;
+    final Long comentarioId = 1L;
+    final Long tipoEvaluacionId = 1L; // Retrospectiva
+    final Long estadoMemoriaId = 13L; // En Evaluacion Seg Anual
+    final String nombreComite = "comite1";
+    final Long estadoRetrospectivaId = 2L; // Completada
+
+    BDDMockito.given(evaluacionRepository.findById(12L))
+        .willReturn(Optional.of(generarMockEvaluacionVariable(evaluacionId, tipoEvaluacionId, estadoMemoriaId,
+            nombreComite, estadoRetrospectivaId)));
+
+    BDDMockito.given(comentarioRepository.findById(comentarioId))
+        .willReturn(Optional.of(generarMockComentario(comentarioId, "", 1L)));
+
+    try {
+      comentarioService.deleteComentarioGestor(evaluacionId, comentarioId);
+      Assertions.fail("El comentario no pertenece a la evaluación recibida");
+      // then: se debe lanzar una excepción
+    } catch (final IllegalArgumentException e) {
+      Assertions.assertThat(e.getMessage()).isEqualTo("El comentario no pertenece a la evaluación recibida");
+    }
+  }
+
+  @Test
+  public void deleteComentarioGestor_MemoriaEstadoEnSecretariaSegFinalAclaraciones() {
+    final Long evaluacionId = 12L;
+    final Long comentarioId = 1L;
+    final Long tipoEvaluacionId = 1L; // Retrospectiva
+    final Long estadoMemoriaId = 18L; // En Secretaria Seg Final Aclaraciones
+    final String nombreComite = "comite1";
+    final Long estadoRetrospectivaId = 2L; // Completada
+
+    BDDMockito.given(evaluacionRepository.findById(12L))
+        .willReturn(Optional.of(generarMockEvaluacionVariable(evaluacionId, tipoEvaluacionId, estadoMemoriaId,
+            nombreComite, estadoRetrospectivaId)));
+
+    BDDMockito.given(comentarioRepository.findById(comentarioId))
+        .willReturn(Optional.of(generarMockComentario(comentarioId, "", 1L)));
+
+    try {
+      comentarioService.deleteComentarioGestor(evaluacionId, comentarioId);
+      Assertions.fail("El comentario no pertenece a la evaluación recibida");
+      // then: se debe lanzar una excepción
+    } catch (final IllegalArgumentException e) {
+      Assertions.assertThat(e.getMessage()).isEqualTo("El comentario no pertenece a la evaluación recibida");
+    }
+  }
+
+  @Test
+  public void deleteComentarioGestor_MemoriaEstadoEnEvaluacionSegFinal() {
+    final Long evaluacionId = 12L;
+    final Long comentarioId = 1L;
+    final Long tipoEvaluacionId = 1L; // Retrospectiva
+    final Long estadoMemoriaId = 19L; // En Evaluacion Seg Final
+    final String nombreComite = "comite1";
+    final Long estadoRetrospectivaId = 2L; // Completada
+
+    BDDMockito.given(evaluacionRepository.findById(12L))
+        .willReturn(Optional.of(generarMockEvaluacionVariable(evaluacionId, tipoEvaluacionId, estadoMemoriaId,
+            nombreComite, estadoRetrospectivaId)));
+
+    BDDMockito.given(comentarioRepository.findById(comentarioId))
+        .willReturn(Optional.of(generarMockComentario(comentarioId, "", 1L)));
+
+    try {
+      comentarioService.deleteComentarioGestor(evaluacionId, comentarioId);
+      Assertions.fail("El comentario no pertenece a la evaluación recibida");
+      // then: se debe lanzar una excepción
+    } catch (final IllegalArgumentException e) {
+      Assertions.assertThat(e.getMessage()).isEqualTo("El comentario no pertenece a la evaluación recibida");
+    }
+  }
+
+  @Test
+  public void deleteComentarioGestor_RetrospectivaEstadoEnEvaluacion() {
+    final Long evaluacionId = 12L;
+    final Long comentarioId = 1L;
+    final Long tipoEvaluacionId = 1L; // Retrospectiva
+    final Long estadoMemoriaId = 1L; // En Elaboracion
+    final String nombreComite = "comite1";
+    final Long estadoRetrospectivaId = 4L; // En Evaluacion
+
+    BDDMockito.given(evaluacionRepository.findById(12L))
+        .willReturn(Optional.of(generarMockEvaluacionVariable(evaluacionId, tipoEvaluacionId, estadoMemoriaId,
+            nombreComite, estadoRetrospectivaId)));
+
+    BDDMockito.given(comentarioRepository.findById(comentarioId))
+        .willReturn(Optional.of(generarMockComentario(comentarioId, "", 1L)));
+
+    try {
+      comentarioService.deleteComentarioGestor(evaluacionId, comentarioId);
+      Assertions.fail("El comentario no pertenece a la evaluación recibida");
+      // then: se debe lanzar una excepción
+    } catch (final IllegalArgumentException e) {
+      Assertions.assertThat(e.getMessage()).isEqualTo("El comentario no pertenece a la evaluación recibida");
+    }
+  }
+
+  @Test
   public void deleteComentarioEvaluador_EvaluacionIdNull() {
     // given: EL id de la evaluación sea null
     final Long evaluacionId = null;
@@ -733,6 +1311,23 @@ public class ComentarioServiceTest extends BaseServiceTest {
       // then: se debe lanzar una excepción
     } catch (final IllegalArgumentException e) {
       Assertions.assertThat(e.getMessage()).isEqualTo("Evaluación id no puede ser null para eliminar un comentario.");
+    }
+  }
+
+  @Test
+  public void deleteComentariEvaluador_EvaluacionNotExists() {
+    // given: EL id de la evaluación es válido pero no existe
+    final Long evaluacionId = 12L;
+    final Long comentarioId = 1L;
+    final String personaRef = "user-002";
+
+    try {
+      // when: se quiere eliminar comentario
+      comentarioService.deleteComentarioEvaluador(evaluacionId, comentarioId, personaRef);
+      Assertions.fail("El id de la Evaluación debe existir para eliminar un comentario.");
+      // then: se debe lanzar una excepción
+    } catch (final EvaluacionNotFoundException e) {
+      Assertions.assertThat(e.getMessage()).isEqualTo("Evaluacion " + evaluacionId + " does not exist.");
     }
   }
 
@@ -815,6 +1410,37 @@ public class ComentarioServiceTest extends BaseServiceTest {
 
   }
 
+  @Test
+  public void deleteComentarioEvaluador_Evaluador1IsPersonaRef() {
+    // given: EL id de la evaluación es válido
+    final Long evaluacionId = 200L;
+    final Long comentarioId = 1L;
+    final String personaRef = "user-002";
+
+    BDDMockito.given(evaluacionRepository.findById(200L)).willReturn(Optional.of(generarMockEvaluacion(evaluacionId)));
+
+    BDDMockito.given(comentarioRepository.findById(comentarioId))
+        .willReturn(Optional.of(generarMockComentario(comentarioId, "", 2L)));
+
+    comentarioService.deleteComentarioEvaluador(evaluacionId, comentarioId, personaRef);
+
+  }
+
+  @Test
+  public void deleteComentarioEvaluador_UsuarioIsEvaluador2() {
+    // given: EL id de la evaluación es válido
+    final Long evaluacionId = 200L;
+    final Long comentarioId = 1L;
+    final String personaRef = "user-002";
+
+    BDDMockito.given(evaluacionRepository.findById(200L)).willReturn(Optional.of(generarMockEvaluacion(evaluacionId)));
+
+    BDDMockito.given(comentarioRepository.findById(comentarioId))
+        .willReturn(Optional.of(generarMockComentario(comentarioId, "", 2L)));
+
+    comentarioService.deleteComentarioEvaluador(evaluacionId, comentarioId, personaRef);
+  }
+
   /**
    * Función que devuelve un objeto Comentario
    * 
@@ -863,8 +1489,49 @@ public class ComentarioServiceTest extends BaseServiceTest {
     evaluacion.setId(id);
     evaluacion.setMemoria(memoria);
     evaluacion.setEvaluador1(evaluador);
+    evaluacion.setEvaluador2(evaluador);
 
     TipoEvaluacion tipoEvaluacion = new TipoEvaluacion(2L, "Memoria", Boolean.TRUE);
+    evaluacion.setTipoEvaluacion(tipoEvaluacion);
+
+    return evaluacion;
+  }
+
+  private Evaluacion generarMockEvaluacionVariable(final Long id, final Long tipoEvaluacionId,
+      final Long estadoMemoriaId, final String nombreComite, final Long estadoRetrospectivaId) {
+
+    final Memoria memoria = new Memoria();
+    final TipoEstadoMemoria estadoMemoria = new TipoEstadoMemoria();
+    final Evaluador evaluador = new Evaluador();
+    evaluador.setPersonaRef("user-002");
+    estadoMemoria.setId(estadoMemoriaId);
+    memoria.setEstadoActual(estadoMemoria);
+
+    final EstadoRetrospectiva estadoRetrospectiva = new EstadoRetrospectiva(estadoRetrospectivaId, "Nombre Estado",
+        Boolean.TRUE);
+    final Retrospectiva retrospectiva = new Retrospectiva(1L, estadoRetrospectiva, LocalDate.now());
+    memoria.setRetrospectiva(retrospectiva);
+
+    Formulario formulario = new Formulario(1L, "Nombre", "Descripcion");
+    Comite comite = new Comite(1L, nombreComite, formulario, Boolean.TRUE);
+    Bloque bloque = new Bloque(1L, formulario, "Bloque1", 1);
+    Apartado apartado = new Apartado();
+    apartado.setId(1L);
+    apartado.setBloque(bloque);
+
+    Comentario comentario = new Comentario();
+    comentario.setId(null);
+    comentario.setApartado(apartado);
+
+    memoria.setComite(comite);
+
+    final Evaluacion evaluacion = new Evaluacion();
+    evaluacion.setId(id);
+    evaluacion.setMemoria(memoria);
+    evaluacion.setEvaluador1(evaluador);
+    // comentario.setEvaluacion(evaluacion);
+
+    TipoEvaluacion tipoEvaluacion = new TipoEvaluacion(tipoEvaluacionId, "Nombre", Boolean.TRUE);
     evaluacion.setTipoEvaluacion(tipoEvaluacion);
 
     return evaluacion;

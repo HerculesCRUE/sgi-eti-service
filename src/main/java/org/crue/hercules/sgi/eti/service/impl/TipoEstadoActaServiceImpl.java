@@ -1,14 +1,11 @@
 package org.crue.hercules.sgi.eti.service.impl;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.TipoEstadoActaNotFoundException;
 import org.crue.hercules.sgi.eti.model.TipoEstadoActa;
 import org.crue.hercules.sgi.eti.repository.TipoEstadoActaRepository;
 import org.crue.hercules.sgi.eti.repository.specification.TipoEstadoActaSpecifications;
 import org.crue.hercules.sgi.eti.service.TipoEstadoActaService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -52,15 +49,13 @@ public class TipoEstadoActaServiceImpl implements TipoEstadoActaService {
    * @param query  información del filtro.
    * @return el listado de entidades {@link TipoEstadoActa} paginadas y filtradas.
    */
-  public Page<TipoEstadoActa> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAllTipoEstadoActa(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<TipoEstadoActa> specByQuery = new QuerySpecification<TipoEstadoActa>(query);
-    Specification<TipoEstadoActa> specActivos = TipoEstadoActaSpecifications.activos();
-
-    Specification<TipoEstadoActa> specs = Specification.where(specActivos).and(specByQuery);
+  public Page<TipoEstadoActa> findAll(String query, Pageable paging) {
+    log.debug("findAllTipoEstadoActa(String query,Pageable paging) - start");
+    Specification<TipoEstadoActa> specs = TipoEstadoActaSpecifications.activos()
+        .and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<TipoEstadoActa> returnValue = tipoEstadoActaRepository.findAll(specs, paging);
-    log.debug("findAllTipoEstadoActa(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAllTipoEstadoActa(String query,Pageable paging) - end");
     return returnValue;
   }
 

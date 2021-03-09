@@ -6,19 +6,19 @@ import java.util.List;
 import java.util.Optional;
 
 import org.assertj.core.api.Assertions;
+import org.crue.hercules.sgi.eti.dto.PeticionEvaluacionWithIsEliminable;
 import org.crue.hercules.sgi.eti.exceptions.PeticionEvaluacionNotFoundException;
+import org.crue.hercules.sgi.eti.model.Memoria;
 import org.crue.hercules.sgi.eti.model.PeticionEvaluacion;
 import org.crue.hercules.sgi.eti.model.TipoActividad;
 import org.crue.hercules.sgi.eti.repository.PeticionEvaluacionRepository;
 import org.crue.hercules.sgi.eti.service.impl.PeticionEvaluacionServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -29,7 +29,6 @@ import org.springframework.data.jpa.domain.Specification;
 /**
  * PeticionEvaluacionServiceTest
  */
-@ExtendWith(MockitoExtension.class)
 public class PeticionEvaluacionServiceTest extends BaseServiceTest {
 
   @Mock
@@ -172,6 +171,24 @@ public class PeticionEvaluacionServiceTest extends BaseServiceTest {
   }
 
   @Test
+  public void deleteAll_DeleteAllPeticionEvaluacion() {
+    // given: One hundred PeticionEvaluacion
+    List<PeticionEvaluacion> peticionEvaluaciones = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      peticionEvaluaciones
+          .add(generarMockPeticionEvaluacion(Long.valueOf(i), "PeticionEvaluacion" + String.format("%03d", i)));
+    }
+
+    BDDMockito.doNothing().when(peticionEvaluacionRepository).deleteAll();
+
+    Assertions.assertThatCode(
+        // when: Delete all
+        () -> peticionEvaluacionService.deleteAll())
+        // then: No se lanza ninguna excepción
+        .doesNotThrowAnyException();
+  }
+
+  @Test
   public void findAll_Unlimited_ReturnsFullPeticionEvaluacionList() {
     // given: One hundred PeticionEvaluacion
     List<PeticionEvaluacion> peticionEvaluaciones = new ArrayList<>();
@@ -233,6 +250,69 @@ public class PeticionEvaluacionServiceTest extends BaseServiceTest {
     }
   }
 
+  @Test
+  public void findAllPeticionesWithPersonaRefCreadorPeticionesEvaluacionOrResponsableMemoria_Unlimited_ReturnsFullMemoriaPeticionEvaluacionList() {
+
+    List<PeticionEvaluacionWithIsEliminable> peticiones = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      peticiones.add(generarMockPeticionEvaluacionWithIsEliminable(Long.valueOf(i),
+          "PeticionEvaluacion" + String.format("%03d", i)));
+    }
+    BDDMockito.given(
+        peticionEvaluacionRepository.findAllPeticionEvaluacionMemoria(ArgumentMatchers.<Specification<Memoria>>any(),
+            ArgumentMatchers.<Pageable>any(), ArgumentMatchers.<String>any()))
+        .willReturn(new PageImpl<>(peticiones));
+
+    // when: find unlimited peticiones evaluación
+    Page<PeticionEvaluacionWithIsEliminable> page = peticionEvaluacionService
+        .findAllPeticionesWithPersonaRefCreadorPeticionesEvaluacionOrResponsableMemoria(null, Pageable.unpaged(),
+            "user-001");
+
+    Assertions.assertThat(page.getContent().size()).isEqualTo(100);
+    Assertions.assertThat(page.getNumber()).isEqualTo(0);
+    Assertions.assertThat(page.getSize()).isEqualTo(100);
+    Assertions.assertThat(page.getTotalElements()).isEqualTo(100);
+  }
+
+  @Test
+  public void findAllMemoriasWithPersonaRefCreadorPeticionesEvaluacionOrResponsableMemoria_WithPaging_ReturnsPage() {
+
+    List<PeticionEvaluacionWithIsEliminable> peticiones = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      peticiones.add(generarMockPeticionEvaluacionWithIsEliminable(Long.valueOf(i),
+          "PeticionEvaluacion" + String.format("%03d", i)));
+    }
+
+    BDDMockito.given(
+        peticionEvaluacionRepository.findAllPeticionEvaluacionMemoria(ArgumentMatchers.<Specification<Memoria>>any(),
+            ArgumentMatchers.<Pageable>any(), ArgumentMatchers.<String>any()))
+        .willAnswer(new Answer<Page<PeticionEvaluacionWithIsEliminable>>() {
+          @Override
+          public Page<PeticionEvaluacionWithIsEliminable> answer(InvocationOnMock invocation) throws Throwable {
+            List<PeticionEvaluacionWithIsEliminable> content = peticiones.subList(30, 40);
+            Page<PeticionEvaluacionWithIsEliminable> page = new PageImpl<>(content, PageRequest.of(3, 10),
+                peticiones.size());
+            return page;
+          }
+        });
+
+    // when: Get page=3 with pagesize=10 asignables by convocatoria
+    Pageable paging = PageRequest.of(3, 10);
+    Page<PeticionEvaluacionWithIsEliminable> page = peticionEvaluacionService
+        .findAllPeticionesWithPersonaRefCreadorPeticionesEvaluacionOrResponsableMemoria(null, paging, "user-001");
+
+    // then: A Page with ten Memorias are returned containing
+    // num referencia='NumRef-031' to 'NumRef-040'
+    Assertions.assertThat(page.getContent().size()).isEqualTo(10);
+    Assertions.assertThat(page.getNumber()).isEqualTo(3);
+    Assertions.assertThat(page.getSize()).isEqualTo(10);
+    Assertions.assertThat(page.getTotalElements()).isEqualTo(100);
+    for (int i = 0, j = 31; i < 10; i++, j++) {
+      PeticionEvaluacionWithIsEliminable peticion = page.getContent().get(i);
+      Assertions.assertThat(peticion.getTitulo()).isEqualTo("PeticionEvaluacion" + String.format("%03d", j));
+    }
+  }
+
   /**
    * Función que devuelve un objeto PeticionEvaluacion
    * 
@@ -266,5 +346,9 @@ public class PeticionEvaluacionServiceTest extends BaseServiceTest {
     peticionEvaluacion.setActivo(Boolean.TRUE);
 
     return peticionEvaluacion;
+  }
+
+  public PeticionEvaluacionWithIsEliminable generarMockPeticionEvaluacionWithIsEliminable(Long id, String titulo) {
+    return new PeticionEvaluacionWithIsEliminable(generarMockPeticionEvaluacion(id, titulo), true);
   }
 }

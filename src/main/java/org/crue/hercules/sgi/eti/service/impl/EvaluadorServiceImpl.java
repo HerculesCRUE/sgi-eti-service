@@ -10,8 +10,7 @@ import org.crue.hercules.sgi.eti.model.Memoria;
 import org.crue.hercules.sgi.eti.repository.EvaluadorRepository;
 import org.crue.hercules.sgi.eti.repository.specification.EvaluadorSpecifications;
 import org.crue.hercules.sgi.eti.service.EvaluadorService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -142,15 +141,12 @@ public class EvaluadorServiceImpl implements EvaluadorService {
    * @return el listado de entidades {@link Evaluador} paginadas y filtradas.
    */
   @Override
-  public Page<Evaluador> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAll(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<Evaluador> specByQuery = new QuerySpecification<Evaluador>(query);
-    Specification<Evaluador> specActivos = EvaluadorSpecifications.activos();
-
-    Specification<Evaluador> specs = Specification.where(specActivos).and(specByQuery);
+  public Page<Evaluador> findAll(String query, Pageable paging) {
+    log.debug("findAll(String query,Pageable paging) - start");
+    Specification<Evaluador> specs = EvaluadorSpecifications.activos().and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<Evaluador> returnValue = evaluadorRepository.findAll(specs, paging);
-    log.debug("findAll(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAll(String query,Pageable paging) - end");
     return returnValue;
   }
 

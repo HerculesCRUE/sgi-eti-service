@@ -1,12 +1,8 @@
 package org.crue.hercules.sgi.eti.service;
 
+import org.crue.hercules.sgi.eti.exceptions.ConflictoInteresNotFoundException;
 import org.crue.hercules.sgi.eti.model.ConflictoInteres;
 import org.crue.hercules.sgi.eti.model.Evaluador;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
-
-import java.util.List;
-
-import org.crue.hercules.sgi.eti.exceptions.ConflictoInteresNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -38,7 +34,7 @@ public interface ConflictoInteresService {
    * @return la lista de entidades {@link ConflictoInteres} paginadas y/o
    *         filtradas.
    */
-  Page<ConflictoInteres> findAll(List<QueryCriteria> query, Pageable pageable);
+  Page<ConflictoInteres> findAll(String query, Pageable pageable);
 
   /**
    * Obtiene {@link ConflictoInteres} por id.

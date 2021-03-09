@@ -23,16 +23,13 @@ import org.crue.hercules.sgi.eti.repository.RetrospectivaRepository;
 import org.crue.hercules.sgi.eti.repository.TipoEstadoActaRepository;
 import org.crue.hercules.sgi.eti.repository.custom.CustomActaRepository;
 import org.crue.hercules.sgi.eti.service.impl.ActaServiceImpl;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -42,7 +39,6 @@ import org.springframework.data.domain.Pageable;
 /**
  * ActaServiceTest
  */
-@ExtendWith(MockitoExtension.class)
 public class ActaServiceTest extends BaseServiceTest {
 
   @Mock
@@ -220,8 +216,9 @@ public class ActaServiceTest extends BaseServiceTest {
       actas.add(generarMockActaWithNumEvaluaciones(Long.valueOf(i), i));
     }
 
-    BDDMockito.given(actaRepository.findAllActaWithNumEvaluaciones(ArgumentMatchers.<List<QueryCriteria>>any(),
-        ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(actas));
+    BDDMockito.given(
+        actaRepository.findAllActaWithNumEvaluaciones(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
+        .willReturn(new PageImpl<>(actas));
 
     // when: find unlimited
     Page<ActaWithNumEvaluaciones> page = actaService.findAllActaWithNumEvaluaciones(null, Pageable.unpaged());
@@ -242,8 +239,9 @@ public class ActaServiceTest extends BaseServiceTest {
       actas.add(generarMockActaWithNumEvaluaciones(Long.valueOf(i), i));
     }
 
-    BDDMockito.given(actaRepository.findAllActaWithNumEvaluaciones(ArgumentMatchers.<List<QueryCriteria>>any(),
-        ArgumentMatchers.<Pageable>any())).willAnswer(new Answer<Page<ActaWithNumEvaluaciones>>() {
+    BDDMockito.given(
+        actaRepository.findAllActaWithNumEvaluaciones(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
+        .willAnswer(new Answer<Page<ActaWithNumEvaluaciones>>() {
           @Override
           public Page<ActaWithNumEvaluaciones> answer(InvocationOnMock invocation) throws Throwable {
             Pageable pageable = invocation.getArgument(1, Pageable.class);

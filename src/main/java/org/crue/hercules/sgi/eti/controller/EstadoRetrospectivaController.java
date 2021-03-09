@@ -1,12 +1,10 @@
 package org.crue.hercules.sgi.eti.controller;
 
-import java.util.List;
-
 import javax.validation.Valid;
 
+import org.crue.hercules.sgi.eti.exceptions.EstadoRetrospectivaNotFoundException;
 import org.crue.hercules.sgi.eti.model.EstadoRetrospectiva;
 import org.crue.hercules.sgi.eti.service.EstadoRetrospectivaService;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.crue.hercules.sgi.framework.web.bind.annotation.RequestPageable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -115,18 +113,17 @@ public class EstadoRetrospectivaController {
    * Obtiene las entidades {@link EstadoRetrospectiva} filtradas y paginadas según
    * los criterios de búsqueda.
    * 
-   * @param query  filtro de {@link QueryCriteria}.
+   * @param query  filtro de búsqueda.
    * @param paging pageable
    * @return el listado de entidades {@link EstadoRetrospectiva} paginadas y
    *         filtradas.
    */
   @GetMapping()
-  ResponseEntity<Page<EstadoRetrospectiva>> findAll(
-      @RequestParam(name = "q", required = false) List<QueryCriteria> query,
+  ResponseEntity<Page<EstadoRetrospectiva>> findAll(@RequestParam(name = "q", required = false) String query,
       @RequestPageable(sort = "s") Pageable paging) {
-    log.debug("findAll(List<QueryCriteria> query, Pageable paging - start");
+    log.debug("findAll(String query, Pageable paging - start");
     Page<EstadoRetrospectiva> page = service.findAll(query, paging);
-    log.debug("findAll(List<QueryCriteria> query, Pageable paging - end");
+    log.debug("findAll(String query, Pageable paging - end");
     if (page.isEmpty()) {
       return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }

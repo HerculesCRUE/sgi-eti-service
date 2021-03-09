@@ -1,11 +1,7 @@
 package org.crue.hercules.sgi.eti.service;
 
-import org.crue.hercules.sgi.eti.model.Respuesta;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
-
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.RespuestaNotFoundException;
+import org.crue.hercules.sgi.eti.model.Respuesta;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -36,7 +32,7 @@ public interface RespuestaService {
    * @param query    la información del filtro.
    * @return la lista de entidades {@link Respuesta} paginadas y/o filtradas.
    */
-  Page<Respuesta> findAll(List<QueryCriteria> query, Pageable pageable);
+  Page<Respuesta> findAll(String query, Pageable pageable);
 
   /**
    * Obtiene {@link Respuesta} por id.

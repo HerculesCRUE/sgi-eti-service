@@ -42,11 +42,29 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 
 /**
  * Test de integracion de ConvocatoriaReunion.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off    
+  "classpath:scripts/tipo_memoria.sql", 
+  "classpath:scripts/tipo_actividad.sql",
+  "classpath:scripts/formulario.sql", 
+  "classpath:scripts/tipo_estado_memoria.sql",
+  "classpath:scripts/estado_retrospectiva.sql", 
+  "classpath:scripts/tipo_evaluacion.sql",
+  "classpath:scripts/tipo_convocatoria_reunion.sql", 
+  "classpath:scripts/cargo_comite.sql",
+  "classpath:scripts/tipo_estado_acta.sql", 
+  "classpath:scripts/convocatoria_reunion.sql"
+// @formatter:on    
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class ConvocatoriaReunionIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -67,8 +85,6 @@ public class ConvocatoriaReunionIT extends BaseIT {
     return request;
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void create_ReturnsConvocatoriaReunion() throws Exception {
 
@@ -78,7 +94,9 @@ public class ConvocatoriaReunionIT extends BaseIT {
 
     // given: Nueva entidad
     final ConvocatoriaReunion newConvocatoriaReunion = getMockData(1L, 1L, 1L);
+    newConvocatoriaReunion.setAnio(LocalDate.now().getYear());
     newConvocatoriaReunion.setId(null);
+    newConvocatoriaReunion.setNumeroActa(3L);
 
     // when: Se crea la entidad
     final ResponseEntity<ConvocatoriaReunion> response = restTemplate.exchange(
@@ -93,8 +111,6 @@ public class ConvocatoriaReunionIT extends BaseIT {
     Assertions.assertThat(convocatoriaReunion).isEqualTo(newConvocatoriaReunion);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void update_WithExistingId_ReturnsConvocatoriaReunion() throws Exception {
 
@@ -104,7 +120,7 @@ public class ConvocatoriaReunionIT extends BaseIT {
 
     // given: Entidad existente que se va a actualizar
     final ConvocatoriaReunion updatedConvocatoriaReunion = getMockData(2L, 1L, 2L);
-    updatedConvocatoriaReunion.setId(1L);
+    updatedConvocatoriaReunion.setId(3L);
 
     // when: Se actualiza la entidad
     final ResponseEntity<ConvocatoriaReunion> response = restTemplate.exchange(
@@ -117,8 +133,6 @@ public class ConvocatoriaReunionIT extends BaseIT {
     Assertions.assertThat(response.getBody()).isEqualTo(updatedConvocatoriaReunion);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void delete_WithExistingId_Return204() throws Exception {
 
@@ -127,7 +141,7 @@ public class ConvocatoriaReunionIT extends BaseIT {
     headers.set("Authorization", String.format("bearer %s", tokenBuilder.buildToken("user", "ETI-CNV-V", "ETI-CNV-B")));
 
     // given: Entidad existente con la propiedad activo a true
-    Long id = 1L;
+    Long id = 2L;
 
     ResponseEntity<ConvocatoriaReunion> response = restTemplate.exchange(
         CONVOCATORIA_REUNION_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.GET, buildRequest(headers, null),
@@ -148,8 +162,6 @@ public class ConvocatoriaReunionIT extends BaseIT {
     Assertions.assertThat(response.getBody().getActivo()).isEqualTo(Boolean.FALSE);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findById_WithExistingId_ReturnsConvocatoriaReunion() throws Exception {
 
@@ -158,7 +170,7 @@ public class ConvocatoriaReunionIT extends BaseIT {
     headers.set("Authorization", String.format("bearer %s", tokenBuilder.buildToken("user", "ETI-CNV-V", "ETI-CNV-E")));
 
     // given: Entidad con un determinado Id
-    final ConvocatoriaReunion convocatoriaReunion = getMockData(1L, 1L, 1L);
+    final ConvocatoriaReunion convocatoriaReunion = getMockData(2L, 1L, 2L);
 
     // when: Se busca la entidad por ese Id
     ResponseEntity<ConvocatoriaReunion> response = restTemplate.exchange(
@@ -170,7 +182,6 @@ public class ConvocatoriaReunionIT extends BaseIT {
     Assertions.assertThat(response.getBody()).isEqualTo(convocatoriaReunion);
   }
 
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findById_WithNotExistingId_Returns404() throws Exception {
 
@@ -190,8 +201,6 @@ public class ConvocatoriaReunionIT extends BaseIT {
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findByIdWithDatosGenerales_WithExistingId_ReturnsConvocatoriaReunionDatosGenerales() throws Exception {
 
@@ -201,7 +210,7 @@ public class ConvocatoriaReunionIT extends BaseIT {
 
     // given: Entidad con un determinado Id
     final ConvocatoriaReunionDatosGenerales convocatoriaReunion = new ConvocatoriaReunionDatosGenerales(
-        getMockData(1L, 1L, 1L), 1L, 1L);
+        getMockData(2L, 1L, 2L), 3L, 1L);
 
     // when: Se busca la entidad por ese Id
     ResponseEntity<ConvocatoriaReunionDatosGenerales> response = restTemplate.exchange(
@@ -214,7 +223,6 @@ public class ConvocatoriaReunionIT extends BaseIT {
     Assertions.assertThat(response.getBody()).isEqualTo(convocatoriaReunion);
   }
 
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findByIdWithDatosGenerales_WithNotExistingId_Returns404() throws Exception {
 
@@ -234,15 +242,16 @@ public class ConvocatoriaReunionIT extends BaseIT {
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_Unlimited_ReturnsFullConvocatoriaReunionList() throws Exception {
 
     // given: Datos existentes
     List<ConvocatoriaReunion> response = new LinkedList<>();
-    response.add(getMockData(1L, 1L, 1L));
+    // response.add(getMockData(1L, 1L, 1L));
     response.add(getMockData(2L, 1L, 2L));
+    response.add(getMockData(3L, 2L, 1L));
+    response.add(getMockData(4L, 2L, 2L));
+    response.add(getMockData(5L, 3L, 1L));
 
     // Authorization
     HttpHeaders headers = new HttpHeaders();
@@ -259,41 +268,43 @@ public class ConvocatoriaReunionIT extends BaseIT {
     Assertions.assertThat(result.getBody()).isEqualTo(response);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPaging_ReturnsConvocatoriaReunionSubList() throws Exception {
 
     // given: Datos existentes
     List<ConvocatoriaReunion> response = new LinkedList<>();
-    response.add(getMockData(5L, 3L, 1L));
+    response.add(getMockData(3L, 2L, 1L));
+    response.add(getMockData(2L, 1L, 2L));
 
     // página 2 con 2 elementos por página
     HttpHeaders headers = new HttpHeaders();
-    headers.add("X-Page", "2");
+    headers.add("X-Page", "1");
     headers.add("X-Page-Size", "2");
     // Authorization
     headers.set("Authorization", String.format("bearer %s", tokenBuilder.buildToken("user", "ETI-ACT-C", "ETI-CNV-V")));
 
-    // when: Se buscan los datos paginados
-    final ResponseEntity<List<ConvocatoriaReunion>> result = restTemplate.exchange(
-        CONVOCATORIA_REUNION_CONTROLLER_BASE_PATH, HttpMethod.GET, buildRequest(headers, null),
-        new ParameterizedTypeReference<List<ConvocatoriaReunion>>() {
+    // when: Ordenación por id asc
+    String sort = "id,desc";
+
+    URI uri = UriComponentsBuilder.fromUriString(CONVOCATORIA_REUNION_CONTROLLER_BASE_PATH).queryParam("s", sort)
+        .build(false).toUri();
+
+    // when: Se buscan los datos paginados con el filtro y orden indicados
+    final ResponseEntity<List<ConvocatoriaReunion>> result = restTemplate.exchange(uri, HttpMethod.GET,
+        buildRequest(headers, null), new ParameterizedTypeReference<List<ConvocatoriaReunion>>() {
         });
 
     // then: Se recuperan los datos correctamente según la paginación solicitada
     Assertions.assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-    Assertions.assertThat(result.getBody().size()).isEqualTo(1);
+    Assertions.assertThat(result.getBody().size()).isEqualTo(2);
     Assertions.assertThat(result.getBody()).isEqualTo(response);
-    Assertions.assertThat(result.getHeaders().getFirst("X-Page")).isEqualTo("2");
+    Assertions.assertThat(result.getHeaders().getFirst("X-Page")).isEqualTo("1");
     Assertions.assertThat(result.getHeaders().getFirst("X-Page-Size")).isEqualTo("2");
-    Assertions.assertThat(result.getHeaders().getFirst("X-Page-Total-Count")).isEqualTo("1");
-    Assertions.assertThat(result.getHeaders().getFirst("X-Page-Count")).isEqualTo("3");
-    Assertions.assertThat(result.getHeaders().getFirst("X-Total-Count")).isEqualTo("5");
+    Assertions.assertThat(result.getHeaders().getFirst("X-Page-Total-Count")).isEqualTo("2");
+    Assertions.assertThat(result.getHeaders().getFirst("X-Page-Count")).isEqualTo("2");
+    Assertions.assertThat(result.getHeaders().getFirst("X-Total-Count")).isEqualTo("4");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSearchQuery_ReturnsFilteredConvocatoriaReunionList() throws Exception {
 
@@ -307,7 +318,7 @@ public class ConvocatoriaReunionIT extends BaseIT {
 
     // search by codigo like, id equals
     Long id = 3L;
-    String query = "numeroActa<4,id:" + id;
+    String query = "numeroActa=lt=4;id==" + id;
 
     URI uri = UriComponentsBuilder.fromUriString(CONVOCATORIA_REUNION_CONTROLLER_BASE_PATH).queryParam("q", query)
         .build(false).toUri();
@@ -328,8 +339,6 @@ public class ConvocatoriaReunionIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSortQuery_ReturnsOrderedConvocatoriaReunionList() throws Exception {
 
@@ -338,7 +347,7 @@ public class ConvocatoriaReunionIT extends BaseIT {
     headers.set("Authorization", String.format("bearer %s", tokenBuilder.buildToken("user", "ETI-ACT-C", "ETI-CNV-V")));
 
     // sort by id desc
-    String sort = "id-";
+    String sort = "id,desc";
 
     URI uri = UriComponentsBuilder.fromUriString(CONVOCATORIA_REUNION_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .build(false).toUri();
@@ -351,22 +360,21 @@ public class ConvocatoriaReunionIT extends BaseIT {
     // then: Se recuperan los datos filtrados, ordenados y paginados
     Assertions.assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
     Assertions.assertThat(result.getBody().get(0).getId()).isEqualTo(5L);
-    Assertions.assertThat(result.getBody().get(4).getId()).isEqualTo(1L);
+    Assertions.assertThat(result.getBody().get(3).getId()).isEqualTo(2L);
     Assertions.assertThat(result.getHeaders().getFirst("X-Page")).isEqualTo("0");
-    Assertions.assertThat(result.getHeaders().getFirst("X-Page-Size")).isEqualTo("5");
-    Assertions.assertThat(result.getHeaders().getFirst("X-Page-Total-Count")).isEqualTo("5");
+    Assertions.assertThat(result.getHeaders().getFirst("X-Page-Size")).isEqualTo("4");
+    Assertions.assertThat(result.getHeaders().getFirst("X-Page-Total-Count")).isEqualTo("4");
     Assertions.assertThat(result.getHeaders().getFirst("X-Page-Count")).isEqualTo("1");
-    Assertions.assertThat(result.getHeaders().getFirst("X-Total-Count")).isEqualTo("5");
+    Assertions.assertThat(result.getHeaders().getFirst("X-Total-Count")).isEqualTo("4");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPagingSortingAndFiltering_ReturnsConvocatoriaReunionSubList() throws Exception {
 
     // given: Datos existentes
     List<ConvocatoriaReunion> response = new LinkedList<>();
-    response.add(getMockData(1L, 1L, 1L));
+    response.add(getMockData(3L, 2L, 1L));
+    response.add(getMockData(2L, 1L, 2L));
 
     // página 1 con 2 elementos por página
     HttpHeaders headers = new HttpHeaders();
@@ -376,14 +384,14 @@ public class ConvocatoriaReunionIT extends BaseIT {
     // Authorization
     headers.set("Authorization", String.format("bearer %s", tokenBuilder.buildToken("user", "ETI-ACT-C", "ETI-CNV-V")));
 
-    // sort
-    String sort = "id-";
+    // sort desc
+    String sort = "id,desc";
 
     // search
-    String query = "numeroActa<4";
+    String query = "numeroActa=lt=4";
 
-    URI uri = UriComponentsBuilder.fromUriString(CONVOCATORIA_REUNION_CONTROLLER_BASE_PATH).queryParam("s", sort)
-        .queryParam("q", query).build(false).toUri();
+    URI uri = UriComponentsBuilder.fromUriString(CONVOCATORIA_REUNION_CONTROLLER_BASE_PATH).query(query)
+        .queryParam("s", sort).build(false).toUri();
 
     // when: Se buscan los datos paginados con el filtro y orden indicados
     final ResponseEntity<List<ConvocatoriaReunion>> result = restTemplate.exchange(uri, HttpMethod.GET,
@@ -392,22 +400,20 @@ public class ConvocatoriaReunionIT extends BaseIT {
 
     // then: Se recuperan los datos filtrados, ordenados y paginados
     Assertions.assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-    Assertions.assertThat(result.getBody().size()).as("size").isEqualTo(1);
+    Assertions.assertThat(result.getBody().size()).as("size").isEqualTo(2);
     Assertions.assertThat(result.getBody()).isEqualTo(response);
     Assertions.assertThat(result.getHeaders().getFirst("X-Page")).as("X-Page").isEqualTo("1");
     Assertions.assertThat(result.getHeaders().getFirst("X-Page-Size")).as("X-Page-Size").isEqualTo("2");
-    Assertions.assertThat(result.getHeaders().getFirst("X-Page-Total-Count")).as("X-Page-Total-Count").isEqualTo("1");
+    Assertions.assertThat(result.getHeaders().getFirst("X-Page-Total-Count")).as("X-Page-Total-Count").isEqualTo("2");
     Assertions.assertThat(result.getHeaders().getFirst("X-Page-Count")).as("X-Page-Count").isEqualTo("2");
-    Assertions.assertThat(result.getHeaders().getFirst("X-Total-Count")).as("X-Total-Count").isEqualTo("3");
+    Assertions.assertThat(result.getHeaders().getFirst("X-Total-Count")).as("X-Total-Count").isEqualTo("4");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAsistentes_Unlimited_ReturnsFullAsistentesList() throws Exception {
 
     // given: Datos existentes
-    Long convocatoriaReunionId = 1L;
+    Long convocatoriaReunionId = 2L;
     final String url = new StringBuilder(CONVOCATORIA_REUNION_CONTROLLER_BASE_PATH)//
         .append(PATH_PARAMETER_ID)//
         .append("/asistentes").toString();
@@ -431,12 +437,10 @@ public class ConvocatoriaReunionIT extends BaseIT {
     Assertions.assertThat(response.getBody()).isEqualTo(result);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAsistentes_WithPaging_ReturnsAsistentesSubList() throws Exception {
 
-    Long convocatoriaReunionId = 1L;
+    Long convocatoriaReunionId = 2L;
     final String url = new StringBuilder(CONVOCATORIA_REUNION_CONTROLLER_BASE_PATH)//
         .append(PATH_PARAMETER_ID)//
         .append("/asistentes").toString();
@@ -478,13 +482,11 @@ public class ConvocatoriaReunionIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findEvaluacionesActivas_Unlimited_ReturnsFullEvaluacionList() throws Exception {
 
     // given: Datos existentes
-    Long convocatoriaReunionId = 1L;
+    Long convocatoriaReunionId = 2L;
     final String url = new StringBuilder(CONVOCATORIA_REUNION_CONTROLLER_BASE_PATH)//
         .append(PATH_PARAMETER_ID)//
         .append("/evaluaciones-activas").toString();
@@ -493,12 +495,12 @@ public class ConvocatoriaReunionIT extends BaseIT {
     Evaluacion evaluacion1 = generarMockEvaluacion(Long.valueOf(1), String.format("%03d", 1));
     evaluacion1.setEsRevMinima(Boolean.FALSE);
     result.add(evaluacion1);
-    Evaluacion evaluacion2 = generarMockEvaluacion(Long.valueOf(3), String.format("%03d", 3));
-    evaluacion2.setEsRevMinima(Boolean.FALSE);
-    result.add(evaluacion2);
-    Evaluacion evaluacion3 = generarMockEvaluacion(Long.valueOf(5), String.format("%03d", 5));
+    Evaluacion evaluacion3 = generarMockEvaluacion(Long.valueOf(3), String.format("%03d", 3));
     evaluacion3.setEsRevMinima(Boolean.FALSE);
     result.add(evaluacion3);
+    Evaluacion evaluacion5 = generarMockEvaluacion(Long.valueOf(5), String.format("%03d", 5));
+    evaluacion5.setEsRevMinima(Boolean.FALSE);
+    result.add(evaluacion5);
 
     HttpHeaders headers = new HttpHeaders();
     headers.set("Authorization", String.format("bearer %s", tokenBuilder.buildToken("user", "ETI-ACT-C", "ETI-ACT-E")));
@@ -513,12 +515,10 @@ public class ConvocatoriaReunionIT extends BaseIT {
     Assertions.assertThat(response.getBody()).isEqualTo(result);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findEvaluacionesActivas_WithPaging_ReturnsEvaluacionSubList() throws Exception {
 
-    Long convocatoriaReunionId = 1L;
+    Long convocatoriaReunionId = 2L;
     final String url = new StringBuilder(CONVOCATORIA_REUNION_CONTROLLER_BASE_PATH)//
         .append(PATH_PARAMETER_ID)//
         .append("/evaluaciones-activas").toString();
@@ -565,25 +565,23 @@ public class ConvocatoriaReunionIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void getEvaluaciones_Unlimited_ReturnsFullEvaluacionList() throws Exception {
 
     // given: Datos existentes
-    Long convocatoriaReunionId = 1L;
+    Long convocatoriaReunionId = 2L;
     final String url = new StringBuilder(CONVOCATORIA_REUNION_CONTROLLER_BASE_PATH)//
         .append(PATH_PARAMETER_ID).append(PATH_PARAMETER_BY_EVALUACIONES)//
         .toString();
 
-    List<Evaluacion> result = new ArrayList<>();
-    Evaluacion evaluacion1 = generarMockEvaluacion(Long.valueOf(1), String.format("%03d", 1), convocatoriaReunionId);
+    List<Evaluacion> result = new LinkedList<>();
+    Evaluacion evaluacion1 = generarMockEvaluacion(Long.valueOf(1), String.format("%03d", 1));
     evaluacion1.setEsRevMinima(Boolean.FALSE);
     result.add(evaluacion1);
-    Evaluacion evaluacion2 = generarMockEvaluacion(Long.valueOf(3), String.format("%03d", 3), convocatoriaReunionId);
+    Evaluacion evaluacion2 = generarMockEvaluacion(Long.valueOf(3), String.format("%03d", 3));
     evaluacion2.setEsRevMinima(Boolean.FALSE);
     result.add(evaluacion2);
-    Evaluacion evaluacion3 = generarMockEvaluacion(Long.valueOf(5), String.format("%03d", 5), convocatoriaReunionId);
+    Evaluacion evaluacion3 = generarMockEvaluacion(Long.valueOf(5), String.format("%03d", 5));
     evaluacion3.setEsRevMinima(Boolean.FALSE);
     result.add(evaluacion3);
 
@@ -600,26 +598,24 @@ public class ConvocatoriaReunionIT extends BaseIT {
     Assertions.assertThat(response.getBody()).isEqualTo(result);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void getEvaluaciones_WithPaging_ReturnsEvaluacionSubList() throws Exception {
 
-    Long convocatoriaReunionId = 1L;
+    Long convocatoriaReunionId = 2L;
     final String url = new StringBuilder(CONVOCATORIA_REUNION_CONTROLLER_BASE_PATH)//
         .append(PATH_PARAMETER_ID).append(PATH_PARAMETER_BY_EVALUACIONES)//
         .toString();
 
-    List<Evaluacion> result = new LinkedList<>();
-    Evaluacion evaluacion1 = generarMockEvaluacion(Long.valueOf(1), String.format("%03d", 1), convocatoriaReunionId);
+    List<Evaluacion> result = new ArrayList<>();
+    Evaluacion evaluacion1 = generarMockEvaluacion(Long.valueOf(1), String.format("%03d", 1));
     evaluacion1.setEsRevMinima(Boolean.FALSE);
     result.add(evaluacion1);
-    Evaluacion evaluacion2 = generarMockEvaluacion(Long.valueOf(3), String.format("%03d", 3), convocatoriaReunionId);
-    evaluacion2.setEsRevMinima(Boolean.FALSE);
-    result.add(evaluacion2);
-    Evaluacion evaluacion3 = generarMockEvaluacion(Long.valueOf(5), String.format("%03d", 5), convocatoriaReunionId);
+    Evaluacion evaluacion3 = generarMockEvaluacion(Long.valueOf(3), String.format("%03d", 3));
     evaluacion3.setEsRevMinima(Boolean.FALSE);
     result.add(evaluacion3);
+    Evaluacion evaluacion5 = generarMockEvaluacion(Long.valueOf(5), String.format("%03d", 5));
+    evaluacion5.setEsRevMinima(Boolean.FALSE);
+    result.add(evaluacion5);
 
     // página 1 con 2 elementos por página
     HttpHeaders headers = new HttpHeaders();
@@ -651,8 +647,6 @@ public class ConvocatoriaReunionIT extends BaseIT {
     Assertions.assertThat(response.getBody()).isEqualTo(pageResult.getContent());
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findConvocatoriasSinActa() throws Exception {
     // when: Obtiene page=1 con pagesize=5
@@ -676,7 +670,7 @@ public class ConvocatoriaReunionIT extends BaseIT {
     HttpHeaders responseHeaders = response.getHeaders();
     Assertions.assertThat(responseHeaders.getFirst("X-Page")).isEqualTo("0");
     Assertions.assertThat(responseHeaders.getFirst("X-Page-Size")).isEqualTo("5");
-    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("5");
+    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("3");
   }
 
   /**
@@ -689,7 +683,7 @@ public class ConvocatoriaReunionIT extends BaseIT {
    */
   private ConvocatoriaReunion getMockData(Long id, Long comiteId, Long tipoId) {
 
-    Formulario formulario = new Formulario(comiteId, "M" + comiteId + "0", "Descripcion");
+    Formulario formulario = new Formulario(comiteId, "M" + comiteId + "0", "Formulario M" + comiteId + "0");
     Comite comite = new Comite(comiteId, "Comite" + comiteId, formulario, Boolean.TRUE);
 
     String tipo_txt = (tipoId == 1L) ? "Ordinaria" : (tipoId == 2L) ? "Extraordinaria" : "Seguimiento";
@@ -729,7 +723,7 @@ public class ConvocatoriaReunionIT extends BaseIT {
     Asistentes asistentes = new Asistentes();
     asistentes.setId(id);
     asistentes.setEvaluador(generarMockEvaluador(evaluadorId));
-    asistentes.setConvocatoriaReunion(getMockData(convocatoriaReunionId, convocatoriaReunionId, 1L));
+    asistentes.setConvocatoriaReunion(getMockData(convocatoriaReunionId, 1L, 2L));
     asistentes.setMotivo("Motivo" + id);
     asistentes.setAsistencia(Boolean.TRUE);
 
@@ -746,10 +740,10 @@ public class ConvocatoriaReunionIT extends BaseIT {
   private Evaluador generarMockEvaluador(Long id) {
     CargoComite cargoComite = new CargoComite();
     cargoComite.setId(1L);
-    cargoComite.setNombre("CargoComite1");
+    cargoComite.setNombre("PRESIDENTE");
     cargoComite.setActivo(Boolean.TRUE);
 
-    Formulario formulario = new Formulario(1L, "M10", "Descripcion");
+    Formulario formulario = new Formulario(1L, "M10", "Formulario M10");
     Comite comite = new Comite(1L, "Comite1", formulario, Boolean.TRUE);
 
     Evaluador evaluador = new Evaluador();
@@ -782,7 +776,7 @@ public class ConvocatoriaReunionIT extends BaseIT {
 
     TipoActividad tipoActividad = new TipoActividad();
     tipoActividad.setId(1L);
-    tipoActividad.setNombre("TipoActividad1");
+    tipoActividad.setNombre("Proyecto de investigacion");
     tipoActividad.setActivo(Boolean.TRUE);
 
     PeticionEvaluacion peticionEvaluacion = new PeticionEvaluacion();
@@ -803,18 +797,19 @@ public class ConvocatoriaReunionIT extends BaseIT {
     peticionEvaluacion.setValorSocial("valor social");
     peticionEvaluacion.setActivo(Boolean.TRUE);
 
-    Formulario formulario = new Formulario(1L, "M10", "Descripcion");
+    Formulario formulario = new Formulario(1L, "M10", "Formulario M10");
     Comite comite = new Comite(1L, "Comite1", formulario, Boolean.TRUE);
 
     TipoMemoria tipoMemoria = new TipoMemoria();
     tipoMemoria.setId(1L);
-    tipoMemoria.setNombre("TipoMemoria1");
+    tipoMemoria.setNombre("TipoMemoria001");
     tipoMemoria.setActivo(Boolean.TRUE);
 
     Memoria memoria = new Memoria(1L, "numRef-001", peticionEvaluacion, comite, "Memoria001", "user-001", tipoMemoria,
         new TipoEstadoMemoria(1L, "En elaboración", Boolean.TRUE), LocalDate.of(2020, 8, 1), Boolean.FALSE,
-        new Retrospectiva(1L, new EstadoRetrospectiva(1L, "Pendiente", Boolean.TRUE), LocalDate.of(2020, 8, 1)), 3,
-        "CodOrganoCompetente", Boolean.TRUE, null);
+        new Retrospectiva(1L, new EstadoRetrospectiva(1L, "EstadoRetrospectiva01", Boolean.TRUE),
+            LocalDate.of(2020, 8, 1)),
+        3, "CodOrganoCompetente", Boolean.TRUE, null);
 
     TipoEvaluacion tipoEvaluacion = new TipoEvaluacion();
     tipoEvaluacion.setId(1L);
@@ -827,7 +822,7 @@ public class ConvocatoriaReunionIT extends BaseIT {
     evaluacion.setEsRevMinima(Boolean.TRUE);
     evaluacion.setFechaDictamen(LocalDate.of(2020, 8, 1));
     evaluacion.setMemoria(memoria);
-    evaluacion.setConvocatoriaReunion(getMockData(1L, 1L, 1L));
+    evaluacion.setConvocatoriaReunion(getMockData(2L, 1L, 2L));
     evaluacion.setTipoEvaluacion(tipoEvaluacion);
     evaluacion.setEvaluador1(generarMockEvaluador(1L));
     evaluacion.setEvaluador2(generarMockEvaluador(2L));
@@ -861,7 +856,7 @@ public class ConvocatoriaReunionIT extends BaseIT {
 
     TipoActividad tipoActividad = new TipoActividad();
     tipoActividad.setId(1L);
-    tipoActividad.setNombre("TipoActividad1");
+    tipoActividad.setNombre("Proyecto de investigacion");
     tipoActividad.setActivo(Boolean.TRUE);
 
     PeticionEvaluacion peticionEvaluacion = new PeticionEvaluacion();
@@ -882,18 +877,19 @@ public class ConvocatoriaReunionIT extends BaseIT {
     peticionEvaluacion.setValorSocial("valor social");
     peticionEvaluacion.setActivo(Boolean.TRUE);
 
-    Formulario formulario = new Formulario(1L, "M10", "Descripcion");
+    Formulario formulario = new Formulario(1L, "M10", "Formulario M10");
     Comite comite = new Comite(1L, "Comite1", formulario, Boolean.TRUE);
 
     TipoMemoria tipoMemoria = new TipoMemoria();
     tipoMemoria.setId(1L);
-    tipoMemoria.setNombre("TipoMemoria1");
+    tipoMemoria.setNombre("TipoMemoria001");
     tipoMemoria.setActivo(Boolean.TRUE);
 
     Memoria memoria = new Memoria(1L, "numRef-001", peticionEvaluacion, comite, "Memoria001", "user-001", tipoMemoria,
         new TipoEstadoMemoria(1L, "En elaboración", Boolean.TRUE), LocalDate.of(2020, 8, 1), Boolean.FALSE,
-        new Retrospectiva(1L, new EstadoRetrospectiva(1L, "Pendiente", Boolean.TRUE), LocalDate.of(2020, 8, 1)), 3,
-        "CodOrganoCompetente", Boolean.TRUE, null);
+        new Retrospectiva(1L, new EstadoRetrospectiva(1L, "EstadoRetrospectiva01", Boolean.TRUE),
+            LocalDate.of(2020, 8, 1)),
+        3, "CodOrganoCompetente", Boolean.TRUE, null);
 
     TipoConvocatoriaReunion tipoConvocatoriaReunion = new TipoConvocatoriaReunion(1L, "Ordinaria", Boolean.TRUE);
 

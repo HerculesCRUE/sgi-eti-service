@@ -1,11 +1,7 @@
 package org.crue.hercules.sgi.eti.service;
 
-import org.crue.hercules.sgi.eti.model.TipoDocumento;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
-
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.TipoDocumentoNotFoundException;
+import org.crue.hercules.sgi.eti.model.TipoDocumento;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -36,7 +32,7 @@ public interface TipoDocumentoService {
    * @param query    la información del filtro.
    * @return la lista de entidades {@link TipoDocumento} paginadas y/o filtradas.
    */
-  Page<TipoDocumento> findAll(List<QueryCriteria> query, Pageable pageable);
+  Page<TipoDocumento> findAll(String query, Pageable pageable);
 
   /**
    * Obtiene {@link TipoDocumento} por id.
@@ -62,10 +58,10 @@ public interface TipoDocumentoService {
    * Devuelve una lista paginada y filtrada {@link TipoDocumento} inicial de una
    * memoria.
    * 
-   * @param query  filtro de {@link QueryCriteria}.
+   * @param query  filtro de búsqueda.
    * @param paging pageable
    * @return lista paginada de tipos documentos.
    */
-  Page<TipoDocumento> findTipoDocumentacionInicial(List<QueryCriteria> query, Pageable paging);
+  Page<TipoDocumento> findTipoDocumentacionInicial(String query, Pageable paging);
 
 }

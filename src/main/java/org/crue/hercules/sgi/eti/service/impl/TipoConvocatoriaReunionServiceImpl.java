@@ -1,14 +1,11 @@
 package org.crue.hercules.sgi.eti.service.impl;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.TipoConvocatoriaReunionNotFoundException;
 import org.crue.hercules.sgi.eti.model.TipoConvocatoriaReunion;
 import org.crue.hercules.sgi.eti.repository.TipoConvocatoriaReunionRepository;
 import org.crue.hercules.sgi.eti.repository.specification.TipoConvocatoriaReunionSpecifications;
 import org.crue.hercules.sgi.eti.service.TipoConvocatoriaReunionService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -56,15 +53,13 @@ public class TipoConvocatoriaReunionServiceImpl implements TipoConvocatoriaReuni
    * @return el listado de entidades {@link TipoConvocatoriaReunion} paginadas y
    *         filtradas.
    */
-  public Page<TipoConvocatoriaReunion> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAllTipoConvocatoriaReunion(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<TipoConvocatoriaReunion> specByQuery = new QuerySpecification<TipoConvocatoriaReunion>(query);
-    Specification<TipoConvocatoriaReunion> specActivos = TipoConvocatoriaReunionSpecifications.activos();
-
-    Specification<TipoConvocatoriaReunion> specs = Specification.where(specActivos).and(specByQuery);
+  public Page<TipoConvocatoriaReunion> findAll(String query, Pageable paging) {
+    log.debug("findAllTipoConvocatoriaReunion(String query,Pageable paging) - start");
+    Specification<TipoConvocatoriaReunion> specs = TipoConvocatoriaReunionSpecifications.activos()
+        .and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<TipoConvocatoriaReunion> returnValue = tipoConvocatoriaReunionRepository.findAll(specs, paging);
-    log.debug("findAllTipoConvocatoriaReunion(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAllTipoConvocatoriaReunion(String query,Pageable paging) - end");
     return returnValue;
   }
 

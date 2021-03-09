@@ -1,15 +1,12 @@
 package org.crue.hercules.sgi.eti.service;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.dto.EvaluacionWithIsEliminable;
 import org.crue.hercules.sgi.eti.dto.EvaluacionWithNumComentario;
 import org.crue.hercules.sgi.eti.exceptions.EvaluacionNotFoundException;
-import org.crue.hercules.sgi.eti.model.Memoria;
 import org.crue.hercules.sgi.eti.model.ConvocatoriaReunion;
 import org.crue.hercules.sgi.eti.model.Evaluacion;
 import org.crue.hercules.sgi.eti.model.Evaluador;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.eti.model.Memoria;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -40,7 +37,7 @@ public interface EvaluacionService {
    * @param query    la información del filtro.
    * @return la lista de entidades {@link Evaluacion} paginadas y/o filtradas.
    */
-  Page<Evaluacion> findAll(List<QueryCriteria> query, Pageable pageable);
+  Page<Evaluacion> findAll(String query, Pageable pageable);
 
   /**
    * Obtiene la lista de evaluaciones activas de una convocatoria reunion que no
@@ -52,7 +49,7 @@ public interface EvaluacionService {
    * @return la lista de entidades {@link EvaluacionWithIsEliminable} paginadas.
    */
   Page<EvaluacionWithIsEliminable> findAllByConvocatoriaReunionIdAndNoEsRevMinima(Long idConvocatoriaReunion,
-      List<QueryCriteria> query, Pageable paging);
+      String query, Pageable paging);
 
   /**
    * Obtener todas las entidades paginadas {@link Evaluacion} activas para una
@@ -81,11 +78,11 @@ public interface EvaluacionService {
    * {@link Evaluador}.
    * 
    * @param personaRef Identificador del {@link Evaluacion}
-   * @param query      filtro de {@link QueryCriteria}.
+   * @param query      filtro de búsqueda.
    * @param pageable   pageable
    * @return la lista de entidades {@link Evaluacion} paginadas.
    */
-  Page<Evaluacion> findByEvaluadorPersonaRef(String personaRef, List<QueryCriteria> query, Pageable pageable);
+  Page<Evaluacion> findByEvaluadorPersonaRef(String personaRef, String query, Pageable pageable);
 
   /**
    * Obtiene todas las entidades {@link Evaluacion}, en estado "En evaluación
@@ -94,23 +91,22 @@ public interface EvaluacionService {
    * a un evaluador
    * 
    * @param personaRef Persona Ref del {@link Evaluador}
-   * @param query      filtro de {@link QueryCriteria}.
+   * @param query      filtro de búsqueda.
    * @param pageable   pageable
    * @return la lista de entidades {@link Evaluacion} paginadas y/o filtradas.
    */
-  Page<Evaluacion> findEvaluacionesEnSeguimientosByEvaluador(String personaRef, List<QueryCriteria> query,
-      Pageable pageable);
+  Page<Evaluacion> findEvaluacionesEnSeguimientosByEvaluador(String personaRef, String query, Pageable pageable);
 
   /**
    * Devuelve una lista paginada y filtrada {@link Evaluacion} según su
    * {@link Evaluador}.
    * 
    * @param personaRef Identificador del {@link Evaluacion}
-   * @param query      filtro de {@link QueryCriteria}.
+   * @param query      filtro de búsqueda.
    * @param pageable   pageable
    * @return la lista de entidades {@link Evaluacion} paginadas.
    */
-  Page<Evaluacion> findByEvaluador(String personaRef, List<QueryCriteria> query, Pageable pageable);
+  Page<Evaluacion> findByEvaluador(String personaRef, String query, Pageable pageable);
 
   /**
    * Obtener todas las entidades {@link Evaluacion} paginadas y/o filtradas.
@@ -119,7 +115,7 @@ public interface EvaluacionService {
    * @param query    la información del filtro.
    * @return la lista de entidades {@link Evaluacion} paginadas y/o filtradas.
    */
-  Page<Evaluacion> findAllByMemoriaAndRetrospectivaEnEvaluacion(List<QueryCriteria> query, Pageable pageable);
+  Page<Evaluacion> findAllByMemoriaAndRetrospectivaEnEvaluacion(String query, Pageable pageable);
 
   /**
    * Obtiene {@link Evaluacion} por id.
@@ -145,12 +141,12 @@ public interface EvaluacionService {
    * Obtener todas las entidades paginadas {@link Evaluacion} con memorias en
    * determinados estados de seguimiento
    * 
-   * @param query    filtro de {@link QueryCriteria}.
+   * @param query    filtro de búsqueda.
    * @param pageable pageable
    * @return la lista de entidades {@link Evaluacion} paginadas.
    */
 
-  Page<Evaluacion> findByEvaluacionesEnSeguimientoFinal(List<QueryCriteria> query, Pageable pageable);
+  Page<Evaluacion> findByEvaluacionesEnSeguimientoFinal(String query, Pageable pageable);
 
   /**
    * Elimina las memorias asignadas a una convocatoria de reunión

@@ -19,12 +19,22 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Test de integracion de EquipoTrabajo.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off      
+  "classpath:scripts/tipo_actividad.sql",
+  "classpath:scripts/equipo_trabajo.sql" 
+// @formatter:on
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class EquipoTrabajoIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -42,8 +52,6 @@ public class EquipoTrabajoIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void getEquipoTrabajo_WithId_ReturnsEquipoTrabajo() throws Exception {
     final ResponseEntity<EquipoTrabajo> response = restTemplate.exchange(
@@ -59,8 +67,6 @@ public class EquipoTrabajoIT extends BaseIT {
     Assertions.assertThat(equipoTrabajo.getPersonaRef()).isEqualTo("user-1");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPaging_ReturnsEquipoTrabajoSubList() throws Exception {
     // when: Obtiene la page=3 con pagesize=10
@@ -88,12 +94,10 @@ public class EquipoTrabajoIT extends BaseIT {
     Assertions.assertThat(equipoTrabajos.get(2).getPeticionEvaluacion().getTitulo()).isEqualTo("PeticionEvaluacion8");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSearchQuery_ReturnsFilteredEquipoTrabajoList() throws Exception {
     // when: Búsqueda por id equals
-    String query = "id:5";
+    String query = "id==5";
 
     URI uri = UriComponentsBuilder.fromUriString(EQUIPO_TRABAJO_CONTROLLER_BASE_PATH).queryParam("q", query)
         .build(false).toUri();
@@ -112,12 +116,10 @@ public class EquipoTrabajoIT extends BaseIT {
     Assertions.assertThat(equipoTrabajos.get(0).getPeticionEvaluacion().getTitulo()).startsWith("PeticionEvaluacion");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSortQuery_ReturnsOrderedEquipoTrabajoList() throws Exception {
     // when: Ordenación por personaRef desc
-    String query = "personaRef-";
+    String query = "personaRef,desc";
 
     URI uri = UriComponentsBuilder.fromUriString(EQUIPO_TRABAJO_CONTROLLER_BASE_PATH).queryParam("s", query)
         .build(false).toUri();
@@ -136,13 +138,11 @@ public class EquipoTrabajoIT extends BaseIT {
       EquipoTrabajo equipoTrabajo = equipoTrabajos.get(i);
       Assertions.assertThat(equipoTrabajo.getId()).isEqualTo(8 - i);
       Assertions.assertThat(equipoTrabajo.getPeticionEvaluacion().getTitulo())
-          .isEqualTo("PeticionEvaluacion" + String.format("%03d", 8 - i));
-      Assertions.assertThat(equipoTrabajo.getPersonaRef()).isEqualTo("user-" + String.format("%03d", 8 - i));
+          .isEqualTo("PeticionEvaluacion" + String.format("%d", 8 - i));
+      Assertions.assertThat(equipoTrabajo.getPersonaRef()).isEqualTo("user-" + String.format("%d", 8 - i));
     }
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPagingSortingAndFiltering_ReturnsEquipoTrabajoSubList() throws Exception {
     // when: Obtiene page=3 con pagesize=10
@@ -150,9 +150,9 @@ public class EquipoTrabajoIT extends BaseIT {
     headers.add("X-Page", "0");
     headers.add("X-Page-Size", "3");
     // when: Ordena por personaRef desc
-    String sort = "personaRef-";
+    String sort = "personaRef,desc";
     // when: Filtra por personaRef like
-    String filter = "personaRef~%00%";
+    String filter = "personaRef=ke=user-";
 
     URI uri = UriComponentsBuilder.fromUriString(EQUIPO_TRABAJO_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .queryParam("q", filter).build(false).toUri();
@@ -169,12 +169,12 @@ public class EquipoTrabajoIT extends BaseIT {
     HttpHeaders responseHeaders = response.getHeaders();
     Assertions.assertThat(responseHeaders.getFirst("X-Page")).isEqualTo("0");
     Assertions.assertThat(responseHeaders.getFirst("X-Page-Size")).isEqualTo("3");
-    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("3");
+    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("8");
 
-    // Contiene personaRef='user-001', 'user-002', 'user-003'
-    Assertions.assertThat(equipoTrabajos.get(0).getPersonaRef()).isEqualTo("user-" + String.format("%03d", 3));
-    Assertions.assertThat(equipoTrabajos.get(1).getPersonaRef()).isEqualTo("user-" + String.format("%03d", 2));
-    Assertions.assertThat(equipoTrabajos.get(2).getPersonaRef()).isEqualTo("user-" + String.format("%03d", 1));
+    // Contiene personaRef desde 'user-1' hasta 'user-8'
+    Assertions.assertThat(equipoTrabajos.get(0).getPersonaRef()).isEqualTo("user-" + String.format("%d", 8));
+    Assertions.assertThat(equipoTrabajos.get(1).getPersonaRef()).isEqualTo("user-" + String.format("%d", 7));
+    Assertions.assertThat(equipoTrabajos.get(2).getPersonaRef()).isEqualTo("user-" + String.format("%d", 6));
 
   }
 

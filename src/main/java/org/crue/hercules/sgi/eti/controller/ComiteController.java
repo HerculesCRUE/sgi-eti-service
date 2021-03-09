@@ -1,7 +1,5 @@
 package org.crue.hercules.sgi.eti.controller;
 
-import java.util.List;
-
 import javax.validation.Valid;
 
 import org.crue.hercules.sgi.eti.exceptions.ComiteNotFoundException;
@@ -11,7 +9,6 @@ import org.crue.hercules.sgi.eti.model.TipoMemoria;
 import org.crue.hercules.sgi.eti.service.ComiteService;
 import org.crue.hercules.sgi.eti.service.MemoriaService;
 import org.crue.hercules.sgi.eti.service.TipoMemoriaComiteService;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.crue.hercules.sgi.framework.web.bind.annotation.RequestPageable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -126,21 +123,21 @@ public class ComiteController {
   /**
    * Devuelve una lista paginada y filtrada {@link Comite}.
    * 
-   * @param query  filtro de {@link QueryCriteria}.
+   * @param query  filtro de búsqueda.
    * @param paging pageable
    */
   @GetMapping()
   @PreAuthorize("hasAnyAuthorityForAnyUO('ETI-ACT-V', 'ETI-CONV-V', 'ETI-EVC-VR', 'ETI-EVC-VR-INV', 'ETI-EVC-EVALR', 'ETI-EVC-EVALR-INV', 'ETI-PEV-VR-INV','ETI-PEV-V')")
-  ResponseEntity<Page<Comite>> findAll(@RequestParam(name = "q", required = false) List<QueryCriteria> query,
+  ResponseEntity<Page<Comite>> findAll(@RequestParam(name = "q", required = false) String query,
       @RequestPageable(sort = "s") Pageable paging) {
-    log.debug("findAllComite(List<QueryCriteria> query,Pageable paging) - start");
+    log.debug("findAllComite(String query,Pageable paging) - start");
     Page<Comite> page = service.findAll(query, paging);
 
     if (page.isEmpty()) {
-      log.debug("findAllComite(List<QueryCriteria> query,Pageable paging) - end");
+      log.debug("findAllComite(String query,Pageable paging) - end");
       return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
-    log.debug("findAllComite(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAllComite(String query,Pageable paging) - end");
     return new ResponseEntity<>(page, HttpStatus.OK);
   }
 

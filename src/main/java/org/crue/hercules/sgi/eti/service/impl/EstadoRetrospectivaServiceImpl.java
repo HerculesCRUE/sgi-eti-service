@@ -1,13 +1,11 @@
 package org.crue.hercules.sgi.eti.service.impl;
 
-import java.util.List;
 import org.crue.hercules.sgi.eti.exceptions.EstadoRetrospectivaNotFoundException;
 import org.crue.hercules.sgi.eti.model.EstadoRetrospectiva;
 import org.crue.hercules.sgi.eti.repository.EstadoRetrospectivaRepository;
 import org.crue.hercules.sgi.eti.repository.specification.EstadoRetrospectivaSpecifications;
 import org.crue.hercules.sgi.eti.service.EstadoRetrospectivaService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -117,22 +115,20 @@ public class EstadoRetrospectivaServiceImpl implements EstadoRetrospectivaServic
    * Obtiene las entidades {@link EstadoRetrospectiva} filtradas y paginadas según
    * los criterios de búsqueda.
    *
-   * @param query  filtro de {@link QueryCriteria}.
+   * @param query  filtro de búsqueda.
    * @param paging pageable
    * @return el listado de entidades {@link EstadoRetrospectiva} paginadas y
    *         filtradas.
    */
   @Override
-  public Page<EstadoRetrospectiva> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAll(List<QueryCriteria> query, Pageable paging) - start");
-    Specification<EstadoRetrospectiva> specByQuery = new QuerySpecification<EstadoRetrospectiva>(query);
-    Specification<EstadoRetrospectiva> specActivos = EstadoRetrospectivaSpecifications.activos();
-
-    Specification<EstadoRetrospectiva> specs = Specification.where(specActivos).and(specByQuery);
+  public Page<EstadoRetrospectiva> findAll(String query, Pageable paging) {
+    log.debug("findAll(String query, Pageable paging) - start");
+    Specification<EstadoRetrospectiva> specs = EstadoRetrospectivaSpecifications.activos()
+        .and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<EstadoRetrospectiva> returnValue = repository.findAll(specs, paging);
 
-    log.debug("findAll(List<QueryCriteria> query, Pageable paging) - end");
+    log.debug("findAll(String query, Pageable paging) - end");
 
     return returnValue;
   }

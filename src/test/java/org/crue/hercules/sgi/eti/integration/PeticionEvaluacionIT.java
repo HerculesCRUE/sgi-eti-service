@@ -27,12 +27,28 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Test de integracion de PeticionEvaluacion.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off
+  "classpath:scripts/tipo_actividad.sql", 
+  "classpath:scripts/formulario.sql",
+  "classpath:scripts/tipo_memoria.sql", 
+  "classpath:scripts/tipo_estado_memoria.sql",
+  "classpath:scripts/estado_retrospectiva.sql", 
+  "classpath:scripts/formacion_especifica.sql",
+  "classpath:scripts/tipo_tarea.sql",
+  "classpath:scripts/peticion_evaluacion.sql" 
+// @formatter:on
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class PeticionEvaluacionIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -84,24 +100,20 @@ public class PeticionEvaluacionIT extends BaseIT {
     return request;
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void getPeticionEvaluacion_WithId_ReturnsPeticionEvaluacion() throws Exception {
     final ResponseEntity<PeticionEvaluacion> response = restTemplate.exchange(
         PETICION_EVALUACION_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.GET, buildRequest(null, null),
-        PeticionEvaluacion.class, 1L);
+        PeticionEvaluacion.class, 2L);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
     final PeticionEvaluacion tipoActividad = response.getBody();
 
-    Assertions.assertThat(tipoActividad.getId()).isEqualTo(1L);
-    Assertions.assertThat(tipoActividad.getTitulo()).isEqualTo("PeticionEvaluacion1");
+    Assertions.assertThat(tipoActividad.getId()).isEqualTo(2L);
+    Assertions.assertThat(tipoActividad.getTitulo()).isEqualTo("PeticionEvaluacion2");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void addPeticionEvaluacion_ReturnsPeticionEvaluacion() throws Exception {
 
@@ -115,13 +127,11 @@ public class PeticionEvaluacionIT extends BaseIT {
     Assertions.assertThat(response.getBody().getId()).isNotNull();
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removePeticionEvaluacion_Success() throws Exception {
 
     // when: Delete con id existente
-    long id = 1L;
+    long id = 2L;
     final ResponseEntity<PeticionEvaluacion> response = restTemplate.exchange(
         PETICION_EVALUACION_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.DELETE, buildRequest(null, null),
         PeticionEvaluacion.class, id);
@@ -131,8 +141,6 @@ public class PeticionEvaluacionIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removePeticionEvaluacion_DoNotGetPeticionEvaluacion() throws Exception {
     restTemplate.exchange(PETICION_EVALUACION_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.DELETE,
@@ -146,16 +154,14 @@ public class PeticionEvaluacionIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void replacePeticionEvaluacion_ReturnsPeticionEvaluacion() throws Exception {
 
-    PeticionEvaluacion replacePeticionEvaluacion = generarMockPeticionEvaluacion(1L, "PeticionEvaluacion1");
+    PeticionEvaluacion replacePeticionEvaluacion = generarMockPeticionEvaluacion(2L, "PeticionEvaluacion2");
 
     final ResponseEntity<PeticionEvaluacion> response = restTemplate.exchange(
         PETICION_EVALUACION_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.PUT,
-        buildRequest(null, replacePeticionEvaluacion), PeticionEvaluacion.class, 1L);
+        buildRequest(null, replacePeticionEvaluacion), PeticionEvaluacion.class, 2L);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
@@ -166,8 +172,6 @@ public class PeticionEvaluacionIT extends BaseIT {
     Assertions.assertThat(tipoActividad.getActivo()).isEqualTo(replacePeticionEvaluacion.getActivo());
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPaging_ReturnsPeticionEvaluacionSubList() throws Exception {
     // when: Obtiene la page=3 con pagesize=10
@@ -175,7 +179,7 @@ public class PeticionEvaluacionIT extends BaseIT {
     headers.add("X-Page", "1");
     headers.add("X-Page-Size", "5");
 
-    String query = "id+";
+    String query = "id,asc";
 
     URI uri = UriComponentsBuilder.fromUriString(PETICION_EVALUACION_CONTROLLER_BASE_PATH).queryParam("s", query)
         .build(false).toUri();
@@ -188,26 +192,24 @@ public class PeticionEvaluacionIT extends BaseIT {
     // correcta en el header
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     final List<PeticionEvaluacion> peticionEvaluaciones = response.getBody();
-    Assertions.assertThat(peticionEvaluaciones.size()).isEqualTo(3);
+    Assertions.assertThat(peticionEvaluaciones.size()).isEqualTo(2);
     Assertions.assertThat(response.getHeaders().getFirst("X-Page")).isEqualTo("1");
     Assertions.assertThat(response.getHeaders().getFirst("X-Page-Size")).isEqualTo("5");
-    Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("8");
+    Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("7");
 
     // Contiene de titulo='PeticionEvaluacion6' a 'PeticionEvaluacion8'
     List<String> titulos = new ArrayList<>();
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 2; i++) {
       titulos.add(peticionEvaluaciones.get(i).getTitulo());
     }
-    Assertions.assertThat(titulos).contains("PeticionEvaluacion6", "PeticionEvaluacion7", "PeticionEvaluacion8");
+    Assertions.assertThat(titulos).contains("PeticionEvaluacion7", "PeticionEvaluacion8");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSearchQuery_ReturnsFilteredPeticionEvaluacionList() throws Exception {
     // when: Búsqueda por titulo like e id equals
-    Long id = 5L;
-    String query = "titulo~PeticionEvaluacion%,id:" + id;
+    Long id = 2L;
+    String query = "peticionEvaluacion.titulo=ke=PeticionEvaluacion;peticionEvaluacion.id==" + id;
 
     URI uri = UriComponentsBuilder.fromUriString(PETICION_EVALUACION_CONTROLLER_BASE_PATH).queryParam("q", query)
         .build(false).toUri();
@@ -226,12 +228,10 @@ public class PeticionEvaluacionIT extends BaseIT {
     Assertions.assertThat(peticionEvaluaciones.get(0).getTitulo()).startsWith("PeticionEvaluacion");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSortQuery_ReturnsOrderedPeticionEvaluacionList() throws Exception {
     // when: Ordenación por titulo desc
-    String query = "titulo-";
+    String query = "titulo,desc";
 
     URI uri = UriComponentsBuilder.fromUriString(PETICION_EVALUACION_CONTROLLER_BASE_PATH).queryParam("s", query)
         .build(false).toUri();
@@ -245,16 +245,14 @@ public class PeticionEvaluacionIT extends BaseIT {
     // correcta en el header
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     final List<PeticionEvaluacion> peticionEvaluaciones = response.getBody();
-    Assertions.assertThat(peticionEvaluaciones.size()).isEqualTo(8);
-    for (int i = 0; i < 8; i++) {
+    Assertions.assertThat(peticionEvaluaciones.size()).isEqualTo(7);
+    for (int i = 0; i < 7; i++) {
       PeticionEvaluacion tipoActividad = peticionEvaluaciones.get(i);
       Assertions.assertThat(tipoActividad.getId()).isEqualTo(8 - i);
-      Assertions.assertThat(tipoActividad.getTitulo()).isEqualTo("PeticionEvaluacion" + String.format("%03d", 8 - i));
+      Assertions.assertThat(tipoActividad.getTitulo()).isEqualTo("PeticionEvaluacion" + String.format("%d", 8 - i));
     }
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPagingSortingAndFiltering_ReturnsPeticionEvaluacionSubList() throws Exception {
     // when: Obtiene page=3 con pagesize=10
@@ -262,9 +260,9 @@ public class PeticionEvaluacionIT extends BaseIT {
     headers.add("X-Page", "0");
     headers.add("X-Page-Size", "3");
     // when: Ordena por titulo desc
-    String sort = "titulo-";
+    String sort = "titulo,desc";
     // when: Filtra por titulo like e id equals
-    String filter = "titulo~%00%";
+    String filter = "peticionEvaluacion.titulo=ke=Peticion";
 
     URI uri = UriComponentsBuilder.fromUriString(PETICION_EVALUACION_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .queryParam("q", filter).build(false).toUri();
@@ -277,25 +275,19 @@ public class PeticionEvaluacionIT extends BaseIT {
     // correcta en el header
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     final List<PeticionEvaluacion> peticionEvaluaciones = response.getBody();
-    Assertions.assertThat(peticionEvaluaciones.size()).isEqualTo(3);
+    Assertions.assertThat(peticionEvaluaciones.size()).isEqualTo(1);
     HttpHeaders responseHeaders = response.getHeaders();
     Assertions.assertThat(responseHeaders.getFirst("X-Page")).isEqualTo("0");
     Assertions.assertThat(responseHeaders.getFirst("X-Page-Size")).isEqualTo("3");
-    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("3");
+    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("1");
 
-    // Contiene titulo='PeticionEvaluacion001', 'PeticionEvaluacion002',
-    // 'PeticionEvaluacion003'
+    // Contiene titulo='PeticionEvaluacion1', 'PeticionEvaluacion2',
+    // 'PeticionEvaluacion3'
     Assertions.assertThat(peticionEvaluaciones.get(0).getTitulo())
-        .isEqualTo("PeticionEvaluacion" + String.format("%03d", 3));
-    Assertions.assertThat(peticionEvaluaciones.get(1).getTitulo())
-        .isEqualTo("PeticionEvaluacion" + String.format("%03d", 2));
-    Assertions.assertThat(peticionEvaluaciones.get(2).getTitulo())
-        .isEqualTo("PeticionEvaluacion" + String.format("%03d", 1));
+        .isEqualTo("PeticionEvaluacion" + String.format("%d", 2));
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findEquipoInvestigador_WithPaging_ReturnsEquipoInvestigadorSubList() throws Exception {
     // when: Obtiene la page=3 con pagesize=10
@@ -307,25 +299,22 @@ public class PeticionEvaluacionIT extends BaseIT {
         PETICION_EVALUACION_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID + "/equipo-investigador", HttpMethod.GET,
         buildRequestEquipoTrabajo(headers, null),
         new ParameterizedTypeReference<List<EquipoTrabajoWithIsEliminable>>() {
-        }, 1L);
+        }, 2L);
 
     // then: Respuesta OK, PeticionEvaluaciones retorna la información de la página
     // correcta en el header
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     final List<EquipoTrabajoWithIsEliminable> equiposTrabajo = response.getBody();
-    Assertions.assertThat(equiposTrabajo.size()).isEqualTo(3);
+    Assertions.assertThat(equiposTrabajo.size()).isEqualTo(2);
     Assertions.assertThat(response.getHeaders().getFirst("X-Page")).isEqualTo("1");
     Assertions.assertThat(response.getHeaders().getFirst("X-Page-Size")).isEqualTo("5");
-    Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("8");
+    Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("7");
 
-    // Contiene de id='6' a '8'
-    Assertions.assertThat(equiposTrabajo.get(0).getId()).isEqualTo(6);
-    Assertions.assertThat(equiposTrabajo.get(1).getId()).isEqualTo(7);
-    Assertions.assertThat(equiposTrabajo.get(2).getId()).isEqualTo(8);
+    // Contiene de id='7' a '8'
+    Assertions.assertThat(equiposTrabajo.get(0).getId()).isEqualTo(7);
+    Assertions.assertThat(equiposTrabajo.get(1).getId()).isEqualTo(8);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findTareas_WithPaging_ReturnsTareasSubList() throws Exception {
     // when: Obtiene la page=3 con pagesize=10
@@ -336,25 +325,22 @@ public class PeticionEvaluacionIT extends BaseIT {
     final ResponseEntity<List<TareaWithIsEliminable>> response = restTemplate.exchange(
         PETICION_EVALUACION_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID + "/tareas", HttpMethod.GET,
         buildRequestEquipoTrabajo(headers, null), new ParameterizedTypeReference<List<TareaWithIsEliminable>>() {
-        }, 1L);
+        }, 2L);
 
     // then: Respuesta OK, PeticionEvaluaciones retorna la información de la página
     // correcta en el header
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     final List<TareaWithIsEliminable> tareas = response.getBody();
-    Assertions.assertThat(tareas.size()).isEqualTo(3);
+    Assertions.assertThat(tareas.size()).isEqualTo(2);
     Assertions.assertThat(response.getHeaders().getFirst("X-Page")).isEqualTo("1");
     Assertions.assertThat(response.getHeaders().getFirst("X-Page-Size")).isEqualTo("5");
-    Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("8");
+    Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("7");
 
-    // Contiene de id='6' a '8'
-    Assertions.assertThat(tareas.get(0).getId()).isEqualTo(6);
-    Assertions.assertThat(tareas.get(1).getId()).isEqualTo(7);
-    Assertions.assertThat(tareas.get(2).getId()).isEqualTo(8);
+    // Contiene de id='7' a '8'
+    Assertions.assertThat(tareas.get(0).getId()).isEqualTo(7);
+    Assertions.assertThat(tareas.get(1).getId()).isEqualTo(8);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findMemorias_WithPaging_ReturnsMemoriaPeticionEvaluacionSubList() throws Exception {
     // when: Obtiene la page=3 con pagesize=10
@@ -366,7 +352,7 @@ public class PeticionEvaluacionIT extends BaseIT {
         PETICION_EVALUACION_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID + "/memorias", HttpMethod.GET,
         buildRequestMemoriaPeticionEvaluacion(headers, null),
         new ParameterizedTypeReference<List<MemoriaPeticionEvaluacion>>() {
-        }, 1L);
+        }, 2L);
 
     // then: Respuesta OK, PeticionEvaluaciones retorna la información de la página
     // correcta en el header
@@ -378,13 +364,15 @@ public class PeticionEvaluacionIT extends BaseIT {
     Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("8");
 
     // Contiene de id='6' a '8'
-    Assertions.assertThat(memoriasPeticionEvaluacion.get(0).getId()).isEqualTo(6);
-    Assertions.assertThat(memoriasPeticionEvaluacion.get(1).getId()).isEqualTo(7);
-    Assertions.assertThat(memoriasPeticionEvaluacion.get(2).getId()).isEqualTo(8);
+    List<Long> ids = new ArrayList<>();
+    for (MemoriaPeticionEvaluacion memoria : memoriasPeticionEvaluacion) {
+      ids.add(memoria.getId());
+    }
+    Assertions.assertThat(ids.contains(6L)).isTrue();
+    Assertions.assertThat(ids.contains(7L)).isTrue();
+    Assertions.assertThat(ids.contains(8L)).isTrue();
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void addTarea_ReturnsTarea() throws Exception {
 
@@ -392,7 +380,7 @@ public class PeticionEvaluacionIT extends BaseIT {
 
     final ResponseEntity<Tarea> response = restTemplate.exchange(
         PETICION_EVALUACION_CONTROLLER_BASE_PATH + "/{idPeticionEvaluacion}/equipos-trabajo/{idEquipoTrabajo}/tareas",
-        HttpMethod.POST, buildRequestTarea(null, nuevaTarea), Tarea.class, 1L, 100L);
+        HttpMethod.POST, buildRequestTarea(null, nuevaTarea), Tarea.class, 2L, 2L);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
@@ -400,46 +388,42 @@ public class PeticionEvaluacionIT extends BaseIT {
 
     Assertions.assertThat(tarea.getId()).as("id").isEqualTo(1L);
     Assertions.assertThat(tarea.getEquipoTrabajo()).as("equipoTrabajo").isNotNull();
-    Assertions.assertThat(tarea.getEquipoTrabajo().getId()).as("equipoTrabajo.id").isEqualTo(100L);
+    Assertions.assertThat(tarea.getEquipoTrabajo().getId()).as("equipoTrabajo.id").isEqualTo(2L);
     Assertions.assertThat(tarea.getMemoria()).as("memoria").isNotNull();
-    Assertions.assertThat(tarea.getMemoria().getId()).as("memoria.id").isEqualTo(200L);
+    Assertions.assertThat(tarea.getMemoria().getId()).as("memoria.id").isEqualTo(1L);
     Assertions.assertThat(tarea.getTarea()).as("tarea").isEqualTo("Tarea");
     Assertions.assertThat(tarea.getFormacion()).as("formacion").isEqualTo("Formacion");
     Assertions.assertThat(tarea.getFormacionEspecifica()).as("formacionEspecifica").isNotNull();
-    Assertions.assertThat(tarea.getFormacionEspecifica().getId()).as("formacionEspecifica.id").isEqualTo(300L);
+    Assertions.assertThat(tarea.getFormacionEspecifica().getId()).as("formacionEspecifica.id").isEqualTo(1L);
     Assertions.assertThat(tarea.getOrganismo()).as("organismo").isEqualTo("Organismo");
     Assertions.assertThat(tarea.getAnio()).as("anio").isEqualTo(2020);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void addEquipoTrabajo_ReturnsEquipoTrabajo() throws Exception {
 
     EquipoTrabajo nuevoEquipoTrabajo = generarMockEquipoTrabajo(null,
-        generarMockPeticionEvaluacion(1L, "PeticionEvaluacion1"));
+        generarMockPeticionEvaluacion(2L, "PeticionEvaluacion2"));
 
     final ResponseEntity<EquipoTrabajo> response = restTemplate.exchange(
         PETICION_EVALUACION_CONTROLLER_BASE_PATH + "/{idPeticionEvaluacion}/equipos-trabajo", HttpMethod.POST,
-        buildRequestEquipoTrabajo(null, nuevoEquipoTrabajo), EquipoTrabajo.class, 1L);
+        buildRequestEquipoTrabajo(null, nuevoEquipoTrabajo), EquipoTrabajo.class, 2L);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
     final EquipoTrabajo equipoTrabajo = response.getBody();
 
     Assertions.assertThat(equipoTrabajo.getId()).isNotNull();
-    Assertions.assertThat(equipoTrabajo.getPeticionEvaluacion().getId()).isEqualTo(1);
+    Assertions.assertThat(equipoTrabajo.getPeticionEvaluacion().getId()).isEqualTo(2);
     Assertions.assertThat(equipoTrabajo.getPersonaRef()).isEqualTo("user-001");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeEquipoTrabajo_Success() throws Exception {
 
     // when: Delete con id existente
-    long idPeticionEvaluacion = 1L;
-    long idEquipoTrabajo = 1L;
+    long idPeticionEvaluacion = 2L;
+    long idEquipoTrabajo = 2L;
     final ResponseEntity<EquipoTrabajo> response = restTemplate.exchange(
         PETICION_EVALUACION_CONTROLLER_BASE_PATH + "/{idPeticionEvaluacion}/equipos-trabajo/{idEquipoTrabajo}",
         HttpMethod.DELETE, buildRequest(null, null), EquipoTrabajo.class, idPeticionEvaluacion, idEquipoTrabajo);
@@ -449,8 +433,6 @@ public class PeticionEvaluacionIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeEquipoTrabajo_DoNotGetEquipoTrabajo() throws Exception {
 
@@ -465,15 +447,13 @@ public class PeticionEvaluacionIT extends BaseIT {
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeTarea_Success() throws Exception {
 
     // when: Delete con id existente
-    long idPeticionEvaluacion = 1L;
-    long idEquipoTrabajo = 100L;
-    long idTarea = 1L;
+    long idPeticionEvaluacion = 2L;
+    long idEquipoTrabajo = 2L;
+    long idTarea = 2L;
     final ResponseEntity<Tarea> response = restTemplate.exchange(
         PETICION_EVALUACION_CONTROLLER_BASE_PATH
             + "/{idPeticionEvaluacion}/equipos-trabajo/{idEquipoTrabajo}/tareas/{idTarea}",
@@ -484,8 +464,6 @@ public class PeticionEvaluacionIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeTarea_DoNotGetTarea() throws Exception {
 
@@ -498,6 +476,41 @@ public class PeticionEvaluacionIT extends BaseIT {
 
     // then: 404
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+  }
+
+  @Test
+  public void findAllPeticionEvaluacionMemoria_WithPagingSortingAndFiltering_ReturnsPeticionEvaluacionSubList()
+      throws Exception {
+    // when: Obtiene page=1 con pagesize=3
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("Authorization",
+        String.format("bearer %s", tokenBuilder.buildToken("user", "ETI-PEV-VR-INV", "ETI-PEV-V", "ETI-MEM-CR-INV")));
+    headers.add("X-Page", "0");
+    headers.add("X-Page-Size", "3");
+    // when: Ordena por id desc
+    String sort = "id,desc";
+    // when: Filtra por numReferencia like
+    String filter = "numReferencia=ke=ref-";
+
+    URI uri = UriComponentsBuilder.fromUriString(PETICION_EVALUACION_CONTROLLER_BASE_PATH + "/memorias")
+        .queryParam("s", sort).queryParam("q", filter).build(false).toUri();
+
+    final ResponseEntity<List<PeticionEvaluacion>> response = restTemplate.exchange(uri, HttpMethod.GET,
+        buildRequest(headers, null), new ParameterizedTypeReference<List<PeticionEvaluacion>>() {
+        });
+
+    // then: Respuesta OK, peticiones de evaluación retorna la información de la
+    // página correcta en el header
+    Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    final List<PeticionEvaluacion> peticionesEvaluacion = response.getBody();
+    Assertions.assertThat(peticionesEvaluacion.size()).isEqualTo(1);
+    HttpHeaders responseHeaders = response.getHeaders();
+    Assertions.assertThat(responseHeaders.getFirst("X-Page")).isEqualTo("0");
+    Assertions.assertThat(responseHeaders.getFirst("X-Page-Size")).isEqualTo("3");
+    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("1");
+
+    // Contiene titulo='PeticionEvaluacion1'
+    Assertions.assertThat(peticionesEvaluacion.get(0).getTitulo()).isEqualTo("PeticionEvaluacion2");
   }
 
   /**
@@ -561,13 +574,13 @@ public class PeticionEvaluacionIT extends BaseIT {
    */
   public Tarea generarMockTarea(Long id, String descripcion) {
     EquipoTrabajo equipoTrabajo = new EquipoTrabajo();
-    equipoTrabajo.setId(100L);
+    equipoTrabajo.setId(2L);
 
     Memoria memoria = new Memoria();
-    memoria.setId(200L);
+    memoria.setId(1L);
 
     FormacionEspecifica formacionEspecifica = new FormacionEspecifica();
-    formacionEspecifica.setId(300L);
+    formacionEspecifica.setId(1L);
 
     TipoTarea tipoTarea = new TipoTarea();
     tipoTarea.setId(1L);

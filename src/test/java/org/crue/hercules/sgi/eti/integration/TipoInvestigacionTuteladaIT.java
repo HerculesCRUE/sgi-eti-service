@@ -18,12 +18,21 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Test de integracion de TipoInvestigacionTutelada.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off  
+  "classpath:scripts/tipo_investigacion_tutelada.sql"
+// @formatter:on
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 @ContextConfiguration(initializers = { Oauth2WireMockInitializer.class })
 
 public class TipoInvestigacionTuteladaIT extends BaseIT {
@@ -42,8 +51,6 @@ public class TipoInvestigacionTuteladaIT extends BaseIT {
     return request;
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPaging_ReturnsTipoInvestigacionTuteladaSubList() throws Exception {
     // when: Obtiene la page=3 con pagesize=10
@@ -71,13 +78,11 @@ public class TipoInvestigacionTuteladaIT extends BaseIT {
     Assertions.assertThat(tipoInvestigacionTuteladas.get(0).getNombre()).isEqualTo("Trabajo Fin de Grado");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSearchQuery_ReturnsFilteredTipoInvestigacionTuteladaList() throws Exception {
     // when: Búsqueda por nombre like e id equals
     Long id = 1L;
-    String query = "nombre~Tesis%,id:" + id;
+    String query = "nombre=ke=Tesis;id==" + id;
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_INVESTIGACION_TUTELADA_CONTROLLER_BASE_PATH)
         .queryParam("q", query).build(false).toUri();
@@ -97,12 +102,10 @@ public class TipoInvestigacionTuteladaIT extends BaseIT {
     Assertions.assertThat(tipoInvestigacionTuteladas.get(0).getNombre()).startsWith("Tesis doctoral");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSortQuery_ReturnsOrderedTipoInvestigacionTuteladaList() throws Exception {
     // when: Ordenación por nombre desc
-    String query = "nombre-";
+    String query = "nombre,desc";
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_INVESTIGACION_TUTELADA_CONTROLLER_BASE_PATH)
         .queryParam("s", query).build(false).toUri();
@@ -124,8 +127,6 @@ public class TipoInvestigacionTuteladaIT extends BaseIT {
     Assertions.assertThat(tipoInvestigacionTuteladas.get(2).getNombre()).isEqualTo("Tesis doctoral");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPagingSortingAndFiltering_ReturnsTipoInvestigacionTuteladaSubList() throws Exception {
     // when: Obtiene page=3 con pagesize=10
@@ -133,9 +134,9 @@ public class TipoInvestigacionTuteladaIT extends BaseIT {
     headers.add("X-Page", "0");
     headers.add("X-Page-Size", "4");
     // when: Ordena por nombre desc
-    String sort = "nombre-";
+    String sort = "nombre,desc";
     // when: Filtra por nombre like
-    String filter = "nombre~%Trabajo%";
+    String filter = "nombre=ke=Trabajo";
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_INVESTIGACION_TUTELADA_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .queryParam("q", filter).build(false).toUri();

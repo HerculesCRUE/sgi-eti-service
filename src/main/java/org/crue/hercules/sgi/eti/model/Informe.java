@@ -55,4 +55,9 @@ public class Informe extends BaseEntity {
   @NotNull
   private Integer version;
 
+  /** Tipo evaluacion. */
+  @ManyToOne
+  @JoinColumn(name = "tipo_evaluacion_id", nullable = false, foreignKey = @ForeignKey(name = "FK_INFORME_TIPOEVALUACION"))
+  private TipoEvaluacion tipoEvaluacion;
+
 }

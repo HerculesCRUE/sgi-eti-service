@@ -1,11 +1,7 @@
 package org.crue.hercules.sgi.eti.service;
 
-import org.crue.hercules.sgi.eti.model.FormacionEspecifica;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
-
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.FormacionEspecificaNotFoundException;
+import org.crue.hercules.sgi.eti.model.FormacionEspecifica;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -39,7 +35,7 @@ public interface FormacionEspecificaService {
    * @return la lista de entidades {@link FormacionEspecifica} paginadas y/o
    *         filtradas.
    */
-  Page<FormacionEspecifica> findAll(List<QueryCriteria> query, Pageable pageable);
+  Page<FormacionEspecifica> findAll(String query, Pageable pageable);
 
   /**
    * Obtiene {@link FormacionEspecifica} por id.

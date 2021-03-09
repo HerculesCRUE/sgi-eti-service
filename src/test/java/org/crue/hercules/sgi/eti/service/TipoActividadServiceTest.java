@@ -11,12 +11,10 @@ import org.crue.hercules.sgi.eti.repository.TipoActividadRepository;
 import org.crue.hercules.sgi.eti.service.impl.TipoActividadServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -27,7 +25,6 @@ import org.springframework.data.jpa.domain.Specification;
 /**
  * TipoActividadServiceTest
  */
-@ExtendWith(MockitoExtension.class)
 public class TipoActividadServiceTest extends BaseServiceTest {
 
   @Mock
@@ -163,6 +160,23 @@ public class TipoActividadServiceTest extends BaseServiceTest {
     Assertions.assertThatCode(
         // when: Delete con id existente
         () -> tipoActividadService.delete(1L))
+        // then: No se lanza ninguna excepción
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  public void deleteAll_DeleteAllTipoActividad() {
+    // given: One hundred TipoActividad
+    List<TipoActividad> tipoActividads = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      tipoActividads.add(generarMockTipoActividad(Long.valueOf(i), "TipoActividad" + String.format("%03d", i)));
+    }
+
+    BDDMockito.doNothing().when(tipoActividadRepository).deleteAll();
+
+    Assertions.assertThatCode(
+        // when: Delete all
+        () -> tipoActividadService.deleteAll())
         // then: No se lanza ninguna excepción
         .doesNotThrowAnyException();
   }

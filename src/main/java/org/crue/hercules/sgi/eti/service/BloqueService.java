@@ -1,10 +1,7 @@
 package org.crue.hercules.sgi.eti.service;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.model.Bloque;
 import org.crue.hercules.sgi.eti.model.Formulario;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -20,7 +17,7 @@ public interface BloqueService {
    * @param query    la información del filtro.
    * @return la lista de entidades {@link Bloque} paginadas y/o filtradas.
    */
-  Page<Bloque> findAll(List<QueryCriteria> query, Pageable pageable);
+  Page<Bloque> findAll(String query, Pageable pageable);
 
   /**
    * Obtiene {@link Bloque} por id.

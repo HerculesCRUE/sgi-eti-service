@@ -1,6 +1,5 @@
 package org.crue.hercules.sgi.eti.controller;
 
-import java.lang.reflect.Field;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -11,6 +10,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.assertj.core.api.Assertions;
 import org.crue.hercules.sgi.eti.dto.EquipoTrabajoWithIsEliminable;
 import org.crue.hercules.sgi.eti.dto.MemoriaPeticionEvaluacion;
+import org.crue.hercules.sgi.eti.dto.PeticionEvaluacionWithIsEliminable;
 import org.crue.hercules.sgi.eti.dto.TareaWithIsEliminable;
 import org.crue.hercules.sgi.eti.exceptions.PeticionEvaluacionNotFoundException;
 import org.crue.hercules.sgi.eti.model.Comite;
@@ -26,7 +26,6 @@ import org.crue.hercules.sgi.eti.service.EquipoTrabajoService;
 import org.crue.hercules.sgi.eti.service.MemoriaService;
 import org.crue.hercules.sgi.eti.service.PeticionEvaluacionService;
 import org.crue.hercules.sgi.eti.service.TareaService;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -45,7 +44,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * PeticionEvaluacionControllerTest
@@ -67,6 +65,8 @@ public class PeticionEvaluacionControllerTest extends BaseControllerTest {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
   private static final String PETICION_EVALUACION_CONTROLLER_BASE_PATH = "/peticionevaluaciones";
+  private static final String MEMORIAS_CONTROLLER_BASE_PATH = "/memorias";
+  private static final String PERSONA_CONTROLLER_BASE_PATH = "/persona";
 
   @Test
   @WithMockUser(username = "user", authorities = { "ETI-PEV-ER-INV", "ETI-PEV-V" })
@@ -194,14 +194,16 @@ public class PeticionEvaluacionControllerTest extends BaseControllerTest {
   @WithMockUser(username = "user", authorities = { "ETI-PEV-VR-INV", "ETI-PEV-V" })
   public void findAll_Unlimited_ReturnsFullPeticionEvaluacionList() throws Exception {
     // given: One hundred PeticionEvaluacion
-    List<PeticionEvaluacion> peticionEvaluaciones = new ArrayList<>();
+    List<PeticionEvaluacionWithIsEliminable> peticionEvaluaciones = new ArrayList<>();
     for (int i = 1; i <= 100; i++) {
-      peticionEvaluaciones
-          .add(generarMockPeticionEvaluacion(Long.valueOf(i), "PeticionEvaluacion" + String.format("%03d", i)));
+      peticionEvaluaciones.add(generarMockPeticionEvaluacionWithIsEliminable(Long.valueOf(i),
+          "PeticionEvaluacion" + String.format("%03d", i)));
     }
 
-    BDDMockito.given(peticionEvaluacionService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(),
-        ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(peticionEvaluaciones));
+    BDDMockito
+        .given(peticionEvaluacionService.findAllPeticionesWithPersonaRefCreadorPeticionesEvaluacionOrResponsableMemoria(
+            ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any(), ArgumentMatchers.isNull()))
+        .willReturn(new PageImpl<>(peticionEvaluaciones));
 
     // when: find unlimited
     mockMvc
@@ -215,6 +217,23 @@ public class PeticionEvaluacionControllerTest extends BaseControllerTest {
 
   @Test
   @WithMockUser(username = "user", authorities = { "ETI-PEV-VR-INV", "ETI-PEV-V" })
+  public void findAll_ReturnsNoContent() throws Exception {
+    // given: PeticionEvaluacion empty
+    List<PeticionEvaluacionWithIsEliminable> peticionEvaluaciones = new ArrayList<>();
+
+    BDDMockito
+        .given(peticionEvaluacionService.findAllPeticionesWithPersonaRefCreadorPeticionesEvaluacionOrResponsableMemoria(
+            ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any(), ArgumentMatchers.isNull()))
+        .willReturn(new PageImpl<>(peticionEvaluaciones));
+
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(PETICION_EVALUACION_CONTROLLER_BASE_PATH)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print()).andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-PEV-VR-INV", "ETI-PEV-V" })
   public void findAll_WithPaging_ReturnsPeticionEvaluacionSubList() throws Exception {
     // given: One hundred PeticionEvaluacion
     List<PeticionEvaluacion> peticionEvaluaciones = new ArrayList<>();
@@ -223,8 +242,10 @@ public class PeticionEvaluacionControllerTest extends BaseControllerTest {
           .add(generarMockPeticionEvaluacion(Long.valueOf(i), "PeticionEvaluacion" + String.format("%03d", i)));
     }
 
-    BDDMockito.given(peticionEvaluacionService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(),
-        ArgumentMatchers.<Pageable>any())).willAnswer(new Answer<Page<PeticionEvaluacion>>() {
+    BDDMockito
+        .given(peticionEvaluacionService.findAllPeticionesWithPersonaRefCreadorPeticionesEvaluacionOrResponsableMemoria(
+            ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any(), ArgumentMatchers.isNull()))
+        .willAnswer(new Answer<Page<PeticionEvaluacion>>() {
           @Override
           public Page<PeticionEvaluacion> answer(InvocationOnMock invocation) throws Throwable {
             Pageable pageable = invocation.getArgument(1, Pageable.class);
@@ -277,65 +298,16 @@ public class PeticionEvaluacionControllerTest extends BaseControllerTest {
     }
     String query = "titulo~PeticionEvaluacion%,id:5";
 
-    BDDMockito.given(peticionEvaluacionService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(),
-        ArgumentMatchers.<Pageable>any())).willAnswer(new Answer<Page<PeticionEvaluacion>>() {
+    BDDMockito
+        .given(peticionEvaluacionService.findAllPeticionesWithPersonaRefCreadorPeticionesEvaluacionOrResponsableMemoria(
+            ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any(), ArgumentMatchers.isNull()))
+        .willAnswer(new Answer<Page<PeticionEvaluacion>>() {
           @Override
           public Page<PeticionEvaluacion> answer(InvocationOnMock invocation) throws Throwable {
-            List<QueryCriteria> queryCriterias = invocation.<List<QueryCriteria>>getArgument(0);
-
             List<PeticionEvaluacion> content = new ArrayList<>();
             for (PeticionEvaluacion peticionEvaluacion : peticionEvaluaciones) {
-              boolean add = true;
-              for (QueryCriteria queryCriteria : queryCriterias) {
-                Field field = ReflectionUtils.findField(PeticionEvaluacion.class, queryCriteria.getKey());
-                field.setAccessible(true);
-                String fieldValue = ReflectionUtils.getField(field, peticionEvaluacion).toString();
-                switch (queryCriteria.getOperation()) {
-                  case EQUALS:
-                    if (!fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) > 0)) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) >= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LIKE:
-                    if (!fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) < 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) <= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_EQUALS:
-                    if (fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_LIKE:
-                    if (fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  default:
-                    break;
-                }
-              }
-              if (add) {
+              if (peticionEvaluacion.getTitulo().startsWith("PeticionEvaluacion")
+                  && peticionEvaluacion.getId().equals(5L)) {
                 content.add(peticionEvaluacion);
               }
             }
@@ -411,6 +383,29 @@ public class PeticionEvaluacionControllerTest extends BaseControllerTest {
   }
 
   @Test
+  @WithMockUser(username = "user", authorities = { "ETI-PEV-CR", "ETI-PEV-ER-INV", "ETI-PEV-VR-INV", "ETI-PEV-C-INV",
+      "ETI-PEV-ER-INV" })
+  public void findEquipoInvestigador_ReturnsNoContent() throws Exception {
+    // given: EquipoTrabajos empty
+    List<EquipoTrabajoWithIsEliminable> equipoTrabajos = new ArrayList<>();
+
+    BDDMockito.given(equipoTrabajoService.findAllByPeticionEvaluacionId(ArgumentMatchers.<Long>any(),
+        ArgumentMatchers.<Pageable>any())).willAnswer(new Answer<Page<EquipoTrabajoWithIsEliminable>>() {
+          @Override
+          public Page<EquipoTrabajoWithIsEliminable> answer(InvocationOnMock invocation) throws Throwable {
+            Page<EquipoTrabajoWithIsEliminable> page = new PageImpl<>(equipoTrabajos);
+            return page;
+          }
+        });
+
+    mockMvc
+        .perform(MockMvcRequestBuilders
+            .get(PETICION_EVALUACION_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID + "/equipo-investigador", 1L)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print()).andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
   @WithMockUser(username = "user", authorities = { "ETI-PEV-C-INV", "ETI-PEV-ER-INV" })
   public void findTareas_ReturnsTareaSubList() throws Exception {
     // given: One hundred tareas
@@ -466,6 +461,31 @@ public class PeticionEvaluacionControllerTest extends BaseControllerTest {
 
   @Test
   @WithMockUser(username = "user", authorities = { "ETI-PEV-C-INV", "ETI-PEV-ER-INV" })
+  public void findTareas_ReturnsNoContent() throws Exception {
+    // given: Tareas empty
+    List<TareaWithIsEliminable> tareas = new ArrayList<>();
+
+    BDDMockito
+        .given(
+            tareaService.findAllByPeticionEvaluacionId(ArgumentMatchers.<Long>any(), ArgumentMatchers.<Pageable>any()))
+        .willAnswer(new Answer<Page<TareaWithIsEliminable>>() {
+          @Override
+          public Page<TareaWithIsEliminable> answer(InvocationOnMock invocation) throws Throwable {
+            Page<TareaWithIsEliminable> page = new PageImpl<>(tareas);
+            return page;
+          }
+        });
+
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.get(PETICION_EVALUACION_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID + "/tareas", 1L)
+                .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print()).andExpect(MockMvcResultMatchers.status().isNoContent());
+
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-PEV-C-INV", "ETI-PEV-ER-INV" })
   public void findMemorias_NotFound_Returns404() throws Exception {
 
     BDDMockito.given(memoriaService.findMemoriaByPeticionEvaluacionMaxVersion(ArgumentMatchers.anyLong(),
@@ -500,6 +520,22 @@ public class PeticionEvaluacionControllerTest extends BaseControllerTest {
 
   @Test
   @WithMockUser(username = "user", authorities = { "ETI-PEV-C-INV", "ETI-PEV-ER-INV" })
+  public void findMemorias_listMemoriaPeticionEvaluacion_ReturnsNoContent() throws Exception {
+
+    List<MemoriaPeticionEvaluacion> listMemoriaPeticionEvaluacion = new ArrayList<MemoriaPeticionEvaluacion>();
+
+    BDDMockito.given(memoriaService.findMemoriaByPeticionEvaluacionMaxVersion(ArgumentMatchers.anyLong(),
+        ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(listMemoriaPeticionEvaluacion));
+
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.get(PETICION_EVALUACION_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID + "/memorias", 1L)
+                .with(SecurityMockMvcRequestPostProcessors.csrf()))
+        .andDo(MockMvcResultHandlers.print()).andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-PEV-C-INV", "ETI-PEV-ER-INV" })
   public void newTarea_ReturnsTarea() throws Exception {
     // given: Una tarea nueva
     String nuevaTareaJson = "{\"tarea\": \"Tarea1\", \"equipoTrabajo\": {\"id\": 100}, \"memoria\": {\"id\": 200}, \"formacion\": \"Formacion1\", \"formacionEspecifica\": {\"id\": 300}, \"organismo\": \"Organismo1\", \"anio\": 2020}";
@@ -522,6 +558,29 @@ public class PeticionEvaluacionControllerTest extends BaseControllerTest {
         // then: Crea la nueva tarea y la devuelve
         .andExpect(MockMvcResultMatchers.status().isCreated()).andExpect(MockMvcResultMatchers.jsonPath("id").value(1))
         .andExpect(MockMvcResultMatchers.jsonPath("tarea").value("Tarea1"));
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-PEV-C-INV", "ETI-PEV-ER-INV" })
+  public void newTarea_EquipoTrabajoIsNull_ReturnsNotFound() throws Exception {
+    // given: Una tarea con equipoTrabajo null
+    String nuevaTareaJson = "{\"tarea\": \"Tarea1\", \"equipoTrabajo\": {\"id\": 100}, \"memoria\": {\"id\": 200}, \"formacion\": \"Formacion1\", \"formacionEspecifica\": {\"id\": 300}, \"organismo\": \"Organismo1\", \"anio\": 2020}";
+
+    Tarea tarea = generarMockTarea(1L, "Tarea1");
+
+    BDDMockito.given(equipoTrabajoService.findById(1L)).willReturn(null);
+    BDDMockito.given(tareaService.create(ArgumentMatchers.<Tarea>any())).willReturn(tarea);
+
+    // when: Creamos una tarea
+    mockMvc
+        .perform(MockMvcRequestBuilders
+            .post(PETICION_EVALUACION_CONTROLLER_BASE_PATH
+                + "/{idPeticionEvaluacion}/equipos-trabajo/{idEquipoTrabajo}/tareas", 1L, 1L)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).contentType(MediaType.APPLICATION_JSON)
+            .content(nuevaTareaJson))
+        .andDo(MockMvcResultHandlers.print())
+        // then: Devueve un error 404
+        .andExpect(MockMvcResultMatchers.status().isNotFound());
   }
 
   @Test
@@ -576,6 +635,26 @@ public class PeticionEvaluacionControllerTest extends BaseControllerTest {
 
   @Test
   @WithMockUser(username = "user", authorities = { "ETI-PEV-C-INV", "ETI-PEV-ER-INV" })
+  public void newEquipoTrabajo_PeticionEvaluacionIsNull_ReturnsNotFound() throws Exception {
+    // given: Un equipo de trabajo nuevo con peticionEvaluacion null
+    String nuevoEquipoTrabajoJson = "{\"personaRef\": \"user-001\", \"peticionEvaluacion\": {\"titulo\": \"PeticionEvaluacion1\", \"activo\": \"true\"}}";
+
+    EquipoTrabajo equipoTrabajo = generarMockEquipoTrabajo(1L,
+        generarMockPeticionEvaluacion(1L, "PeticionEvaluacion1"));
+
+    BDDMockito.given(peticionEvaluacionService.findById(1L)).willReturn(null);
+    BDDMockito.given(equipoTrabajoService.create(ArgumentMatchers.<EquipoTrabajo>any())).willReturn(equipoTrabajo);
+    // when: Creamos un EquipoTrabajo
+    mockMvc
+        .perform(MockMvcRequestBuilders
+            .post(PETICION_EVALUACION_CONTROLLER_BASE_PATH + "/{idPeticionEvaluacion}/equipos-trabajo", 1L)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).contentType(MediaType.APPLICATION_JSON)
+            .content(nuevoEquipoTrabajoJson))
+        .andDo(MockMvcResultHandlers.print()).andExpect(MockMvcResultMatchers.status().isNotFound());
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-PEV-C-INV", "ETI-PEV-ER-INV" })
   public void newEquipoTrabajo_Error_Returns400() throws Exception {
     // given: Un equipo de trabajo nuevo que produce un error al crearse
     String nuevoEquipoTrabajoJson = "{\"personaRef\": \"user-001\", \"peticionEvaluacion\": {\"titulo\": \"PeticionEvaluacion1\", \"activo\": \"true\"}}";
@@ -619,6 +698,28 @@ public class PeticionEvaluacionControllerTest extends BaseControllerTest {
 
   @Test
   @WithMockUser(username = "user", authorities = { "ETI-PEV-ER-INV" })
+  public void removeTarea_TareaIsNull_ReturnsNotFound() throws Exception {
+    // given: Una tarea que es null
+    long idPeticionEvaluacion = 1L;
+    long idEquipoTrabajo = 1L;
+    long idTarea = 1L;
+
+    BDDMockito.given(tareaService.findById(idTarea)).willReturn(null);
+    BDDMockito.doNothing().when(tareaService).delete(idTarea);
+    // when: Tratamos de borrar la tarea
+    mockMvc
+        .perform(MockMvcRequestBuilders
+            .delete(
+                PETICION_EVALUACION_CONTROLLER_BASE_PATH
+                    + "/{idPeticionEvaluacion}/equipos-trabajo/{idEquipoTrabajo}/tareas/{idTarea}",
+                idPeticionEvaluacion, idEquipoTrabajo, idTarea)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).contentType(MediaType.APPLICATION_JSON))
+        // then: Devuelve un error 404
+        .andDo(MockMvcResultHandlers.print()).andExpect(MockMvcResultMatchers.status().isNotFound());
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-PEV-ER-INV" })
   public void removeEquipoTrabajo_ReturnsOk() throws Exception {
     long idPeticionEvaluacion = 1L;
     long idEquipoTrabajo = 111L;
@@ -633,6 +734,236 @@ public class PeticionEvaluacionControllerTest extends BaseControllerTest {
         .delete(PETICION_EVALUACION_CONTROLLER_BASE_PATH + "/{idPeticionEvaluacion}/equipos-trabajo/{idEquipoTrabajo}",
             idPeticionEvaluacion, idEquipoTrabajo)
         .with(SecurityMockMvcRequestPostProcessors.csrf()).contentType(MediaType.APPLICATION_JSON));
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-PEV-ER-INV" })
+  public void removeEquipoTrabajo_EquipoTrabajoIsNull_ReturnsNotFound() throws Exception {
+    // given: Un equipo de trabajo que es null
+    long idPeticionEvaluacion = 1L;
+    long idEquipoTrabajo = 111L;
+
+    BDDMockito.given(equipoTrabajoService.findById(idEquipoTrabajo)).willReturn(null);
+    BDDMockito.doNothing().when(tareaService).deleteByEquipoTrabajo(idEquipoTrabajo);
+    BDDMockito.doNothing().when(equipoTrabajoService).delete(idEquipoTrabajo);
+    // when: Tratamos de borrar el equipo de trabajo
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders
+                .delete(
+                    PETICION_EVALUACION_CONTROLLER_BASE_PATH
+                        + "/{idPeticionEvaluacion}/equipos-trabajo/{idEquipoTrabajo}",
+                    idPeticionEvaluacion, idEquipoTrabajo)
+                .with(SecurityMockMvcRequestPostProcessors.csrf()).contentType(MediaType.APPLICATION_JSON))
+        // then: Devuelve un error 404
+        .andDo(MockMvcResultHandlers.print()).andExpect(MockMvcResultMatchers.status().isNotFound());
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-PEV-VR-INV", "ETI-PEV-V" })
+  public void findAllPeticionEvaluacionMemoria_Unlimited_ReturnsFullPeticionEvaluacionList() throws Exception {
+    // given: One hundred PeticionEvaluacion
+    List<PeticionEvaluacionWithIsEliminable> peticionEvaluaciones = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      peticionEvaluaciones.add(generarMockPeticionEvaluacionWithIsEliminable(Long.valueOf(i),
+          "PeticionEvaluacion" + String.format("%03d", i)));
+    }
+
+    BDDMockito
+        .given(peticionEvaluacionService.findAllPeticionesWithPersonaRefCreadorPeticionesEvaluacionOrResponsableMemoria(
+            ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any(), ArgumentMatchers.anyString()))
+        .willReturn(new PageImpl<>(peticionEvaluaciones));
+
+    // when: find unlimited
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(PETICION_EVALUACION_CONTROLLER_BASE_PATH + MEMORIAS_CONTROLLER_BASE_PATH)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print())
+        // then: Get a page one hundred PeticionEvaluacion
+        .andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(100)));
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-PEV-VR-INV", "ETI-PEV-V" })
+  public void findAllPeticionEvaluacionMemoria_ReturnsNoContent() throws Exception {
+    List<PeticionEvaluacionWithIsEliminable> peticionEvaluaciones = new ArrayList<>();
+
+    BDDMockito
+        .given(peticionEvaluacionService.findAllPeticionesWithPersonaRefCreadorPeticionesEvaluacionOrResponsableMemoria(
+            ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any(), ArgumentMatchers.anyString()))
+        .willReturn(new PageImpl<>(peticionEvaluaciones));
+
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(PETICION_EVALUACION_CONTROLLER_BASE_PATH + MEMORIAS_CONTROLLER_BASE_PATH)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print()).andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-PEV-VR-INV", "ETI-PEV-V" })
+  public void findAllByPersonaRef_ReturnOk() throws Exception {
+    // given: One hundred PeticionEvaluacion
+    List<PeticionEvaluacion> peticionEvaluaciones = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      peticionEvaluaciones
+          .add(generarMockPeticionEvaluacion(Long.valueOf(i), "PeticionEvaluacion" + String.format("%03d", i)));
+    }
+    BDDMockito
+        .given(peticionEvaluacionService.findAllByPersonaRef(ArgumentMatchers.<String>any(),
+            ArgumentMatchers.<Pageable>any(), ArgumentMatchers.anyString()))
+        .willAnswer(new Answer<Page<PeticionEvaluacion>>() {
+          @Override
+          public Page<PeticionEvaluacion> answer(InvocationOnMock invocation) throws Throwable {
+            Pageable pageable = invocation.getArgument(1, Pageable.class);
+            int size = pageable.getPageSize();
+            int index = pageable.getPageNumber();
+            int fromIndex = size * index;
+            int toIndex = fromIndex + size;
+            List<PeticionEvaluacion> content = peticionEvaluaciones.subList(fromIndex, toIndex);
+            Page<PeticionEvaluacion> page = new PageImpl<>(content, pageable, peticionEvaluaciones.size());
+            return page;
+          }
+        });
+
+    // when: get page=3 with pagesize=10
+    MvcResult requestResult = mockMvc
+        .perform(MockMvcRequestBuilders.get(PETICION_EVALUACION_CONTROLLER_BASE_PATH + PERSONA_CONTROLLER_BASE_PATH)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).header("X-Page", "3").header("X-Page-Size", "10")
+            .accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print())
+        // then: the asked PeticionEvaluacions are returned with the right page
+        // information
+        // in headers
+        .andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(MockMvcResultMatchers.header().string("X-Page", "3"))
+        .andExpect(MockMvcResultMatchers.header().string("X-Page-Size", "10"))
+        .andExpect(MockMvcResultMatchers.header().string("X-Total-Count", "100"))
+        .andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(10))).andReturn();
+
+    // this uses a TypeReference to inform Jackson about the Lists's generic type
+    List<PeticionEvaluacion> actual = mapper.readValue(requestResult.getResponse().getContentAsString(),
+        new TypeReference<List<PeticionEvaluacion>>() {
+        });
+
+    // containing titulo='PeticionEvaluacion031' to 'PeticionEvaluacion040'
+    for (int i = 0, j = 31; i < 10; i++, j++) {
+      PeticionEvaluacion peticionEvaluacion = actual.get(i);
+      Assertions.assertThat(peticionEvaluacion.getTitulo()).isEqualTo("PeticionEvaluacion" + String.format("%03d", j));
+    }
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-PEV-VR-INV", "ETI-PEV-V" })
+  public void findAllByPersonaRef_ReturnsNoContent() throws Exception {
+    // given: Peticion de evaluacion empty
+    List<PeticionEvaluacion> peticionEvaluaciones = new ArrayList<>();
+
+    BDDMockito
+        .given(peticionEvaluacionService.findAllByPersonaRef(ArgumentMatchers.<String>any(),
+            ArgumentMatchers.<Pageable>any(), ArgumentMatchers.anyString()))
+        .willReturn(new PageImpl<>(peticionEvaluaciones));
+
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(PETICION_EVALUACION_CONTROLLER_BASE_PATH + PERSONA_CONTROLLER_BASE_PATH)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print()).andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-PEV-VR-INV", "ETI-PEV-V" })
+  public void findAllPeticionEvaluacionMemoria_WithPaging_ReturnsPeticionEvaluacionSubList() throws Exception {
+    // given: One hundred PeticionEvaluacion
+    List<PeticionEvaluacion> peticionEvaluaciones = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      peticionEvaluaciones
+          .add(generarMockPeticionEvaluacion(Long.valueOf(i), "PeticionEvaluacion" + String.format("%03d", i)));
+    }
+
+    BDDMockito
+        .given(peticionEvaluacionService.findAllPeticionesWithPersonaRefCreadorPeticionesEvaluacionOrResponsableMemoria(
+            ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any(), ArgumentMatchers.anyString()))
+        .willAnswer(new Answer<Page<PeticionEvaluacion>>() {
+          @Override
+          public Page<PeticionEvaluacion> answer(InvocationOnMock invocation) throws Throwable {
+            Pageable pageable = invocation.getArgument(1, Pageable.class);
+            int size = pageable.getPageSize();
+            int index = pageable.getPageNumber();
+            int fromIndex = size * index;
+            int toIndex = fromIndex + size;
+            List<PeticionEvaluacion> content = peticionEvaluaciones.subList(fromIndex, toIndex);
+            Page<PeticionEvaluacion> page = new PageImpl<>(content, pageable, peticionEvaluaciones.size());
+            return page;
+          }
+        });
+
+    // when: get page=3 with pagesize=10
+    MvcResult requestResult = mockMvc
+        .perform(MockMvcRequestBuilders.get(PETICION_EVALUACION_CONTROLLER_BASE_PATH + MEMORIAS_CONTROLLER_BASE_PATH)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).header("X-Page", "3").header("X-Page-Size", "10")
+            .accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print())
+        // then: the asked PeticionEvaluacions are returned with the right page
+        // information
+        // in headers
+        .andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(MockMvcResultMatchers.header().string("X-Page", "3"))
+        .andExpect(MockMvcResultMatchers.header().string("X-Page-Size", "10"))
+        .andExpect(MockMvcResultMatchers.header().string("X-Total-Count", "100"))
+        .andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(10))).andReturn();
+
+    // this uses a TypeReference to inform Jackson about the Lists's generic type
+    List<PeticionEvaluacion> actual = mapper.readValue(requestResult.getResponse().getContentAsString(),
+        new TypeReference<List<PeticionEvaluacion>>() {
+        });
+
+    // containing titulo='PeticionEvaluacion031' to 'PeticionEvaluacion040'
+    for (int i = 0, j = 31; i < 10; i++, j++) {
+      PeticionEvaluacion peticionEvaluacion = actual.get(i);
+      Assertions.assertThat(peticionEvaluacion.getTitulo()).isEqualTo("PeticionEvaluacion" + String.format("%03d", j));
+    }
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-PEV-VR-INV", "ETI-PEV-V" })
+  public void findAllPeticionEvaluacionMemoria_WithSearchQuery_ReturnsFilteredPeticionEvaluacionList()
+      throws Exception {
+    // given: One hundred PeticionEvaluacion and a search query
+    List<PeticionEvaluacion> peticionEvaluaciones = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      peticionEvaluaciones
+          .add(generarMockPeticionEvaluacion(Long.valueOf(i), "PeticionEvaluacion" + String.format("%03d", i)));
+    }
+    String query = "titulo~PeticionEvaluacion%,id:5";
+
+    BDDMockito
+        .given(peticionEvaluacionService.findAllPeticionesWithPersonaRefCreadorPeticionesEvaluacionOrResponsableMemoria(
+            ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any(), ArgumentMatchers.anyString()))
+        .willAnswer(new Answer<Page<PeticionEvaluacion>>() {
+          @Override
+          public Page<PeticionEvaluacion> answer(InvocationOnMock invocation) throws Throwable {
+            List<PeticionEvaluacion> content = new ArrayList<>();
+            for (PeticionEvaluacion peticionEvaluacion : peticionEvaluaciones) {
+              if (peticionEvaluacion.getTitulo().startsWith("PeticionEvaluacion")
+                  && peticionEvaluacion.getId().equals(5L)) {
+                content.add(peticionEvaluacion);
+              }
+            }
+            Page<PeticionEvaluacion> page = new PageImpl<>(content);
+            return page;
+          }
+        });
+
+    // when: find with search query
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(PETICION_EVALUACION_CONTROLLER_BASE_PATH + MEMORIAS_CONTROLLER_BASE_PATH)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).param("q", query).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print())
+        // then: Get a page one hundred PeticionEvaluacion
+        .andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(1)));
   }
 
   /**
@@ -805,6 +1136,10 @@ public class PeticionEvaluacionControllerTest extends BaseControllerTest {
     tarea.setEliminable(true);
 
     return tarea;
+  }
+
+  public PeticionEvaluacionWithIsEliminable generarMockPeticionEvaluacionWithIsEliminable(Long id, String titulo) {
+    return new PeticionEvaluacionWithIsEliminable(generarMockPeticionEvaluacion(id, titulo), true);
   }
 
 }

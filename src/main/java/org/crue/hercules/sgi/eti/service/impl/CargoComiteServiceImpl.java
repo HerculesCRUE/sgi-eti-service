@@ -1,14 +1,11 @@
 package org.crue.hercules.sgi.eti.service.impl;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.CargoComiteNotFoundException;
 import org.crue.hercules.sgi.eti.model.CargoComite;
 import org.crue.hercules.sgi.eti.repository.CargoComiteRepository;
 import org.crue.hercules.sgi.eti.repository.specification.CargoComiteSpecifications;
 import org.crue.hercules.sgi.eti.service.CargoComiteService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -52,16 +49,14 @@ public class CargoComiteServiceImpl implements CargoComiteService {
    * @param query  información del filtro.
    * @return el listado de entidades {@link CargoComite} paginadas y filtradas.
    */
-  public Page<CargoComite> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAllCargoComite(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<CargoComite> specByQuery = new QuerySpecification<CargoComite>(query);
-    Specification<CargoComite> specActivos = CargoComiteSpecifications.activos();
-
-    Specification<CargoComite> specs = Specification.where(specActivos).and(specByQuery);
+  public Page<CargoComite> findAll(String query, Pageable paging) {
+    log.debug("findAllCargoComite(String query,Pageable paging) - start");
+    Specification<CargoComite> specs = CargoComiteSpecifications.activos()
+        .and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<CargoComite> returnValue = cargoComiteRepository.findAll(specs, paging);
 
-    log.debug("findAllCargoComite(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAllCargoComite(String query,Pageable paging) - end");
     return returnValue;
   }
 

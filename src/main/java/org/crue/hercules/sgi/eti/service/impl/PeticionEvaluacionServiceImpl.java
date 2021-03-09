@@ -1,14 +1,14 @@
 package org.crue.hercules.sgi.eti.service.impl;
 
-import java.util.List;
-
+import org.apache.commons.lang3.StringUtils;
+import org.crue.hercules.sgi.eti.dto.PeticionEvaluacionWithIsEliminable;
 import org.crue.hercules.sgi.eti.exceptions.PeticionEvaluacionNotFoundException;
+import org.crue.hercules.sgi.eti.model.Memoria;
 import org.crue.hercules.sgi.eti.model.PeticionEvaluacion;
 import org.crue.hercules.sgi.eti.repository.PeticionEvaluacionRepository;
 import org.crue.hercules.sgi.eti.repository.specification.PeticionEvaluacionSpecifications;
 import org.crue.hercules.sgi.eti.service.PeticionEvaluacionService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -70,15 +70,13 @@ public class PeticionEvaluacionServiceImpl implements PeticionEvaluacionService 
    * @return el listado de entidades {@link PeticionEvaluacion} paginadas y
    *         filtradas.
    */
-  public Page<PeticionEvaluacion> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAllPeticionEvaluacion(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<PeticionEvaluacion> specByQuery = new QuerySpecification<PeticionEvaluacion>(query);
-    Specification<PeticionEvaluacion> specActivos = PeticionEvaluacionSpecifications.activos();
-
-    Specification<PeticionEvaluacion> specs = Specification.where(specActivos).and(specByQuery);
+  public Page<PeticionEvaluacion> findAll(String query, Pageable paging) {
+    log.debug("findAllPeticionEvaluacion(String query,Pageable paging) - start");
+    Specification<PeticionEvaluacion> specs = PeticionEvaluacionSpecifications.activos()
+        .and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<PeticionEvaluacion> returnValue = peticionEvaluacionRepository.findAll(specs, paging);
-    log.debug("findAllPeticionEvaluacion(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAllPeticionEvaluacion(String query,Pageable paging) - end");
     return returnValue;
   }
 
@@ -180,16 +178,39 @@ public class PeticionEvaluacionServiceImpl implements PeticionEvaluacionService 
    * @return el listado de entidades {@link PeticionEvaluacion} paginadas y
    *         filtradas.
    */
-  public Page<PeticionEvaluacion> findAllByPersonaRef(List<QueryCriteria> query, Pageable paging, String personaRef) {
-    log.debug("findAllPeticionEvaluacion(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<PeticionEvaluacion> specByQuery = new QuerySpecification<PeticionEvaluacion>(query);
-    Specification<PeticionEvaluacion> specActivos = PeticionEvaluacionSpecifications.activos();
-    Specification<PeticionEvaluacion> specByPersonaRef = PeticionEvaluacionSpecifications.byPersonaRef(personaRef);
-
-    Specification<PeticionEvaluacion> specs = Specification.where(specActivos).and(specByQuery).and(specByPersonaRef);
+  public Page<PeticionEvaluacion> findAllByPersonaRef(String query, Pageable paging, String personaRef) {
+    log.debug("findAllPeticionEvaluacion(String query,Pageable paging) - start");
+    Specification<PeticionEvaluacion> specs = PeticionEvaluacionSpecifications.activos()
+        .and(PeticionEvaluacionSpecifications.byPersonaRef(personaRef)).and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<PeticionEvaluacion> returnValue = peticionEvaluacionRepository.findAll(specs, paging);
-    log.debug("findAllPeticionEvaluacion(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAllPeticionEvaluacion(String query,Pageable paging) - end");
+    return returnValue;
+  }
+
+  /**
+   * Obtiene una lista paginada y filtrada {@link PeticionEvaluacion} de una
+   * persona responsable de memorias o creador de peticiones de evaluacion
+   * 
+   * @param query      Criterios de búsqueda
+   * @param pageable   datos paginación
+   * @param personaRef usuario
+   * @return las entidades {@link PeticionEvaluacion}
+   */
+  @Override
+  public Page<PeticionEvaluacionWithIsEliminable> findAllPeticionesWithPersonaRefCreadorPeticionesEvaluacionOrResponsableMemoria(
+      String query, Pageable pageable, String personaRef) {
+    log.debug("findAllPeticionEvaluacionMemoria(String query, Pageable pageable, String personaRef) - start");
+    // TODO: Eliminar esta comprobación cuando se controlen los Predicate == null
+    // dentro del custom repository
+    Specification<Memoria> specs = null;
+    if (StringUtils.isNotBlank(query)) {
+      specs = SgiRSQLJPASupport.toSpecification(query);
+    }
+
+    Page<PeticionEvaluacionWithIsEliminable> returnValue = peticionEvaluacionRepository
+        .findAllPeticionEvaluacionMemoria(specs, pageable, personaRef);
+    log.debug("findAllPeticionEvaluacionMemoria(String query, Pageable pageable,  String personaRef) - end");
     return returnValue;
   }
 

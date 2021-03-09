@@ -1,12 +1,9 @@
 package org.crue.hercules.sgi.eti.controller;
 
-import java.util.List;
-
 import javax.validation.Valid;
 
 import org.crue.hercules.sgi.eti.model.TipoDocumento;
 import org.crue.hercules.sgi.eti.service.TipoDocumentoService;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.crue.hercules.sgi.framework.web.bind.annotation.RequestPageable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -49,20 +46,20 @@ public class TipoDocumentoController {
   /**
    * Devuelve una lista paginada y filtrada {@link TipoDocumento}.
    * 
-   * @param query  filtro de {@link QueryCriteria}.
+   * @param query  filtro de búsqueda.
    * @param paging pageable
    */
   @GetMapping()
-  ResponseEntity<Page<TipoDocumento>> findAll(@RequestParam(name = "q", required = false) List<QueryCriteria> query,
+  ResponseEntity<Page<TipoDocumento>> findAll(@RequestParam(name = "q", required = false) String query,
       @RequestPageable(sort = "s") Pageable paging) {
-    log.debug("findAll(List<QueryCriteria> query,Pageable paging) - start");
+    log.debug("findAll(String query,Pageable paging) - start");
     Page<TipoDocumento> page = service.findAll(query, paging);
 
     if (page.isEmpty()) {
-      log.debug("findAll(List<QueryCriteria> query,Pageable paging) - end");
+      log.debug("findAll(String query,Pageable paging) - end");
       return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
-    log.debug("findAll(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAll(String query,Pageable paging) - end");
     return new ResponseEntity<>(page, HttpStatus.OK);
   }
 
@@ -128,21 +125,20 @@ public class TipoDocumentoController {
    * Devuelve una lista paginada y filtrada {@link TipoDocumento} inicial de una
    * memoria.
    * 
-   * @param query  filtro de {@link QueryCriteria}.
+   * @param query  filtro de búsqueda.
    * @param paging pageable
    */
   @GetMapping("/iniciales")
   ResponseEntity<Page<TipoDocumento>> findTipoDocumentacionInicial(
-      @RequestParam(name = "q", required = false) List<QueryCriteria> query,
-      @RequestPageable(sort = "s") Pageable paging) {
-    log.debug("findTipoDocumentacionInicial(List<QueryCriteria> query,Pageable paging) - start");
+      @RequestParam(name = "q", required = false) String query, @RequestPageable(sort = "s") Pageable paging) {
+    log.debug("findTipoDocumentacionInicial(String query,Pageable paging) - start");
     Page<TipoDocumento> page = service.findTipoDocumentacionInicial(query, paging);
 
     if (page.isEmpty()) {
-      log.debug("findTipoDocumentacionInicial(List<QueryCriteria> query,Pageable paging) - end");
+      log.debug("findTipoDocumentacionInicial(String query,Pageable paging) - end");
       return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
-    log.debug("findTipoDocumentacionInicial(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findTipoDocumentacionInicial(String query,Pageable paging) - end");
     return new ResponseEntity<>(page, HttpStatus.OK);
   }
 

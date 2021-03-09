@@ -1,11 +1,7 @@
 package org.crue.hercules.sgi.eti.service;
 
-import org.crue.hercules.sgi.eti.model.TipoConvocatoriaReunion;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
-
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.TipoConvocatoriaReunionNotFoundException;
+import org.crue.hercules.sgi.eti.model.TipoConvocatoriaReunion;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -40,7 +36,7 @@ public interface TipoConvocatoriaReunionService {
    * @return la lista de entidades {@link TipoConvocatoriaReunion} paginadas y/o
    *         filtradas.
    */
-  Page<TipoConvocatoriaReunion> findAll(List<QueryCriteria> query, Pageable pageable);
+  Page<TipoConvocatoriaReunion> findAll(String query, Pageable pageable);
 
   /**
    * Obtiene {@link TipoConvocatoriaReunion} por id.

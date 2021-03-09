@@ -1,11 +1,8 @@
 package org.crue.hercules.sgi.eti.controller;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.ApartadoNotFoundException;
 import org.crue.hercules.sgi.eti.model.Apartado;
 import org.crue.hercules.sgi.eti.service.ApartadoService;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.crue.hercules.sgi.framework.web.bind.annotation.RequestPageable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -46,16 +43,16 @@ public class ApartadoController {
    * Obtiene las entidades {@link Apartado} filtradas y paginadas según los
    * criterios de búsqueda.
    * 
-   * @param query  filtro de {@link QueryCriteria}.
+   * @param query  filtro de búsqueda.
    * @param paging pageable
    * @return el listado de entidades {@link Apartado} paginadas y filtradas.
    */
   @GetMapping()
-  ResponseEntity<Page<Apartado>> findAll(@RequestParam(name = "q", required = false) List<QueryCriteria> query,
+  ResponseEntity<Page<Apartado>> findAll(@RequestParam(name = "q", required = false) String query,
       @RequestPageable(sort = "s") Pageable paging) {
-    log.debug("findAll(List<QueryCriteria> query, Pageable paging - start");
+    log.debug("findAll(String query, Pageable paging - start");
     Page<Apartado> page = service.findAll(query, paging);
-    log.debug("findAll(List<QueryCriteria> query, Pageable paging - end");
+    log.debug("findAll(String query, Pageable paging - end");
     if (page.isEmpty()) {
       return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }

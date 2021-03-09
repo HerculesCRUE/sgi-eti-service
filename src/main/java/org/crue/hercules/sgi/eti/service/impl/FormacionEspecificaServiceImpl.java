@@ -1,14 +1,11 @@
 package org.crue.hercules.sgi.eti.service.impl;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.FormacionEspecificaNotFoundException;
 import org.crue.hercules.sgi.eti.model.FormacionEspecifica;
 import org.crue.hercules.sgi.eti.repository.FormacionEspecificaRepository;
 import org.crue.hercules.sgi.eti.repository.specification.FormacionEspecificaSpecifications;
 import org.crue.hercules.sgi.eti.service.FormacionEspecificaService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -54,15 +51,13 @@ public class FormacionEspecificaServiceImpl implements FormacionEspecificaServic
    * @return el listado de entidades {@link FormacionEspecifica} paginadas y
    *         filtradas.
    */
-  public Page<FormacionEspecifica> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAllFormacionEspecifica(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<FormacionEspecifica> specByQuery = new QuerySpecification<FormacionEspecifica>(query);
-    Specification<FormacionEspecifica> specActivos = FormacionEspecificaSpecifications.activos();
-
-    Specification<FormacionEspecifica> specs = Specification.where(specActivos).and(specByQuery);
+  public Page<FormacionEspecifica> findAll(String query, Pageable paging) {
+    log.debug("findAllFormacionEspecifica(String query,Pageable paging) - start");
+    Specification<FormacionEspecifica> specs = FormacionEspecificaSpecifications.activos()
+        .and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<FormacionEspecifica> returnValue = formacionEspecificaRepository.findAll(specs, paging);
-    log.debug("findAllFormacionEspecifica(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAllFormacionEspecifica(String query,Pageable paging) - end");
     return returnValue;
   }
 

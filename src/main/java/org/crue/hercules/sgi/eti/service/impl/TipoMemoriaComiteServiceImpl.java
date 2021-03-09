@@ -10,8 +10,7 @@ import org.crue.hercules.sgi.eti.model.TipoMemoriaComite;
 import org.crue.hercules.sgi.eti.repository.ComiteRepository;
 import org.crue.hercules.sgi.eti.repository.TipoMemoriaComiteRepository;
 import org.crue.hercules.sgi.eti.service.TipoMemoriaComiteService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -65,12 +64,12 @@ public class TipoMemoriaComiteServiceImpl implements TipoMemoriaComiteService {
    * @return el listado de entidades {@link TipoMemoriaComite} paginadas y
    *         filtradas.
    */
-  public Page<TipoMemoriaComite> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAllTipoMemoriaComite(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<TipoMemoriaComite> spec = new QuerySpecification<>(query);
+  public Page<TipoMemoriaComite> findAll(String query, Pageable paging) {
+    log.debug("findAllTipoMemoriaComite(String query,Pageable paging) - start");
+    Specification<TipoMemoriaComite> specs = SgiRSQLJPASupport.toSpecification(query);
 
-    Page<TipoMemoriaComite> returnValue = tipoMemoriaComiteRepository.findAll(spec, paging);
-    log.debug("findAllTipoMemoriaComite(List<QueryCriteria> query,Pageable paging) - end");
+    Page<TipoMemoriaComite> returnValue = tipoMemoriaComiteRepository.findAll(specs, paging);
+    log.debug("findAllTipoMemoriaComite(String query,Pageable paging) - end");
     return returnValue;
   }
 

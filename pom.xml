@@ -13,7 +13,6 @@
   <name>sgi-eti-service</name>
   <description>Servicio Etica SGI HERCULES</description>
 
-
   <dependencies>
     <dependency>
       <groupId>org.crue.hercules.sgi</groupId>
@@ -122,12 +121,11 @@
       <version>${wiremock.version}</version>
       <scope>test</scope>
     </dependency>
-
   </dependencies>
 
   <properties>
     <java.version>1.8</java.version>
-    <sgi-framework-spring.version>0.0.1-SNAPSHOT</sgi-framework-spring.version>
+    <sgi-framework-spring.version>0.0.2-SNAPSHOT</sgi-framework-spring.version>
     <wiremock.version>2.27.1</wiremock.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -135,11 +133,11 @@
     <liquibase-hibernate5.version>4.1.1</liquibase-hibernate5.version>
     <validation-api.version>2.0.1.Final</validation-api.version>
     <org.hibernate-jpamodelgen.version>5.3.15.Final</org.hibernate-jpamodelgen.version>
+
+    <!-- Plugin versions (only those that are not defined in `spring-boot-starter-parent`) -->
     <docker-maven-plugin.version>0.33.0</docker-maven-plugin.version>
     <maven-help-plugin.version>3.2.0</maven-help-plugin.version>
     <maven-site-plugin.version>3.3</maven-site-plugin.version>
-
-    <!-- Plugin versions (only those that are not defined in `spring-boot-starter-parent`) -->
     <jacoco-maven-plugin.version>0.8.5</jacoco-maven-plugin.version>
     <maven-project-info-reports-plugin.version>3.0.0</maven-project-info-reports-plugin.version>
     <maven-jxr-plugin.version>3.0.0</maven-jxr-plugin.version>
@@ -156,7 +154,6 @@
 
     <!-- Overriding Spring Boot's version so that this version matches Maven Surefire Report Plugin version -->
     <maven-surefire-plugin.version>3.0.0-M4</maven-surefire-plugin.version>
-    <surefire-junit47.version>3.0.0-M4</surefire-junit47.version>
 
     <!-- Do not deploy to maven repo -->
     <maven.deploy.skip>true</maven.deploy.skip>
@@ -166,6 +163,9 @@
     <skip.integration.tests>true</skip.integration.tests>
     <skip.unit.tests>false</skip.unit.tests>
     <skip.startlocalpostgres>true</skip.startlocalpostgres>
+
+    <!-- Define "argLine" as a Maven property rather than as part of the configuration of maven-surefire-plugin -->
+    <argLine>-XX:MaxPermSize=1024m</argLine>
   </properties>
 
   <dependencyManagement>
@@ -177,7 +177,6 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
-
 
   <profiles>
     <profile>
@@ -211,6 +210,7 @@
       </properties>
     </profile>
   </profiles>
+
   <build>
     <!--Enable resource filtering -->
     <resources>
@@ -469,6 +469,8 @@
           <excludes>
             <exclude>**/generated/**</exclude>
             <exclude>**/scratch/**</exclude>
+            <exclude>**/config/**</exclude>
+            <exclude>**/model/**</exclude>
           </excludes>
         </configuration>
         <executions>

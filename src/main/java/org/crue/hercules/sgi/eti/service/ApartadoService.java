@@ -1,11 +1,8 @@
 package org.crue.hercules.sgi.eti.service;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.ApartadoNotFoundException;
 import org.crue.hercules.sgi.eti.model.Apartado;
 import org.crue.hercules.sgi.eti.model.Bloque;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -18,11 +15,11 @@ public interface ApartadoService {
    * Obtiene las entidades {@link Apartado} filtradas y paginadas según los
    * criterios de búsqueda.
    *
-   * @param query  filtro de {@link QueryCriteria}.
+   * @param query  filtro de búsqueda.
    * @param paging pageable
    * @return el listado de entidades {@link Apartado} paginadas y filtradas.
    */
-  Page<Apartado> findAll(List<QueryCriteria> query, Pageable paging);
+  Page<Apartado> findAll(String query, Pageable paging);
 
   /**
    * Obtiene {@link Apartado} por id.

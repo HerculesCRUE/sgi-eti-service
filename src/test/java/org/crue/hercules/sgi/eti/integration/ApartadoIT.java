@@ -19,12 +19,23 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Test de integracion de Apartado.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off
+  "classpath:scripts/formulario.sql",
+  "classpath:scripts/bloque.sql", 
+  "classpath:scripts/apartado.sql"
+// @formatter:on
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class ApartadoIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -41,8 +52,6 @@ public class ApartadoIT extends BaseIT {
     return request;
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findById_WithExistingId_ReturnsApartado() throws Exception {
 
@@ -58,12 +67,11 @@ public class ApartadoIT extends BaseIT {
     Assertions.assertThat(response.getBody()).isEqualTo(apartado);
   }
 
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findById_WithNotExistingId_Returns404() throws Exception {
 
     // given: No existe entidad con el id indicado
-    Long id = 1L;
+    Long id = 6L;
 
     // when: Se busca la entidad por ese Id
     final ResponseEntity<Apartado> response = restTemplate.exchange(APARTADO_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID,
@@ -73,8 +81,6 @@ public class ApartadoIT extends BaseIT {
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_Unlimited_ReturnsFullApartadoList() throws Exception {
 
@@ -82,6 +88,9 @@ public class ApartadoIT extends BaseIT {
     List<Apartado> result = new LinkedList<>();
     result.add(getMockData(1L, 1L, null));
     result.add(getMockData(2L, 1L, 1L));
+    result.add(getMockData(3L, 1L, 1L));
+    result.add(getMockData(4L, 1L, null));
+    result.add(getMockData(5L, 1L, 4L));
 
     // when: Se buscan todos los datos
     final ResponseEntity<List<Apartado>> response = restTemplate.exchange(APARTADO_CONTROLLER_BASE_PATH, HttpMethod.GET,
@@ -93,14 +102,12 @@ public class ApartadoIT extends BaseIT {
     Assertions.assertThat(response.getBody()).isEqualTo(result);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPaging_ReturnsApartadoSubList() throws Exception {
 
     // given: Datos existentes
     List<Apartado> result = new LinkedList<>();
-    result.add(getMockData(5L, 2L, 4L));
+    result.add(getMockData(5L, 1L, 4L));
 
     // página 2 con 2 elementos por página
     HttpHeaders headers = new HttpHeaders();
@@ -123,8 +130,6 @@ public class ApartadoIT extends BaseIT {
     Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("5");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSearchQuery_ReturnsFilteredApartadoList() throws Exception {
 
@@ -134,7 +139,7 @@ public class ApartadoIT extends BaseIT {
 
     // search by codigo like, id equals
     Long id = 3L;
-    String query = "nombre~Apartado0,id:" + id;
+    String query = "nombre=ke=Apartado0;id==" + id;
 
     URI uri = UriComponentsBuilder.fromUriString(APARTADO_CONTROLLER_BASE_PATH).queryParam("q", query).build(false)
         .toUri();
@@ -155,15 +160,13 @@ public class ApartadoIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSortQuery_ReturnsOrderedApartadoList() throws Exception {
 
     // given: Datos existentes
 
     // sort by id desc
-    String sort = "id-";
+    String sort = "id,desc";
 
     URI uri = UriComponentsBuilder.fromUriString(APARTADO_CONTROLLER_BASE_PATH).queryParam("s", sort).build(false)
         .toUri();
@@ -184,8 +187,6 @@ public class ApartadoIT extends BaseIT {
     Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("5");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPagingSortingAndFiltering_ReturnsApartadoSubList() throws Exception {
 
@@ -199,10 +200,10 @@ public class ApartadoIT extends BaseIT {
     headers.add("X-Page-Size", "2");
 
     // sort
-    String sort = "id-";
+    String sort = "id,desc";
 
     // search
-    String query = "nombre~Apartado0";
+    String query = "nombre=ke=Apartado0";
 
     URI uri = UriComponentsBuilder.fromUriString(APARTADO_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .queryParam("q", query).build(false).toUri();
@@ -234,7 +235,7 @@ public class ApartadoIT extends BaseIT {
    */
   private Apartado getMockData(Long id, Long bloqueId, Long padreId) {
 
-    Formulario formulario = new Formulario(1L, "M10", "Descripcion1");
+    Formulario formulario = new Formulario(1L, "M10", "Formulario M10");
     Bloque Bloque = new Bloque(bloqueId, formulario, "Bloque" + bloqueId, bloqueId.intValue());
 
     Apartado padre = (padreId != null) ? getMockData(padreId, bloqueId, null) : null;

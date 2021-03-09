@@ -273,16 +273,6 @@ public class ComentarioServiceImpl implements ComentarioService {
     Assert.notNull(id, "El id de la evaluación no puede ser nulo para listar sus comentarios");
 
     return evaluacionRepository.findById(id).map(evaluacion -> {
-
-      Assert.isTrue(
-          evaluacion.getMemoria().getEstadoActual().getId().equals(4L)
-              || evaluacion.getMemoria().getEstadoActual().getId().equals(5L)
-              || evaluacion.getMemoria().getEstadoActual().getId().equals(13L)
-              || evaluacion.getMemoria().getEstadoActual().getId().equals(18L)
-              || evaluacion.getMemoria().getEstadoActual().getId().equals(19L)
-              || evaluacion.getMemoria().getRetrospectiva().getEstadoRetrospectiva().getId().equals(4L),
-          "La Evaluación no está en un estado adecuado para visualizar sus comentarios.");
-
       Page<Comentario> returnValue = comentarioRepository.findByEvaluacionIdAndTipoComentarioId(id, 1L, pageable);
       log.debug("findByEvaluacionIdGestor(Long id, Pageable pageable) - end");
       return returnValue;

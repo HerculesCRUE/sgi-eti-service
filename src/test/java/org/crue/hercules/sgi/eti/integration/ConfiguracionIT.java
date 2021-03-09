@@ -13,11 +13,20 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 
 /**
  * Test de integracion de Configuracion.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off    
+  "classpath:scripts/configuracion.sql" 
+// @formatter:on  
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class ConfiguracionIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -33,8 +42,6 @@ public class ConfiguracionIT extends BaseIT {
     return request;
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void getConfiguracion_ReturnsConfiguracion() throws Exception {
     final ResponseEntity<Configuracion> response = restTemplate.exchange(CONFIGURACION_CONTROLLER_BASE_PATH,
@@ -48,8 +55,6 @@ public class ConfiguracionIT extends BaseIT {
     Assertions.assertThat(configuracion.getDiasLimiteEvaluador()).isEqualTo(3);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void replaceConfiguracion_ReturnsConfiguracion() throws Exception {
 

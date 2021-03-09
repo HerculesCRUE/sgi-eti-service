@@ -15,6 +15,7 @@ import org.crue.hercules.sgi.eti.model.PeticionEvaluacion;
 import org.crue.hercules.sgi.eti.model.Retrospectiva;
 import org.crue.hercules.sgi.eti.model.TipoActividad;
 import org.crue.hercules.sgi.eti.model.TipoEstadoMemoria;
+import org.crue.hercules.sgi.eti.model.TipoEvaluacion;
 import org.crue.hercules.sgi.eti.model.TipoMemoria;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,12 +27,28 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Test de integracion de Informe.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off  
+  "classpath:scripts/formulario.sql", 
+  "classpath:scripts/tipo_actividad.sql",
+  "classpath:scripts/tipo_memoria.sql", 
+  "classpath:scripts/tipo_estado_memoria.sql",
+  "classpath:scripts/estado_retrospectiva.sql", 
+  "classpath:scripts/retrospectiva.sql",
+  "classpath:scripts/tipo_evaluacion.sql", 
+  "classpath:scripts/informe.sql" 
+// @formatter:on  
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class InformeIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -49,8 +66,6 @@ public class InformeIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void getInforme_WithId_ReturnsInforme() throws Exception {
     final ResponseEntity<Informe> response = restTemplate.exchange(INFORME_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID,
@@ -64,20 +79,21 @@ public class InformeIT extends BaseIT {
     Assertions.assertThat(informe.getDocumentoRef()).isEqualTo("DocumentoFormulario1");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void addInforme_ReturnsInforme() throws Exception {
+    TipoEvaluacion tipoEvaluacion = new TipoEvaluacion();
+    tipoEvaluacion.setId(1L);
+    tipoEvaluacion.setActivo(true);
+    tipoEvaluacion.setNombre("Memoria");
 
     Informe nuevoInforme = new Informe();
     nuevoInforme.setDocumentoRef("DocumentoFormulario1");
+    nuevoInforme.setTipoEvaluacion(tipoEvaluacion);
 
     restTemplate.exchange(INFORME_CONTROLLER_BASE_PATH, HttpMethod.POST, buildRequest(null, nuevoInforme),
         Informe.class);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeInforme_Success() throws Exception {
 
@@ -91,20 +107,16 @@ public class InformeIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeInforme_DoNotGetInforme() throws Exception {
 
     final ResponseEntity<Informe> response = restTemplate.exchange(INFORME_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID,
-        HttpMethod.DELETE, buildRequest(null, null), Informe.class, 2L);
+        HttpMethod.DELETE, buildRequest(null, null), Informe.class, 9L);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void replaceInforme_ReturnsInforme() throws Exception {
 
@@ -121,8 +133,6 @@ public class InformeIT extends BaseIT {
     Assertions.assertThat(informe.getDocumentoRef()).isEqualTo(replaceInforme.getDocumentoRef());
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPaging_ReturnsInformeSubList() throws Exception {
     // when: Obtiene la page=3 con pagesize=10
@@ -149,13 +159,11 @@ public class InformeIT extends BaseIT {
     Assertions.assertThat(informes.get(2).getDocumentoRef()).isEqualTo("DocumentoFormulario8");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSearchQuery_ReturnsFilteredInformeList() throws Exception {
     // when: Búsqueda por documentoRef like e id equals
     Long id = 5L;
-    String query = "documentoRef~DocumentoFormulario%,id:" + id;
+    String query = "documentoRef=ke=DocumentoFormulario;id==" + id;
 
     URI uri = UriComponentsBuilder.fromUriString(INFORME_CONTROLLER_BASE_PATH).queryParam("q", query).build(false)
         .toUri();
@@ -174,12 +182,10 @@ public class InformeIT extends BaseIT {
     Assertions.assertThat(informes.get(0).getDocumentoRef()).startsWith("DocumentoFormulario");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSortQuery_ReturnsOrderedInformeList() throws Exception {
     // when: Ordenación por documentoRef desc
-    String query = "documentoRef-";
+    String query = "documentoRef,desc";
 
     URI uri = UriComponentsBuilder.fromUriString(INFORME_CONTROLLER_BASE_PATH).queryParam("s", query).build(false)
         .toUri();
@@ -197,12 +203,10 @@ public class InformeIT extends BaseIT {
     for (int i = 0; i < 8; i++) {
       Informe informe = informes.get(i);
       Assertions.assertThat(informe.getId()).isEqualTo(8 - i);
-      Assertions.assertThat(informe.getDocumentoRef()).isEqualTo("DocumentoFormulario" + String.format("%03d", 8 - i));
+      Assertions.assertThat(informe.getDocumentoRef()).isEqualTo("DocumentoFormulario" + String.format("%d", 8 - i));
     }
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPagingSortingAndFiltering_ReturnsInformeSubList() throws Exception {
     // when: Obtiene page=3 con pagesize=10
@@ -210,9 +214,9 @@ public class InformeIT extends BaseIT {
     headers.add("X-Page", "0");
     headers.add("X-Page-Size", "3");
     // when: Ordena por documentoRef desc
-    String sort = "documentoRef-";
+    String sort = "documentoRef,desc";
     // when: Filtra por documentoRef like e id equals
-    String filter = "documentoRef~%00%";
+    String filter = "documentoRef=ke=Documento";
 
     URI uri = UriComponentsBuilder.fromUriString(INFORME_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .queryParam("q", filter).build(false).toUri();
@@ -229,17 +233,12 @@ public class InformeIT extends BaseIT {
     HttpHeaders responseHeaders = response.getHeaders();
     Assertions.assertThat(responseHeaders.getFirst("X-Page")).isEqualTo("0");
     Assertions.assertThat(responseHeaders.getFirst("X-Page-Size")).isEqualTo("3");
-    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("3");
+    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("8");
 
-    // Contiene documentoRef='DocumentoFormulario001', 'DocumentoFormulario002',
-    // 'DocumentoFormulario003'
-    Assertions.assertThat(informes.get(0).getDocumentoRef())
-        .isEqualTo("DocumentoFormulario" + String.format("%03d", 3));
-    Assertions.assertThat(informes.get(1).getDocumentoRef())
-        .isEqualTo("DocumentoFormulario" + String.format("%03d", 2));
-    Assertions.assertThat(informes.get(2).getDocumentoRef())
-        .isEqualTo("DocumentoFormulario" + String.format("%03d", 1));
-
+    // Contiene documentoRef='DocumentoFormulario8' a 'DocumentoFormulario6'
+    Assertions.assertThat(informes.get(0).getDocumentoRef()).isEqualTo("DocumentoFormulario" + String.format("%d", 8));
+    Assertions.assertThat(informes.get(1).getDocumentoRef()).isEqualTo("DocumentoFormulario" + String.format("%d", 7));
+    Assertions.assertThat(informes.get(2).getDocumentoRef()).isEqualTo("DocumentoFormulario" + String.format("%d", 6));
   }
 
   /**
@@ -287,11 +286,17 @@ public class InformeIT extends BaseIT {
         new Retrospectiva(id, new EstadoRetrospectiva(1L, "Pendiente", Boolean.TRUE), LocalDate.now()), 3,
         "CodOrganoCompetente", Boolean.TRUE, null);
 
+    TipoEvaluacion tipoEvaluacion = new TipoEvaluacion();
+    tipoEvaluacion.setId(1L);
+    tipoEvaluacion.setActivo(true);
+    tipoEvaluacion.setNombre("Memoria");
+
     Informe informe = new Informe();
     informe.setId(id);
     informe.setDocumentoRef(documentoRef);
     informe.setMemoria(memoria);
     informe.setVersion(3);
+    informe.setTipoEvaluacion(tipoEvaluacion);
 
     return informe;
   }

@@ -17,11 +17,9 @@ import org.crue.hercules.sgi.eti.repository.ConvocatoriaReunionRepository;
 import org.crue.hercules.sgi.eti.service.impl.ConvocatoriaReunionServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -31,7 +29,6 @@ import org.springframework.data.jpa.domain.Specification;
 /**
  * ConvocatoriaReunionServiceTest
  */
-@ExtendWith(MockitoExtension.class)
 public class ConvocatoriaReunionServiceTest extends BaseServiceTest {
 
   @Mock

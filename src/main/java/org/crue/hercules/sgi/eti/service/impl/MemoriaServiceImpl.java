@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.crue.hercules.sgi.eti.dto.MemoriaPeticionEvaluacion;
 import org.crue.hercules.sgi.eti.exceptions.ComiteNotFoundException;
 import org.crue.hercules.sgi.eti.exceptions.EstadoRetrospectivaNotFoundException;
@@ -37,8 +38,7 @@ import org.crue.hercules.sgi.eti.repository.specification.MemoriaSpecifications;
 import org.crue.hercules.sgi.eti.service.InformeService;
 import org.crue.hercules.sgi.eti.service.MemoriaService;
 import org.crue.hercules.sgi.eti.util.Constantes;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -132,7 +132,7 @@ public class MemoriaServiceImpl implements MemoriaService {
     memoria.setRequiereRetrospectiva(Boolean.FALSE);
 
     // Versión
-    memoria.setVersion(1);
+    memoria.setVersion(0);
 
     // Activo
     memoria.setActivo(Boolean.TRUE);
@@ -200,13 +200,12 @@ public class MemoriaServiceImpl implements MemoriaService {
    *         filtradas.
    */
   @Override
-  public Page<MemoriaPeticionEvaluacion> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAll(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<Memoria> spec = new QuerySpecification<Memoria>(query);
-    Specification<Memoria> specActivos = MemoriaSpecifications.activos();
-    Specification<Memoria> specs = Specification.where(specActivos).and(spec);
+  public Page<MemoriaPeticionEvaluacion> findAll(String query, Pageable paging) {
+    log.debug("findAll(String query,Pageable paging) - start");
+    Specification<Memoria> specs = MemoriaSpecifications.activos().and(SgiRSQLJPASupport.toSpecification(query));
+
     Page<MemoriaPeticionEvaluacion> returnValue = memoriaRepository.findAllMemoriasEvaluaciones(specs, paging, null);
-    log.debug("findAll(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAll(String query,Pageable paging) - end");
     return returnValue;
   }
 
@@ -250,34 +249,21 @@ public class MemoriaServiceImpl implements MemoriaService {
    * la fecha límite de la convocatoria de reunión y las que tengan una
    * retrospectiva en estado "En secretaría".
    * 
-   * @param query    filtro de {@link QueryCriteria}.
+   * @param query    filtro de búsqueda.
    * @param pageable pageable
    */
   @Override
-  public Page<Memoria> findAllAsignablesTipoConvocatoriaOrdExt(List<QueryCriteria> query, Pageable pageable) {
-    log.debug("findAllAsignablesTipoConvocatoriaOrdExt(List<QueryCriteria> query,Pageable pageable) - start");
+  public Page<Memoria> findAllAsignablesTipoConvocatoriaOrdExt(String query, Pageable pageable) {
+    log.debug("findAllAsignablesTipoConvocatoriaOrdExt(String query,Pageable pageable) - start");
 
-    // idComite y fechaLimite
-    Specification<Memoria> specByQuery = new QuerySpecification<Memoria>(query);
-    // Memorias activas
-    Specification<Memoria> specActivos = MemoriaSpecifications.activos();
-    // Estado actual
-    Specification<Memoria> specEstadoActual = MemoriaSpecifications
-        .estadoActualIn(Arrays.asList(Constantes.TIPO_ESTADO_MEMORIA_EN_SECRETARIA));
-    // Estado retrospectiva
-    Specification<Memoria> specEstadoRetrospectiva = MemoriaSpecifications
-        .estadoRetrospectivaIn(Arrays.asList(Constantes.ESTADO_RETROSPECTIVA_EN_SECRETARIA));
-
-    // Estado Actual o estado retrospectiva
-    Specification<Memoria> condicionFinal = Specification.where(specEstadoActual).or(specEstadoRetrospectiva);
-
-    // Memorias Activas AND ((Estado Actual AND idComite y fechaLimite) and (estado
-    // actual or estado retrospectiva)
-    Specification<Memoria> specs = Specification.where(specActivos).and(condicionFinal).and(specByQuery);
+    Specification<Memoria> specs = MemoriaSpecifications.activos()
+        .and(MemoriaSpecifications.estadoActualIn(Arrays.asList(Constantes.TIPO_ESTADO_MEMORIA_EN_SECRETARIA)).or(
+            MemoriaSpecifications.estadoRetrospectivaIn(Arrays.asList(Constantes.ESTADO_RETROSPECTIVA_EN_SECRETARIA))))
+        .and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<Memoria> returnValue = memoriaRepository.findAll(specs, pageable);
 
-    log.debug("findAllAsignablesTipoConvocatoriaOrdExt(List<QueryCriteria> query,Pageable pageable) - end");
+    log.debug("findAllAsignablesTipoConvocatoriaOrdExt(String query,Pageable pageable) - end");
     return returnValue;
   }
 
@@ -293,28 +279,22 @@ public class MemoriaServiceImpl implements MemoriaService {
    * fecha de envío es igual o menor a la fecha límite de la convocatoria de
    * reunión.
    * 
-   * @param query    filtro de {@link QueryCriteria}.
+   * @param query    filtro de búsqueda.
    * @param pageable pageable
    */
   @Override
-  public Page<Memoria> findAllAsignablesTipoConvocatoriaSeguimiento(List<QueryCriteria> query, Pageable pageable) {
-    log.debug("findAllAsignablesTipoConvocatoriaSeguimiento(List<QueryCriteria> query,Pageable pageable) - start");
+  public Page<Memoria> findAllAsignablesTipoConvocatoriaSeguimiento(String query, Pageable pageable) {
+    log.debug("findAllAsignablesTipoConvocatoriaSeguimiento(String query,Pageable pageable) - start");
 
-    // idComite y fechaLimite
-    Specification<Memoria> specByQuery = new QuerySpecification<Memoria>(query);
-    // Memorias activas
-    Specification<Memoria> specActivos = MemoriaSpecifications.activos();
-    // Estado actual
-    Specification<Memoria> specEstadoActual = MemoriaSpecifications
-        .estadoActualIn(Arrays.asList(Constantes.TIPO_ESTADO_MEMORIA_EN_SECRETARIA_SEGUIMIENTO_ANUAL,
-            Constantes.TIPO_ESTADO_MEMORIA_EN_SECRETARIA_SEGUIMIENTO_FINAL));
-
-    // Memorias Activas AND (Estado Actual AND idComite y fechaLimite)
-    Specification<Memoria> specs = Specification.where(specActivos).and(specEstadoActual).and(specByQuery);
+    Specification<Memoria> specs = MemoriaSpecifications.activos()
+        .and(MemoriaSpecifications
+            .estadoActualIn(Arrays.asList(Constantes.TIPO_ESTADO_MEMORIA_EN_SECRETARIA_SEGUIMIENTO_ANUAL,
+                Constantes.TIPO_ESTADO_MEMORIA_EN_SECRETARIA_SEGUIMIENTO_FINAL)))
+        .and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<Memoria> returnValue = memoriaRepository.findAll(specs, pageable);
 
-    log.debug("findAllAsignablesTipoConvocatoriaSeguimiento(List<QueryCriteria> query,Pageable pageable) - end");
+    log.debug("findAllAsignablesTipoConvocatoriaSeguimiento(String query,Pageable pageable) - end");
     return returnValue;
   }
 
@@ -370,6 +350,15 @@ public class MemoriaServiceImpl implements MemoriaService {
     Assert.notNull(memoriaActualizar.getId(), "Memoria id no puede ser null para actualizar un tipo memoria");
 
     return memoriaRepository.findById(memoriaActualizar.getId()).map(memoria -> {
+
+      // Se comprueba si se está desactivando la memoria
+      if (memoria.getActivo() && !memoriaActualizar.getActivo()) {
+        Assert.isTrue(
+            memoria.getEstadoActual().getId() == Constantes.TIPO_ESTADO_MEMORIA_EN_ELABORACION
+                || memoria.getEstadoActual().getId() == Constantes.TIPO_ESTADO_MEMORIA_COMPLETADA,
+            "El estado actual de la memoria no es el correcto para desactivar la memoria");
+      }
+
       memoria.setNumReferencia(memoriaActualizar.getNumReferencia());
       memoria.setPeticionEvaluacion(memoriaActualizar.getPeticionEvaluacion());
       memoria.setComite((memoriaActualizar.getComite()));
@@ -441,55 +430,20 @@ public class MemoriaServiceImpl implements MemoriaService {
    * @return el listado de entidades {@link Memoria} paginadas y filtradas.
    */
   @Override
-  public Page<Memoria> findAllByPersonaRef(List<QueryCriteria> query, Pageable paging, String personaRef) {
-    log.debug("findAll(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<Memoria> specByQuery = new QuerySpecification<Memoria>(query);
-    Specification<Memoria> specActivos = MemoriaSpecifications.activos();
-    Specification<Memoria> specByPersonaRef = MemoriaSpecifications.byPersonaRef(personaRef);
+  public Page<MemoriaPeticionEvaluacion> findAllMemoriasWithPersonaRefCreadorPeticionesEvaluacionOrResponsableMemoria(
+      String query, Pageable paging, String personaRef) {
+    log.debug(
+        "findAllMemoriasWithPersonaRefCreadorPeticionesEvaluacionOrResponsableMemoria(String query,Pageable paging, String personaRef) - start");
+    // TODO: Eliminar cuando el custom repository contemple Predicates a null
+    Specification<Memoria> specs = null;
+    if (StringUtils.isNotBlank(query)) {
+      specs = SgiRSQLJPASupport.toSpecification(query);
+    }
 
-    Specification<Memoria> specs = Specification.where(specActivos).and(specByQuery).and(specByPersonaRef);
-
-    Page<Memoria> returnValue = memoriaRepository.findAll(specs, paging);
-    log.debug("findAll(List<QueryCriteria> query,Pageable paging) - end");
-    return returnValue;
-  }
-
-  /**
-   * Devuelve las memorias de las peticiones de evaluación con su fecha límite y
-   * de evaluación.
-   * 
-   * @param pageable información de paginación
-   * @return lista de memorias de {@link PeticionEvaluacion}
-   */
-  @Override
-  public Page<MemoriaPeticionEvaluacion> findAllMemoriasPeticionesEvaluacion(Pageable pageable) {
-    Page<MemoriaPeticionEvaluacion> returnValue = memoriaRepository.findMemoriasEvaluacion(null, pageable, null);
-    return returnValue;
-  }
-
-  /**
-   * Devuelve las memorias de las peticiones de evaluación con su fecha límite y
-   * de evaluación de una personaRef con filtros
-   * 
-   * @param personaRef persona creadora de la memoria
-   * @param paging     la información de paginación.
-   * @param query      información del filtro.
-   * @return lista de memorias de {@link PeticionEvaluacion}
-   */
-  @Override
-  public Page<MemoriaPeticionEvaluacion> findAllByPersonaRefPeticionEvaluacion(List<QueryCriteria> query,
-      Pageable paging, String personaRef) {
-    Specification<Memoria> spec = new QuerySpecification<Memoria>(query);
-    Specification<Memoria> specActivos = MemoriaSpecifications.activos();
-    Specification<Memoria> specByPersonaRefPeticionEvaluacion = MemoriaSpecifications
-        .byPersonaRefPeticionEvaluacion(personaRef);
-    Specification<Memoria> specByPersonaRef = MemoriaSpecifications.byPersonaRef(personaRef);
-
-    Specification<Memoria> specs = Specification.where(spec).and(specActivos)
-        .and((specByPersonaRef).or(specByPersonaRefPeticionEvaluacion));
-    Page<MemoriaPeticionEvaluacion> returnValue = memoriaRepository.findAllMemoriasEvaluaciones(specs, paging,
-        personaRef);
-    return returnValue;
+    Page<MemoriaPeticionEvaluacion> page = memoriaRepository.findAllMemoriasEvaluaciones(specs, paging, personaRef);
+    log.debug(
+        "findAllMemoriasWithPersonaRefCreadorPeticionesEvaluacionOrResponsableMemoria(String query,Pageable paging, String personaRef) - end");
+    return page;
   }
 
   /**
@@ -533,6 +487,7 @@ public class MemoriaServiceImpl implements MemoriaService {
           if (memoria.getEstadoActual().getId() == Constantes.TIPO_ESTADO_MEMORIA_EN_SECRETARIA
               || memoria.getEstadoActual().getId() == Constantes.TIPO_ESTADO_MEMORIA_EN_SECRETARIA_REVISION_MINIMA) {
             // se eliminan los informes en caso de que las memorias tengan alguno asociado
+            memoria.setVersion(memoria.getVersion() - 1);
             informeService.deleteInformeMemoria(memoria.getId());
           }
 
@@ -587,17 +542,23 @@ public class MemoriaServiceImpl implements MemoriaService {
 
     if (memoria.getRetrospectiva() == null || !cambiarEstadoRetrospectiva) {
       List<EstadoMemoria> estadosMemoria = estadoMemoriaRepository
-          .findAllByMemoriaIdOrderByFechaEstadoDesc(memoria.getId()).stream()
+          .findAllByMemoriaIdOrderByFechaEstadoDesc(memoria.getId());
+
+      Optional<EstadoMemoria> estadoAnteriorMemoria = estadosMemoria.stream()
           .filter(estadoMemoria -> estadoMemoria.getTipoEstadoMemoria().getId() != memoria.getEstadoActual().getId())
-          .collect(Collectors.toList());
+          .findFirst();
 
-      Assert.isTrue(estadosMemoria.size() > 0, "No se puede recuperar el estado anterior de la memoria");
+      Assert.isTrue(estadoAnteriorMemoria.isPresent(), "No se puede recuperar el estado anterior de la memoria");
 
-      EstadoMemoria estadoAnteriorMemoria = estadosMemoria.get(0);
+      Optional<EstadoMemoria> estadoMemoriaActual = estadosMemoria.stream()
+          .filter(estadoMemoria -> estadoMemoria.getTipoEstadoMemoria().getId() == memoria.getEstadoActual().getId())
+          .findAny();
 
-      estadoMemoriaRepository
-          .save(new EstadoMemoria(null, memoria, estadoAnteriorMemoria.getTipoEstadoMemoria(), LocalDateTime.now()));
-      memoria.setEstadoActual(estadoAnteriorMemoria.getTipoEstadoMemoria());
+      Assert.isTrue(estadoMemoriaActual.isPresent(), "No se puede recuperar el estado actual de la memoria");
+
+      memoria.setEstadoActual(estadoAnteriorMemoria.get().getTipoEstadoMemoria());
+      // eliminamos el estado a cambiar en el histórico
+      estadoMemoriaRepository.deleteById(estadoMemoriaActual.get().getId());
     } else {
       // El estado anterior de la retrospectiva es el estado con id anterior al que
       // tiene actualmente
@@ -672,7 +633,7 @@ public class MemoriaServiceImpl implements MemoriaService {
       }
 
       if (crearEvaluacion) {
-        evaluacionRepository.findFirstByMemoriaIdOrderByVersionDesc(memoria.getId()).map(evaluacion -> {
+        evaluacionRepository.findFirstByMemoriaIdAndActivoTrueOrderByVersionDesc(memoria.getId()).map(evaluacion -> {
           Evaluacion evaluacionNueva = new Evaluacion();
           BeanUtils.copyProperties(evaluacion, evaluacionNueva);
           evaluacionNueva.setId(null);
@@ -692,9 +653,9 @@ public class MemoriaServiceImpl implements MemoriaService {
       return memoria;
     }).orElseThrow(() -> new MemoriaNotFoundException(idMemoria));
 
-    // FALTA: crear un fichero en formato pdf con los datos del proyecto y con los
-    // datos del formulario y subirlo al gestor documental y que el sistema guarde
-    // en informes el identificador del documento.
+    // TODO crear un fichero en formato pdf con los datos del proyecto y con
+    // los datos del formulario y subirlo al gestor documental y que el sistema
+    // guarde en informes el identificador del documento.
 
     log.debug("enviarSecretaria(Long id) - end");
   }

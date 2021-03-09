@@ -71,6 +71,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="actaPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="true" name="activo" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -108,7 +112,11 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="apartadoPK" />
       </column>
-      <column name="esquema" type="VARCHAR(5000)">
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
+      <column name="esquema" type="VARCHAR(33000)">
         <constraints nullable="false" />
       </column>
       <column name="nombre" type="VARCHAR(250)">
@@ -128,6 +136,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="asistentesPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column name="asistencia" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -145,6 +157,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="bloquePK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column name="nombre" type="VARCHAR(2000)">
         <constraints nullable="false" />
       </column>
@@ -159,6 +175,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="cargo_comitePK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="true" name="activo" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -172,6 +192,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="comentarioPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column name="texto" type="VARCHAR(2000)">
         <constraints nullable="false" />
       </column>
@@ -194,6 +218,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="comitePK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="true" name="activo" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -210,6 +238,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="configuracionPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column name="dias_archivada_pendiente_correcciones" type="INT">
         <constraints nullable="false" />
       </column>
@@ -235,6 +267,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="conflicto_interesPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column name="persona_conflicto_ref" type="VARCHAR(255)">
         <constraints nullable="false" />
       </column>
@@ -248,6 +284,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="convocatoria_reunionPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="true" name="activo" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -289,6 +329,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="dictamenPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="true" name="activo" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -303,6 +347,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="documentacion_memoriaPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="false" name="aportado" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -318,6 +366,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="equipo_trabajoPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column name="persona_ref" type="VARCHAR(250)">
         <constraints nullable="false" />
       </column>
@@ -331,6 +383,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="estado_actaPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column name="fecha_estado" type="TIMESTAMP">
         <constraints nullable="false" />
       </column>
@@ -343,6 +399,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="estado_memoriaPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column name="fecha_estado" type="TIMESTAMP">
         <constraints nullable="false" />
       </column>
@@ -359,6 +419,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="estado_retrospectivaPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="true" name="activo" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -372,6 +436,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="evaluacionPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="true" name="activo" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -405,6 +473,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="evaluadorPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="true" name="activo" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -429,6 +501,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="formacion_especificaPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="true" name="activo" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -442,6 +518,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="formularioPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column name="descripcion" type="VARCHAR(250)">
         <constraints nullable="false" />
       </column>
@@ -455,6 +535,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="informePK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column name="documento_ref" type="VARCHAR(250)">
         <constraints nullable="false" />
       </column>
@@ -462,6 +546,9 @@
         <constraints nullable="false" />
       </column>
       <column name="memoria_id" type="BIGINT" />
+      <column name="tipo_evaluacion_id" type="BIGINT">
+        <constraints nullable="false" />
+      </column>
     </createTable>
   </changeSet>
   <changeSet author="user (generated)" id="0000000000000-44">
@@ -469,17 +556,19 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="memoriaPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="true" name="activo" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
-      <column name="cod_organo_competente" type="VARCHAR(255)" />
+      <column name="cod_organo_competente" type="VARCHAR(250)" />
       <column name="fecha_envio_secretaria" type="date" />
       <column name="num_referencia" type="VARCHAR(250)">
         <constraints nullable="false" />
       </column>
-      <column name="persona_ref" type="VARCHAR(250)">
-        <constraints nullable="false" />
-      </column>
+      <column name="persona_ref" type="VARCHAR(250)" />
       <column defaultValueBoolean="false" name="requiere_retrospectiva" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -510,6 +599,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="peticion_evaluacionPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="true" name="activo" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -555,6 +648,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="respuestaPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column name="valor" type="VARCHAR(5000)">
         <constraints nullable="false" />
       </column>
@@ -571,6 +668,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="retrospectivaPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column name="fecha_retrospectiva" type="date">
         <constraints nullable="false" />
       </column>
@@ -584,6 +685,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="tareaPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column name="anio" type="INT" />
       <column name="formacion" type="VARCHAR(250)" />
       <column name="organismo" type="VARCHAR(250)" />
@@ -603,6 +708,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="tipo_actividadPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="true" name="activo" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -616,6 +725,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="tipo_comentarioPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="true" name="activo" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -629,6 +742,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="tipo_convocatoria_reunionPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="true" name="activo" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -642,6 +759,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="tipo_documentoPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="true" name="activo" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -658,6 +779,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="tipo_estado_actaPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="true" name="activo" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -671,6 +796,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="tipo_estado_memoriaPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="true" name="activo" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -684,6 +813,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="tipo_evaluacionPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="true" name="activo" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -697,6 +830,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="tipo_investigacion_tuteladaPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="true" name="activo" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -710,6 +847,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="tipo_memoriaPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="true" name="activo" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -723,6 +864,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="tipo_memoria_comitePK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column name="comite_id" type="BIGINT">
         <constraints nullable="false" />
       </column>
@@ -736,6 +881,10 @@
       <column name="id" type="BIGINT">
         <constraints nullable="false" primaryKey="true" primaryKeyName="tipo_tareaPK" />
       </column>
+      <column name="created_by" type="VARCHAR(255)" />
+      <column name="creation_date" type="TIMESTAMP" />
+      <column name="last_modified_by" type="VARCHAR(255)" />
+      <column name="last_modified_date" type="TIMESTAMP" />
       <column defaultValueBoolean="true" name="activo" type="BOOLEAN">
         <constraints nullable="false" />
       </column>
@@ -856,57 +1005,60 @@
     <addForeignKeyConstraint baseColumnNames="memoria_id" baseTableName="informe" constraintName="FK_INFORME_MEMORIA" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="memoria" validate="true" />
   </changeSet>
   <changeSet author="user (generated)" id="0000000000000-97">
-    <addForeignKeyConstraint baseColumnNames="comite_id" baseTableName="memoria" constraintName="FK_MEMORIA_COMITE" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="comite" validate="true" />
+    <addForeignKeyConstraint baseColumnNames="tipo_evaluacion_id" baseTableName="informe" constraintName="FK_INFORME_TIPOEVALUACION" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tipo_evaluacion" validate="true" />
   </changeSet>
   <changeSet author="user (generated)" id="0000000000000-98">
-    <addForeignKeyConstraint baseColumnNames="estado_actual_id" baseTableName="memoria" constraintName="FK_MEMORIA_ESTADOACTUAL" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tipo_estado_memoria" validate="true" />
+    <addForeignKeyConstraint baseColumnNames="comite_id" baseTableName="memoria" constraintName="FK_MEMORIA_COMITE" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="comite" validate="true" />
   </changeSet>
   <changeSet author="user (generated)" id="0000000000000-99">
-    <addForeignKeyConstraint baseColumnNames="memoria_original_id" baseTableName="memoria" constraintName="FK_MEMORIA_MEMORIAORIGINAL" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="memoria" validate="true" />
+    <addForeignKeyConstraint baseColumnNames="estado_actual_id" baseTableName="memoria" constraintName="FK_MEMORIA_ESTADOACTUAL" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tipo_estado_memoria" validate="true" />
   </changeSet>
   <changeSet author="user (generated)" id="0000000000000-100">
-    <addForeignKeyConstraint baseColumnNames="peticion_evaluacion_id" baseTableName="memoria" constraintName="FK_MEMORIA_PETICIONEVALUACION" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="peticion_evaluacion" validate="true" />
+    <addForeignKeyConstraint baseColumnNames="memoria_original_id" baseTableName="memoria" constraintName="FK_MEMORIA_MEMORIAORIGINAL" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="memoria" validate="true" />
   </changeSet>
   <changeSet author="user (generated)" id="0000000000000-101">
-    <addForeignKeyConstraint baseColumnNames="retrospectiva_id" baseTableName="memoria" constraintName="FK_MEMORIA_RETROSPECTIVA" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="retrospectiva" validate="true" />
+    <addForeignKeyConstraint baseColumnNames="peticion_evaluacion_id" baseTableName="memoria" constraintName="FK_MEMORIA_PETICIONEVALUACION" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="peticion_evaluacion" validate="true" />
   </changeSet>
   <changeSet author="user (generated)" id="0000000000000-102">
-    <addForeignKeyConstraint baseColumnNames="tipo_memoria_id" baseTableName="memoria" constraintName="FK_MEMORIA_TIPOMEMORIA" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tipo_memoria" validate="true" />
+    <addForeignKeyConstraint baseColumnNames="retrospectiva_id" baseTableName="memoria" constraintName="FK_MEMORIA_RETROSPECTIVA" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="retrospectiva" validate="true" />
   </changeSet>
   <changeSet author="user (generated)" id="0000000000000-103">
-    <addForeignKeyConstraint baseColumnNames="tipo_actividad_id" baseTableName="peticion_evaluacion" constraintName="FK_PETICIONEVALUACION_TIPOACTIVIDAD" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tipo_actividad" validate="true" />
+    <addForeignKeyConstraint baseColumnNames="tipo_memoria_id" baseTableName="memoria" constraintName="FK_MEMORIA_TIPOMEMORIA" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tipo_memoria" validate="true" />
   </changeSet>
   <changeSet author="user (generated)" id="0000000000000-104">
-    <addForeignKeyConstraint baseColumnNames="tipo_investigacion_tutelada_id" baseTableName="peticion_evaluacion" constraintName="FK_PETICIONEVALUACION_TIPOINVESTIGACIONTUTELADA" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tipo_investigacion_tutelada" validate="true" />
+    <addForeignKeyConstraint baseColumnNames="tipo_actividad_id" baseTableName="peticion_evaluacion" constraintName="FK_PETICIONEVALUACION_TIPOACTIVIDAD" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tipo_actividad" validate="true" />
   </changeSet>
   <changeSet author="user (generated)" id="0000000000000-105">
-    <addForeignKeyConstraint baseColumnNames="apartado_id" baseTableName="respuesta" constraintName="FK_RESPUESTA_APARTADO" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="apartado" validate="true" />
+    <addForeignKeyConstraint baseColumnNames="tipo_investigacion_tutelada_id" baseTableName="peticion_evaluacion" constraintName="FK_PETICIONEVALUACION_TIPOINVESTIGACIONTUTELADA" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tipo_investigacion_tutelada" validate="true" />
   </changeSet>
   <changeSet author="user (generated)" id="0000000000000-106">
-    <addForeignKeyConstraint baseColumnNames="memoria_id" baseTableName="respuesta" constraintName="FK_RESPUESTA_MEMORIA" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="memoria" validate="true" />
+    <addForeignKeyConstraint baseColumnNames="apartado_id" baseTableName="respuesta" constraintName="FK_RESPUESTA_APARTADO" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="apartado" validate="true" />
   </changeSet>
   <changeSet author="user (generated)" id="0000000000000-107">
-    <addForeignKeyConstraint baseColumnNames="estado_retrospectiva_id" baseTableName="retrospectiva" constraintName="FK_RETROSPECTIVA_ESTADORETROSPECTIVA" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="estado_retrospectiva" validate="true" />
+    <addForeignKeyConstraint baseColumnNames="memoria_id" baseTableName="respuesta" constraintName="FK_RESPUESTA_MEMORIA" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="memoria" validate="true" />
   </changeSet>
   <changeSet author="user (generated)" id="0000000000000-108">
-    <addForeignKeyConstraint baseColumnNames="equipo_trabajo_id" baseTableName="tarea" constraintName="FK_TAREA_EQUIPOTRABAJO" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="equipo_trabajo" validate="true" />
+    <addForeignKeyConstraint baseColumnNames="estado_retrospectiva_id" baseTableName="retrospectiva" constraintName="FK_RETROSPECTIVA_ESTADORETROSPECTIVA" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="estado_retrospectiva" validate="true" />
   </changeSet>
   <changeSet author="user (generated)" id="0000000000000-109">
-    <addForeignKeyConstraint baseColumnNames="formacion_especifica_id" baseTableName="tarea" constraintName="FK_TAREA_FORMACIONESPECIFICA" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="formacion_especifica" validate="true" />
+    <addForeignKeyConstraint baseColumnNames="equipo_trabajo_id" baseTableName="tarea" constraintName="FK_TAREA_EQUIPOTRABAJO" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="equipo_trabajo" validate="true" />
   </changeSet>
   <changeSet author="user (generated)" id="0000000000000-110">
-    <addForeignKeyConstraint baseColumnNames="memoria_id" baseTableName="tarea" constraintName="FK_TAREA_MEMORIA" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="memoria" validate="true" />
+    <addForeignKeyConstraint baseColumnNames="formacion_especifica_id" baseTableName="tarea" constraintName="FK_TAREA_FORMACIONESPECIFICA" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="formacion_especifica" validate="true" />
   </changeSet>
   <changeSet author="user (generated)" id="0000000000000-111">
-    <addForeignKeyConstraint baseColumnNames="tipo_tarea_id" baseTableName="tarea" constraintName="FK_TAREA_TIPOTAREA" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tipo_tarea" validate="true" />
+    <addForeignKeyConstraint baseColumnNames="memoria_id" baseTableName="tarea" constraintName="FK_TAREA_MEMORIA" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="memoria" validate="true" />
   </changeSet>
   <changeSet author="user (generated)" id="0000000000000-112">
-    <addForeignKeyConstraint baseColumnNames="formulario_id" baseTableName="tipo_documento" constraintName="FK_TIPODOCUMENTO_FORMULARIO" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="formulario" validate="true" />
+    <addForeignKeyConstraint baseColumnNames="tipo_tarea_id" baseTableName="tarea" constraintName="FK_TAREA_TIPOTAREA" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tipo_tarea" validate="true" />
   </changeSet>
   <changeSet author="user (generated)" id="0000000000000-113">
-    <addForeignKeyConstraint baseColumnNames="comite_id" baseTableName="tipo_memoria_comite" constraintName="FK_TIPOMEMORIACOMITE_COMITE" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="comite" validate="true" />
+    <addForeignKeyConstraint baseColumnNames="formulario_id" baseTableName="tipo_documento" constraintName="FK_TIPODOCUMENTO_FORMULARIO" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="formulario" validate="true" />
   </changeSet>
   <changeSet author="user (generated)" id="0000000000000-114">
+    <addForeignKeyConstraint baseColumnNames="comite_id" baseTableName="tipo_memoria_comite" constraintName="FK_TIPOMEMORIACOMITE_COMITE" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="comite" validate="true" />
+  </changeSet>
+  <changeSet author="user (generated)" id="0000000000000-115">
     <addForeignKeyConstraint baseColumnNames="tipo_memoria_id" baseTableName="tipo_memoria_comite" constraintName="FK_TIPOMEMORIACOMITE_TIPOMEMORIA" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tipo_memoria" validate="true" />
   </changeSet>
 </databaseChangeLog>

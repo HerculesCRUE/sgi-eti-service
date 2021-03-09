@@ -1,6 +1,5 @@
 package org.crue.hercules.sgi.eti.controller;
 
-import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -11,6 +10,7 @@ import java.util.List;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import org.assertj.core.api.Assertions;
+import org.crue.hercules.sgi.eti.dto.EvaluacionWithIsEliminable;
 import org.crue.hercules.sgi.eti.exceptions.ComentarioNotFoundException;
 import org.crue.hercules.sgi.eti.exceptions.EvaluacionNotFoundException;
 import org.crue.hercules.sgi.eti.model.Apartado;
@@ -33,7 +33,6 @@ import org.crue.hercules.sgi.eti.model.TipoEvaluacion;
 import org.crue.hercules.sgi.eti.model.TipoMemoria;
 import org.crue.hercules.sgi.eti.service.ComentarioService;
 import org.crue.hercules.sgi.eti.service.EvaluacionService;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -52,7 +51,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * EvaluacionControllerTest
@@ -70,6 +68,9 @@ public class EvaluacionControllerTest extends BaseControllerTest {
   private static final String EVALUACION_CONTROLLER_BASE_PATH = "/evaluaciones";
   private static final String EVALUACION_LIST_PATH = "/evaluables";
   private static final String EVALUACION_SEGUIMIENTO_PATH = "/memorias-seguimiento-final";
+  private static final String CONVOCATORIA_REUNION_BASE_PATH = "/convocatoriareunion";
+  private static final String CONVOCATORIA_REUNION_NO_REV_MINIMA_BASE_PATH = "/convocatoriareunionnorevminima";
+  private static final String NUMERO_COMENTARIOS_BASE_PATH = "/numero-comentarios";
 
   @Test
   @WithMockUser(username = "user", authorities = { "ETI-EVC-V" })
@@ -220,8 +221,7 @@ public class EvaluacionControllerTest extends BaseControllerTest {
       evaluaciones.add(generarMockEvaluacion(Long.valueOf(i), String.format("%03d", i)));
     }
 
-    BDDMockito
-        .given(evaluacionService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(evaluacionService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willReturn(new PageImpl<>(evaluaciones));
 
     // when: find unlimited
@@ -236,6 +236,22 @@ public class EvaluacionControllerTest extends BaseControllerTest {
 
   @Test
   @WithMockUser(username = "user", authorities = { "ETI-EVC-V" })
+  public void findAll_ReturnsNoContent() throws Exception {
+    // given: Evaluacion empty
+    List<Evaluacion> evaluaciones = new ArrayList<>();
+    evaluaciones.isEmpty();
+
+    BDDMockito.given(evaluacionService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
+        .willReturn(new PageImpl<>(evaluaciones));
+
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(EVALUACION_CONTROLLER_BASE_PATH)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print()).andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-EVC-V" })
   public void findAll_WithPaging_ReturnsEvaluacionSubList() throws Exception {
     // given: One hundred Evaluacion
     List<Evaluacion> evaluaciones = new ArrayList<>();
@@ -243,8 +259,7 @@ public class EvaluacionControllerTest extends BaseControllerTest {
       evaluaciones.add(generarMockEvaluacion(Long.valueOf(i), String.format("%03d", i)));
     }
 
-    BDDMockito
-        .given(evaluacionService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(evaluacionService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willAnswer(new Answer<Page<Evaluacion>>() {
           @Override
           public Page<Evaluacion> answer(InvocationOnMock invocation) throws Throwable {
@@ -299,66 +314,13 @@ public class EvaluacionControllerTest extends BaseControllerTest {
     }
     String query = "esRevMinima:true,id:5";
 
-    BDDMockito
-        .given(evaluacionService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(evaluacionService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willAnswer(new Answer<Page<Evaluacion>>() {
           @Override
           public Page<Evaluacion> answer(InvocationOnMock invocation) throws Throwable {
-            List<QueryCriteria> queryCriterias = invocation.<List<QueryCriteria>>getArgument(0);
-
             List<Evaluacion> content = new ArrayList<>();
             for (Evaluacion evaluacion : evaluaciones) {
-              boolean add = true;
-              for (QueryCriteria queryCriteria : queryCriterias) {
-                Field field = ReflectionUtils.findField(Evaluacion.class, queryCriteria.getKey());
-                field.setAccessible(true);
-                String fieldValue = ReflectionUtils.getField(field, evaluacion).toString();
-                switch (queryCriteria.getOperation()) {
-                  case EQUALS:
-                    if (!fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) > 0)) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) >= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LIKE:
-                    if (!fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) < 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) <= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_EQUALS:
-                    if (fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_LIKE:
-                    if (fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  default:
-                    break;
-                }
-              }
-              if (add) {
+              if (evaluacion.getEsRevMinima().equals(Boolean.TRUE) && evaluacion.getId().equals(5L)) {
                 content.add(evaluacion);
               }
             }
@@ -375,6 +337,92 @@ public class EvaluacionControllerTest extends BaseControllerTest {
         // then: Get a page one hundred Evaluacion
         .andExpect(MockMvcResultMatchers.status().isOk())
         .andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(1)));
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-ACT-C", "ETI-ACT-E" })
+  public void findAllActivasByConvocatoriaReunionId_Unlimited_ReturnsFullEvaluacionList() throws Exception {
+    // given: One hundred Evaluacion
+    List<Evaluacion> evaluaciones = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      evaluaciones.add(generarMockEvaluacion(Long.valueOf(i), String.format("%03d", i)));
+    }
+
+    BDDMockito.given(evaluacionService.findAllActivasByConvocatoriaReunionId(ArgumentMatchers.anyLong(),
+        ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(evaluaciones));
+
+    // when: find unlimited
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.get(EVALUACION_CONTROLLER_BASE_PATH + CONVOCATORIA_REUNION_BASE_PATH + "/{id}", 1L)
+                .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print())
+        // then: Get a page one hundred Evaluacion
+        .andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(100)));
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-ACT-C", "ETI-ACT-E" })
+  public void findAllActivasByConvocatoriaReunionId__ReturnsNoContent() throws Exception {
+    // given: Evaluacion empty
+    List<Evaluacion> evaluaciones = new ArrayList<>();
+
+    BDDMockito.given(evaluacionService.findAllActivasByConvocatoriaReunionId(ArgumentMatchers.anyLong(),
+        ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(evaluaciones));
+
+    // when: find unlimited
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.get(EVALUACION_CONTROLLER_BASE_PATH + CONVOCATORIA_REUNION_BASE_PATH + "/{id}", 1L)
+                .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print())
+        // then: Devuelve error No Content
+        .andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-CNV-C", "ETI-CNV-E" })
+  public void findAllByConvocatoriaReunionIdAndNoEsRevMinima_Unlimited_ReturnsFullEvaluacionList() throws Exception {
+    // given: One hundred EvaluacionWithIsEliminable
+    List<EvaluacionWithIsEliminable> evaluaciones = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      evaluaciones.add(generarMockEvaluacionWithIsEliminable(Long.valueOf(i), String.format("%03d", i)));
+    }
+
+    BDDMockito.given(evaluacionService.findAllByConvocatoriaReunionIdAndNoEsRevMinima(ArgumentMatchers.anyLong(),
+        ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(evaluaciones));
+
+    // when: find unlimited
+    mockMvc
+        .perform(MockMvcRequestBuilders
+            .get(EVALUACION_CONTROLLER_BASE_PATH + CONVOCATORIA_REUNION_NO_REV_MINIMA_BASE_PATH
+                + "/{idConvocatoriaReunion}", 1L)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print())
+        // then: Get a page one hundred Evaluacion
+        .andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(100)));
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-CNV-C", "ETI-CNV-E" })
+  public void findAllByConvocatoriaReunionIdAndNoEsRevMinima_Unlimited_ReturnsNoContent() throws Exception {
+    // given: One hundred EvaluacionWithIsEliminable
+    List<EvaluacionWithIsEliminable> evaluaciones = new ArrayList<>();
+
+    BDDMockito.given(evaluacionService.findAllByConvocatoriaReunionIdAndNoEsRevMinima(ArgumentMatchers.anyLong(),
+        ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(evaluaciones));
+
+    // when: find unlimited
+    mockMvc
+        .perform(MockMvcRequestBuilders
+            .get(EVALUACION_CONTROLLER_BASE_PATH + CONVOCATORIA_REUNION_NO_REV_MINIMA_BASE_PATH
+                + "/{idConvocatoriaReunion}", 1L)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print())
+        // then: Devuelve error No Content
+        .andExpect(MockMvcResultMatchers.status().isNoContent());
   }
 
   @Test
@@ -668,10 +716,8 @@ public class EvaluacionControllerTest extends BaseControllerTest {
       evaluaciones.add(generarMockEvaluacion(Long.valueOf(i), String.format("%03d", i)));
     }
 
-    BDDMockito
-        .given(evaluacionService.findAllByMemoriaAndRetrospectivaEnEvaluacion(
-            ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
-        .willReturn(new PageImpl<>(evaluaciones));
+    BDDMockito.given(evaluacionService.findAllByMemoriaAndRetrospectivaEnEvaluacion(ArgumentMatchers.<String>any(),
+        ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(evaluaciones));
 
     // when: find unlimited
     mockMvc
@@ -685,6 +731,23 @@ public class EvaluacionControllerTest extends BaseControllerTest {
 
   @Test
   @WithMockUser(username = "user", authorities = { "ETI-EVC-V" })
+  public void findAllByMemoriaAndRetrospectivaEnEvaluacion_ReturnsNoContent() throws Exception {
+    // given: Evaluacion empty
+    List<Evaluacion> evaluaciones = new ArrayList<>();
+    evaluaciones.isEmpty();
+
+    BDDMockito.given(evaluacionService.findAllByMemoriaAndRetrospectivaEnEvaluacion(ArgumentMatchers.<String>any(),
+        ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(evaluaciones));
+
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(EVALUACION_CONTROLLER_BASE_PATH + EVALUACION_LIST_PATH)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print()).andExpect(MockMvcResultMatchers.status().isNoContent());
+    ;
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-EVC-V" })
   public void findAllByMemoriaAndRetrospectivaEnEvaluacion_WithPaging_ReturnsFiltratedEvaluacionSubList()
       throws Exception {
     // given: One hundred Evaluacion
@@ -693,10 +756,8 @@ public class EvaluacionControllerTest extends BaseControllerTest {
       evaluaciones.add(generarMockEvaluacion(Long.valueOf(i), String.format("%03d", i)));
     }
 
-    BDDMockito
-        .given(evaluacionService.findAllByMemoriaAndRetrospectivaEnEvaluacion(
-            ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
-        .willAnswer(new Answer<Page<Evaluacion>>() {
+    BDDMockito.given(evaluacionService.findAllByMemoriaAndRetrospectivaEnEvaluacion(ArgumentMatchers.<String>any(),
+        ArgumentMatchers.<Pageable>any())).willAnswer(new Answer<Page<Evaluacion>>() {
           @Override
           public Page<Evaluacion> answer(InvocationOnMock invocation) throws Throwable {
             Pageable pageable = invocation.getArgument(1, Pageable.class);
@@ -750,7 +811,7 @@ public class EvaluacionControllerTest extends BaseControllerTest {
       evaluaciones.add(generarMockEvaluacion(Long.valueOf(i), String.format("%03d", i)));
     }
 
-    BDDMockito.given(evaluacionService.findByEvaluacionesEnSeguimientoFinal(ArgumentMatchers.<List<QueryCriteria>>any(),
+    BDDMockito.given(evaluacionService.findByEvaluacionesEnSeguimientoFinal(ArgumentMatchers.<String>any(),
         ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(evaluaciones));
 
     // when: find unlimited
@@ -761,6 +822,36 @@ public class EvaluacionControllerTest extends BaseControllerTest {
         // then: Get a page three Evaluacion
         .andExpect(MockMvcResultMatchers.status().isOk())
         .andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(3)));
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-EVC-V", "ETI-EVC-EVAL" })
+  public void findByEvaluacionesEnSeguimientoFinal_ReturnsNoContent() throws Exception {
+    // given: evaluaciones empty
+    List<Evaluacion> evaluaciones = new ArrayList<>();
+    evaluaciones.isEmpty();
+
+    BDDMockito.given(evaluacionService.findByEvaluacionesEnSeguimientoFinal(ArgumentMatchers.<String>any(),
+        ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(evaluaciones));
+
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(EVALUACION_CONTROLLER_BASE_PATH + EVALUACION_SEGUIMIENTO_PATH)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print()).andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-CNV-E" })
+  public void countNumComentariosEvaluacion_ReturnsOk() throws Exception {
+
+    BDDMockito.given(comentarioService.countByEvaluacionId(ArgumentMatchers.anyLong()))
+        .willReturn(ArgumentMatchers.anyInt());
+
+    mockMvc
+        .perform(MockMvcRequestBuilders
+            .get(EVALUACION_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID + NUMERO_COMENTARIOS_BASE_PATH, 1L)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print()).andExpect(MockMvcResultMatchers.status().isOk());
   }
 
   /**
@@ -885,6 +976,103 @@ public class EvaluacionControllerTest extends BaseControllerTest {
     comentario.setTexto(texto);
 
     return comentario;
+  }
+
+  /**
+   * Función que devuelve un objeto EvaluacionWithIsEliminable
+   * 
+   * @param id     id del EvaluacionWithIsEliminable
+   * @param sufijo el sufijo para título y nombre
+   * @return el objeto EvaluacionWithIsEliminable
+   */
+
+  public EvaluacionWithIsEliminable generarMockEvaluacionWithIsEliminable(Long id, String sufijo) {
+
+    String sufijoStr = (sufijo == null ? id.toString() : sufijo);
+
+    Dictamen dictamen = new Dictamen();
+    dictamen.setId(id);
+    dictamen.setNombre("Dictamen" + sufijoStr);
+    dictamen.setActivo(Boolean.TRUE);
+
+    TipoActividad tipoActividad = new TipoActividad();
+    tipoActividad.setId(1L);
+    tipoActividad.setNombre("TipoActividad1");
+    tipoActividad.setActivo(Boolean.TRUE);
+
+    PeticionEvaluacion peticionEvaluacion = new PeticionEvaluacion();
+    peticionEvaluacion.setId(id);
+    peticionEvaluacion.setCodigo("Codigo1");
+    peticionEvaluacion.setDisMetodologico("DiseñoMetodologico1");
+    peticionEvaluacion.setExterno(Boolean.FALSE);
+    peticionEvaluacion.setFechaFin(LocalDate.now());
+    peticionEvaluacion.setFechaInicio(LocalDate.now());
+    peticionEvaluacion.setFuenteFinanciacion("Fuente financiación");
+    peticionEvaluacion.setObjetivos("Objetivos1");
+    peticionEvaluacion.setResumen("Resumen");
+    peticionEvaluacion.setSolicitudConvocatoriaRef("Referencia solicitud convocatoria");
+    peticionEvaluacion.setTieneFondosPropios(Boolean.FALSE);
+    peticionEvaluacion.setTipoActividad(tipoActividad);
+    peticionEvaluacion.setTitulo("PeticionEvaluacion1");
+    peticionEvaluacion.setPersonaRef("user-001");
+    peticionEvaluacion.setValorSocial("Valor social");
+    peticionEvaluacion.setActivo(Boolean.TRUE);
+
+    Formulario formulario = new Formulario(1L, "M10", "Descripcion");
+    Comite comite = new Comite(1L, "Comite1", formulario, Boolean.TRUE);
+
+    TipoMemoria tipoMemoria = new TipoMemoria();
+    tipoMemoria.setId(1L);
+    tipoMemoria.setNombre("TipoMemoria1");
+    tipoMemoria.setActivo(Boolean.TRUE);
+
+    Memoria memoria = new Memoria(1L, "numRef-001", peticionEvaluacion, comite, "Memoria" + sufijoStr, "user-00" + id,
+        tipoMemoria, new TipoEstadoMemoria(1L, "En elaboración", Boolean.TRUE), LocalDate.now(), Boolean.FALSE,
+        new Retrospectiva(id, new EstadoRetrospectiva(1L, "Pendiente", Boolean.TRUE), LocalDate.now()), 3,
+        "CodOrganoCompetente", Boolean.TRUE, null);
+
+    TipoConvocatoriaReunion tipoConvocatoriaReunion = new TipoConvocatoriaReunion(1L, "Ordinaria", Boolean.TRUE);
+
+    ConvocatoriaReunion convocatoriaReunion = new ConvocatoriaReunion();
+    convocatoriaReunion.setId(1L);
+    convocatoriaReunion.setComite(comite);
+    convocatoriaReunion.setFechaEvaluacion(LocalDateTime.now());
+    convocatoriaReunion.setFechaLimite(LocalDate.now());
+    convocatoriaReunion.setLugar("Lugar");
+    convocatoriaReunion.setOrdenDia("Orden del día convocatoria reunión");
+    convocatoriaReunion.setAnio(2020);
+    convocatoriaReunion.setNumeroActa(100L);
+    convocatoriaReunion.setTipoConvocatoriaReunion(tipoConvocatoriaReunion);
+    convocatoriaReunion.setHoraInicio(7);
+    convocatoriaReunion.setMinutoInicio(30);
+    convocatoriaReunion.setFechaEnvio(LocalDate.now());
+    convocatoriaReunion.setActivo(Boolean.TRUE);
+
+    TipoEvaluacion tipoEvaluacion = new TipoEvaluacion();
+    tipoEvaluacion.setId(1L);
+    tipoEvaluacion.setNombre("TipoEvaluacion1");
+    tipoEvaluacion.setActivo(Boolean.TRUE);
+
+    Evaluador evaluador1 = new Evaluador();
+    evaluador1.setId(1L);
+
+    Evaluador evaluador2 = new Evaluador();
+    evaluador2.setId(2L);
+
+    EvaluacionWithIsEliminable evaluacionWithIsEliminable = new EvaluacionWithIsEliminable();
+    evaluacionWithIsEliminable.setId(id);
+    evaluacionWithIsEliminable.setMemoria(memoria);
+    evaluacionWithIsEliminable.setConvocatoriaReunion(convocatoriaReunion);
+    evaluacionWithIsEliminable.setTipoEvaluacion(tipoEvaluacion);
+    evaluacionWithIsEliminable.setDictamen(dictamen);
+    evaluacionWithIsEliminable.setEvaluador1(evaluador1);
+    evaluacionWithIsEliminable.setEvaluador2(evaluador2);
+    evaluacionWithIsEliminable.setFechaDictamen(LocalDate.now());
+    evaluacionWithIsEliminable.setVersion(2);
+    evaluacionWithIsEliminable.setEsRevMinima(Boolean.FALSE);
+    evaluacionWithIsEliminable.setActivo(Boolean.TRUE);
+
+    return evaluacionWithIsEliminable;
   }
 
 }

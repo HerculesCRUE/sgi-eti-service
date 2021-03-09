@@ -1,15 +1,13 @@
 package org.crue.hercules.sgi.eti.service.impl;
 
 import java.util.Arrays;
-import java.util.List;
 
 import org.crue.hercules.sgi.eti.exceptions.TipoDocumentoNotFoundException;
 import org.crue.hercules.sgi.eti.model.TipoDocumento;
 import org.crue.hercules.sgi.eti.repository.TipoDocumentoRepository;
 import org.crue.hercules.sgi.eti.repository.specification.TipoDocumentoSpecifications;
 import org.crue.hercules.sgi.eti.service.TipoDocumentoService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -53,15 +51,13 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
    * @param query  información del filtro.
    * @return el listado de entidades {@link TipoDocumento} paginadas y filtradas.
    */
-  public Page<TipoDocumento> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAllTipoDocumento(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<TipoDocumento> specByQuery = new QuerySpecification<TipoDocumento>(query);
-    Specification<TipoDocumento> specActivos = TipoDocumentoSpecifications.activos();
-
-    Specification<TipoDocumento> specs = Specification.where(specActivos).and(specByQuery);
+  public Page<TipoDocumento> findAll(String query, Pageable paging) {
+    log.debug("findAllTipoDocumento(String query,Pageable paging) - start");
+    Specification<TipoDocumento> specs = TipoDocumentoSpecifications.activos()
+        .and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<TipoDocumento> returnValue = tipoDocumentoRepository.findAll(specs, paging);
-    log.debug("findAllTipoDocumento(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAllTipoDocumento(String query,Pageable paging) - end");
     return returnValue;
   }
 
@@ -143,23 +139,18 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
    * Devuelve una lista paginada y filtrada {@link TipoDocumento} inicial de una
    * memoria.
    * 
-   * @param query  filtro de {@link QueryCriteria}.
+   * @param query  filtro de búsqueda.
    * @param paging pageable
    */
   @Override
-  public Page<TipoDocumento> findTipoDocumentacionInicial(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findTipoDocumentacionInicial(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<TipoDocumento> specByQuery = new QuerySpecification<TipoDocumento>(query);
-    Specification<TipoDocumento> specActivos = TipoDocumentoSpecifications.activos();
-
-    Specification<TipoDocumento> specTipoDocumentoIdNotIn = TipoDocumentoSpecifications
-        .byIdNotIn(Arrays.asList(1L, 2L, 3L));
-
-    Specification<TipoDocumento> specs = Specification.where(specActivos).and(specByQuery)
-        .and(specTipoDocumentoIdNotIn);
+  public Page<TipoDocumento> findTipoDocumentacionInicial(String query, Pageable paging) {
+    log.debug("findTipoDocumentacionInicial(String query,Pageable paging) - start");
+    Specification<TipoDocumento> specs = TipoDocumentoSpecifications.activos()
+        .and(TipoDocumentoSpecifications.byIdNotIn(Arrays.asList(1L, 2L, 3L)))
+        .and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<TipoDocumento> returnValue = tipoDocumentoRepository.findAll(specs, paging);
-    log.debug("findTipoDocumentacionInicial(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findTipoDocumentacionInicial(String query,Pageable paging) - end");
     return returnValue;
   }
 

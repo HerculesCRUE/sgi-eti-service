@@ -1,6 +1,5 @@
 package org.crue.hercules.sgi.eti.controller;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +10,6 @@ import org.crue.hercules.sgi.eti.exceptions.TipoEvaluacionNotFoundException;
 import org.crue.hercules.sgi.eti.model.Dictamen;
 import org.crue.hercules.sgi.eti.model.TipoEvaluacion;
 import org.crue.hercules.sgi.eti.service.TipoEvaluacionService;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -30,7 +28,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * TipoEvaluacionControllerTest
@@ -176,8 +173,7 @@ public class TipoEvaluacionControllerTest extends BaseControllerTest {
       tipoEvaluaciones.add(generarMockTipoEvaluacion(Long.valueOf(i), "TipoEvaluacion" + String.format("%03d", i)));
     }
 
-    BDDMockito.given(
-        tipoEvaluacionService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(tipoEvaluacionService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willReturn(new PageImpl<>(tipoEvaluaciones));
 
     // when: find unlimited
@@ -199,8 +195,7 @@ public class TipoEvaluacionControllerTest extends BaseControllerTest {
       tipoEvaluaciones.add(generarMockTipoEvaluacion(Long.valueOf(i), "TipoEvaluacion" + String.format("%03d", i)));
     }
 
-    BDDMockito.given(
-        tipoEvaluacionService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(tipoEvaluacionService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willAnswer(new Answer<Page<TipoEvaluacion>>() {
           @Override
           public Page<TipoEvaluacion> answer(InvocationOnMock invocation) throws Throwable {
@@ -252,66 +247,13 @@ public class TipoEvaluacionControllerTest extends BaseControllerTest {
     }
     String query = "nombre~TipoEvaluacion%,id:5";
 
-    BDDMockito.given(
-        tipoEvaluacionService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(tipoEvaluacionService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willAnswer(new Answer<Page<TipoEvaluacion>>() {
           @Override
           public Page<TipoEvaluacion> answer(InvocationOnMock invocation) throws Throwable {
-            List<QueryCriteria> queryCriterias = invocation.<List<QueryCriteria>>getArgument(0);
-
             List<TipoEvaluacion> content = new ArrayList<>();
             for (TipoEvaluacion tipoEvaluacion : tipoEvaluaciones) {
-              boolean add = true;
-              for (QueryCriteria queryCriteria : queryCriterias) {
-                Field field = ReflectionUtils.findField(TipoEvaluacion.class, queryCriteria.getKey());
-                field.setAccessible(true);
-                String fieldValue = ReflectionUtils.getField(field, tipoEvaluacion).toString();
-                switch (queryCriteria.getOperation()) {
-                  case EQUALS:
-                    if (!fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) > 0)) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) >= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LIKE:
-                    if (!fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) < 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) <= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_EQUALS:
-                    if (fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_LIKE:
-                    if (fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  default:
-                    break;
-                }
-              }
-              if (add) {
+              if (tipoEvaluacion.getNombre().startsWith("TipoEvaluacion") && tipoEvaluacion.getId().equals(5L)) {
                 content.add(tipoEvaluacion);
               }
             }
@@ -328,6 +270,24 @@ public class TipoEvaluacionControllerTest extends BaseControllerTest {
         // then: Get a page one hundred TipoEvaluacion
         .andExpect(MockMvcResultMatchers.status().isOk())
         .andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(1)));
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-TIPOEVALUACION-VER" })
+  public void findAll_ReturnsNoContent() throws Exception {
+    // given: TipoEvaluacion empty
+    List<TipoEvaluacion> tipoEvaluaciones = new ArrayList<>();
+
+    BDDMockito.given(tipoEvaluacionService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
+        .willReturn(new PageImpl<>(tipoEvaluaciones));
+
+    // when: find unlimited
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(TIPO_EVALUACION_CONTROLLER_BASE_PATH)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print())
+        // then: Devuelve error No Content
+        .andExpect(MockMvcResultMatchers.status().isNoContent());
   }
 
   @Test

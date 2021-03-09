@@ -16,12 +16,21 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Test de integracion de FormacionEspecifica.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off  
+  "classpath:scripts/formacion_especifica.sql"
+// @formatter:on
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class FormacionEspecificaIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -40,8 +49,6 @@ public class FormacionEspecificaIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void getFormacionEspecifica_WithId_ReturnsFormacionEspecifica() throws Exception {
     final ResponseEntity<FormacionEspecifica> response = restTemplate.exchange(
@@ -56,8 +63,6 @@ public class FormacionEspecificaIT extends BaseIT {
     Assertions.assertThat(formacionEspecifica.getNombre()).isEqualTo("A: Cuidado de los animales");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void addFormacionEspecifica_ReturnsFormacionEspecifica() throws Exception {
 
@@ -74,8 +79,6 @@ public class FormacionEspecificaIT extends BaseIT {
     Assertions.assertThat(response.getBody()).isEqualTo(nuevoFormacionEspecifica);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeFormacionEspecifica_Success() throws Exception {
 
@@ -90,21 +93,17 @@ public class FormacionEspecificaIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeFormacionEspecifica_DoNotGetFormacionEspecifica() throws Exception {
 
     final ResponseEntity<FormacionEspecifica> response = restTemplate.exchange(
         FORMACION_ESPECIFICA_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.DELETE, buildRequest(null, null),
-        FormacionEspecifica.class, 1L);
+        FormacionEspecifica.class, 9L);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void replaceFormacionEspecifica_ReturnsFormacionEspecifica() throws Exception {
 
@@ -123,18 +122,19 @@ public class FormacionEspecificaIT extends BaseIT {
     Assertions.assertThat(formacionEspecifica.getActivo()).isEqualTo(replaceFormacionEspecifica.getActivo());
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPaging_ReturnsFormacionEspecificaSubList() throws Exception {
     // when: Obtiene la page=3 con pagesize=10
     HttpHeaders headers = new HttpHeaders();
-    headers.add("X-Page", "1");
-    headers.add("X-Page-Size", "5");
+    headers.add("X-Page", "0");
+    headers.add("X-Page-Size", "3");
+    String sort = "nombre,desc";
 
-    final ResponseEntity<List<FormacionEspecifica>> response = restTemplate.exchange(
-        FORMACION_ESPECIFICA_CONTROLLER_BASE_PATH, HttpMethod.GET, buildRequest(headers, null),
-        new ParameterizedTypeReference<List<FormacionEspecifica>>() {
+    URI uri = UriComponentsBuilder.fromUriString(FORMACION_ESPECIFICA_CONTROLLER_BASE_PATH).queryParam("s", sort)
+        .build(false).toUri();
+
+    final ResponseEntity<List<FormacionEspecifica>> response = restTemplate.exchange(uri, HttpMethod.GET,
+        buildRequest(headers, null), new ParameterizedTypeReference<List<FormacionEspecifica>>() {
         });
 
     // then: Respuesta OK, FormacionEspecificas retorna la información de la página
@@ -142,23 +142,21 @@ public class FormacionEspecificaIT extends BaseIT {
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     final List<FormacionEspecifica> formacionEspecificas = response.getBody();
     Assertions.assertThat(formacionEspecificas.size()).isEqualTo(3);
-    Assertions.assertThat(response.getHeaders().getFirst("X-Page")).isEqualTo("1");
-    Assertions.assertThat(response.getHeaders().getFirst("X-Page-Size")).isEqualTo("5");
+    Assertions.assertThat(response.getHeaders().getFirst("X-Page")).isEqualTo("0");
+    Assertions.assertThat(response.getHeaders().getFirst("X-Page-Size")).isEqualTo("3");
     Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("8");
 
-    // Contiene de nombre='F: Veterinario designado' a 'H: No requiere'
-    Assertions.assertThat(formacionEspecificas.get(0).getNombre()).isEqualTo("F: Veterinario designado");
+    // Contiene de nombre= 'H: No requiere' a 'F: Veterinario designado'
+    Assertions.assertThat(formacionEspecificas.get(0).getNombre()).isEqualTo("H: No requiere");
     Assertions.assertThat(formacionEspecificas.get(1).getNombre()).isEqualTo("G: Sin especificar");
-    Assertions.assertThat(formacionEspecificas.get(2).getNombre()).isEqualTo("H: No requiere");
+    Assertions.assertThat(formacionEspecificas.get(2).getNombre()).isEqualTo("F: Veterinario designado");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSearchQuery_ReturnsFilteredFormacionEspecificaList() throws Exception {
     // when: Búsqueda por nombre like e id equals
     Long id = 5L;
-    String query = "nombre~animales%,id:" + id;
+    String query = "nombre=ke=animales;id==" + id;
 
     URI uri = UriComponentsBuilder.fromUriString(FORMACION_ESPECIFICA_CONTROLLER_BASE_PATH).queryParam("q", query)
         .build(false).toUri();
@@ -177,12 +175,10 @@ public class FormacionEspecificaIT extends BaseIT {
     Assertions.assertThat(formacionEspecificas.get(0).getNombre()).startsWith("E: Responsable de la");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSortQuery_ReturnsOrderedFormacionEspecificaList() throws Exception {
     // when: Ordenación por nombre desc
-    String query = "nombre-";
+    String query = "nombre,desc";
 
     URI uri = UriComponentsBuilder.fromUriString(FORMACION_ESPECIFICA_CONTROLLER_BASE_PATH).queryParam("s", query)
         .build(false).toUri();
@@ -205,8 +201,6 @@ public class FormacionEspecificaIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPagingSortingAndFiltering_ReturnsFormacionEspecificaSubList() throws Exception {
     // when: Obtiene page=3 con pagesize=10
@@ -214,9 +208,9 @@ public class FormacionEspecificaIT extends BaseIT {
     headers.add("X-Page", "0");
     headers.add("X-Page-Size", "3");
     // when: Ordena por nombre desc
-    String sort = "nombre-";
+    String sort = "nombre,desc";
     // when: Filtra por nombre like e id equals
-    String filter = "nombre~%animales%";
+    String filter = "nombre=ke=animales";
 
     URI uri = UriComponentsBuilder.fromUriString(FORMACION_ESPECIFICA_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .queryParam("q", filter).build(false).toUri();
@@ -239,7 +233,7 @@ public class FormacionEspecificaIT extends BaseIT {
     // cuidado de los animales', 'B: Eutanasia de los animales',
     // 'A: Cuidado de los animales'
     Assertions.assertThat(formacionEspecificas.get(0).getNombre())
-        .isEqualTo("E: Responsable de la supervisión <<in situ>> del bienestar y cuidado de los animales");
+        .isEqualTo("E: Responsable de la supervisión in situ del bienestar y cuidado de los animales");
     Assertions.assertThat(formacionEspecificas.get(1).getNombre()).isEqualTo("B: Eutanasia de los animales");
     Assertions.assertThat(formacionEspecificas.get(2).getNombre()).isEqualTo("A: Cuidado de los animales");
 

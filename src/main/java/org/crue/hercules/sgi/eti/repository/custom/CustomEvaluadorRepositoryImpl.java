@@ -55,6 +55,8 @@ public class CustomEvaluadorRepositoryImpl implements CustomEvaluadorRepository 
    */
   @Override
   public Page<Evaluador> findAllByComiteSinconflictoInteresesMemoria(Long idComite, Long idMemoria, Pageable pageable) {
+    // TODO: Revisar uso pageable. Aunque se está paginando, no se está haciendo el
+    // total count.
     log.debug("findAllByComiteSinconflictoInteresesMemoria(Long idComite, Long idMemoria, Pageable pageable) - start");
     final List<Predicate> predicates = new ArrayList<>();
 

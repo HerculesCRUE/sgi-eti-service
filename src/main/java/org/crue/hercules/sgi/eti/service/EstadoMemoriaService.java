@@ -1,11 +1,7 @@
 package org.crue.hercules.sgi.eti.service;
 
-import org.crue.hercules.sgi.eti.model.EstadoMemoria;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
-
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.EstadoMemoriaNotFoundException;
+import org.crue.hercules.sgi.eti.model.EstadoMemoria;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -36,7 +32,7 @@ public interface EstadoMemoriaService {
    * @param query    la información del filtro.
    * @return la lista de entidades {@link EstadoMemoria} paginadas y/o filtradas.
    */
-  Page<EstadoMemoria> findAll(List<QueryCriteria> query, Pageable pageable);
+  Page<EstadoMemoria> findAll(String query, Pageable pageable);
 
   /**
    * Obtiene {@link EstadoMemoria} por id.

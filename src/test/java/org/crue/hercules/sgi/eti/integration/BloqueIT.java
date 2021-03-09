@@ -17,12 +17,22 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Test de integracion de Bloque.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off  
+  "classpath:scripts/formulario.sql",
+  "classpath:scripts/bloque.sql"
+// @formatter:on  
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class BloqueIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -40,8 +50,6 @@ public class BloqueIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void getBloque_WithId_ReturnsBloque() throws Exception {
     final ResponseEntity<Bloque> response = restTemplate.exchange(BLOQUE_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID,
@@ -55,8 +63,6 @@ public class BloqueIT extends BaseIT {
     Assertions.assertThat(Bloque.getNombre()).isEqualTo("Bloque1");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPaging_ReturnsBloqueSubList() throws Exception {
     // when: Obtiene la page=3 con pagesize=10
@@ -83,13 +89,11 @@ public class BloqueIT extends BaseIT {
     Assertions.assertThat(bloques.get(2).getNombre()).isEqualTo("Bloque8");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSearchQuery_ReturnsFilteredBloqueList() throws Exception {
     // when: Búsqueda por nombre like e id equals
     Long id = 5L;
-    String query = "nombre~Bloque%,id:" + id;
+    String query = "nombre=ke=Bloque;id==" + id;
 
     URI uri = UriComponentsBuilder.fromUriString(BLOQUE_CONTROLLER_BASE_PATH).queryParam("q", query).build(false)
         .toUri();
@@ -108,12 +112,10 @@ public class BloqueIT extends BaseIT {
     Assertions.assertThat(bloques.get(0).getNombre()).startsWith("Bloque");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSortQuery_ReturnsOrderedBloqueList() throws Exception {
     // when: Ordenación por nombre desc
-    String query = "nombre-";
+    String query = "nombre,desc";
 
     URI uri = UriComponentsBuilder.fromUriString(BLOQUE_CONTROLLER_BASE_PATH).queryParam("s", query).build(false)
         .toUri();
@@ -131,12 +133,10 @@ public class BloqueIT extends BaseIT {
     for (int i = 0; i < 8; i++) {
       Bloque Bloque = bloques.get(i);
       Assertions.assertThat(Bloque.getId()).isEqualTo(8 - i);
-      Assertions.assertThat(Bloque.getNombre()).isEqualTo("Bloque" + String.format("%03d", 8 - i));
+      Assertions.assertThat(Bloque.getNombre()).isEqualTo("Bloque" + String.format("%d", 8 - i));
     }
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPagingSortingAndFiltering_ReturnsBloqueSubList() throws Exception {
     // when: Obtiene page=3 con pagesize=10
@@ -144,9 +144,9 @@ public class BloqueIT extends BaseIT {
     headers.add("X-Page", "0");
     headers.add("X-Page-Size", "3");
     // when: Ordena por nombre desc
-    String sort = "nombre-";
+    String sort = "nombre,desc";
     // when: Filtra por nombre like
-    String filter = "nombre~%00%";
+    String filter = "nombre=ke=Bloque";
 
     URI uri = UriComponentsBuilder.fromUriString(BLOQUE_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .queryParam("q", filter).build(false).toUri();
@@ -163,13 +163,13 @@ public class BloqueIT extends BaseIT {
     HttpHeaders responseHeaders = response.getHeaders();
     Assertions.assertThat(responseHeaders.getFirst("X-Page")).isEqualTo("0");
     Assertions.assertThat(responseHeaders.getFirst("X-Page-Size")).isEqualTo("3");
-    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("3");
+    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("8");
 
-    // Contiene nombre='Bloque001', 'Bloque002',
-    // 'Bloque003'
-    Assertions.assertThat(bloques.get(0).getNombre()).isEqualTo("Bloque" + String.format("%03d", 3));
-    Assertions.assertThat(bloques.get(1).getNombre()).isEqualTo("Bloque" + String.format("%03d", 2));
-    Assertions.assertThat(bloques.get(2).getNombre()).isEqualTo("Bloque" + String.format("%03d", 1));
+    // Contiene nombre='Bloque8', 'Bloque7',
+    // 'Bloque6'
+    Assertions.assertThat(bloques.get(0).getNombre()).isEqualTo("Bloque" + String.format("%d", 8));
+    Assertions.assertThat(bloques.get(1).getNombre()).isEqualTo("Bloque" + String.format("%d", 7));
+    Assertions.assertThat(bloques.get(2).getNombre()).isEqualTo("Bloque" + String.format("%d", 6));
 
   }
 

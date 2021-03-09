@@ -11,8 +11,7 @@ import org.crue.hercules.sgi.eti.repository.DictamenRepository;
 import org.crue.hercules.sgi.eti.repository.TipoEvaluacionRepository;
 import org.crue.hercules.sgi.eti.repository.specification.TipoEvaluacionSpecifications;
 import org.crue.hercules.sgi.eti.service.TipoEvaluacionService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -59,15 +58,13 @@ public class TipoEvaluacionServiceImpl implements TipoEvaluacionService {
    * @param query  información del filtro.
    * @return el listado de entidades {@link TipoEvaluacion} paginadas y filtradas.
    */
-  public Page<TipoEvaluacion> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAllTipoEvaluacion(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<TipoEvaluacion> specByQuery = new QuerySpecification<TipoEvaluacion>(query);
-    Specification<TipoEvaluacion> specActivos = TipoEvaluacionSpecifications.activos();
-
-    Specification<TipoEvaluacion> specs = Specification.where(specActivos).and(specByQuery);
+  public Page<TipoEvaluacion> findAll(String query, Pageable paging) {
+    log.debug("findAllTipoEvaluacion(String query,Pageable paging) - start");
+    Specification<TipoEvaluacion> specs = TipoEvaluacionSpecifications.activos()
+        .and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<TipoEvaluacion> returnValue = tipoEvaluacionRepository.findAll(specs, paging);
-    log.debug("findAllTipoEvaluacion(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAllTipoEvaluacion(String query,Pageable paging) - end");
     return returnValue;
   }
 

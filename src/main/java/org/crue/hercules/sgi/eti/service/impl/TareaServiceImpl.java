@@ -11,8 +11,7 @@ import org.crue.hercules.sgi.eti.model.PeticionEvaluacion;
 import org.crue.hercules.sgi.eti.model.Tarea;
 import org.crue.hercules.sgi.eti.repository.TareaRepository;
 import org.crue.hercules.sgi.eti.service.TareaService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -58,12 +57,12 @@ public class TareaServiceImpl implements TareaService {
    * @param query  información del filtro.
    * @return el listado de entidades {@link Tarea} paginadas y filtradas.
    */
-  public Page<Tarea> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAllTarea(List<QueryCriteria> query, Pageable paging) - start");
-    Specification<Tarea> spec = new QuerySpecification<Tarea>(query);
+  public Page<Tarea> findAll(String query, Pageable paging) {
+    log.debug("findAllTarea(String query, Pageable paging) - start");
+    Specification<Tarea> specs = SgiRSQLJPASupport.toSpecification(query);
 
-    Page<Tarea> returnValue = tareaRepository.findAll(spec, paging);
-    log.debug("findAllTarea(List<QueryCriteria> query, Pageable paging) - end");
+    Page<Tarea> returnValue = tareaRepository.findAll(specs, paging);
+    log.debug("findAllTarea(String query, Pageable paging) - end");
     return returnValue;
   }
 

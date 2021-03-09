@@ -3,6 +3,7 @@ package org.crue.hercules.sgi.eti.repository;
 import java.util.Optional;
 
 import org.crue.hercules.sgi.eti.model.PeticionEvaluacion;
+import org.crue.hercules.sgi.eti.repository.custom.CustomPeticionEvaluacionRepository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
@@ -12,8 +13,8 @@ import org.springframework.stereotype.Repository;
  */
 
 @Repository
-public interface PeticionEvaluacionRepository
-    extends JpaRepository<PeticionEvaluacion, Long>, JpaSpecificationExecutor<PeticionEvaluacion> {
+public interface PeticionEvaluacionRepository extends JpaRepository<PeticionEvaluacion, Long>,
+    JpaSpecificationExecutor<PeticionEvaluacion>, CustomPeticionEvaluacionRepository {
 
   /**
    * Recupera la última petición evaluación del año recibido por parámetro.

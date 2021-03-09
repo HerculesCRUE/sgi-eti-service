@@ -21,8 +21,7 @@ import org.crue.hercules.sgi.eti.model.ConvocatoriaReunion_;
 import org.crue.hercules.sgi.eti.model.Evaluacion;
 import org.crue.hercules.sgi.eti.model.Evaluacion_;
 import org.crue.hercules.sgi.eti.model.TipoConvocatoriaReunion_;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -50,8 +49,10 @@ public class CustomActaRepositoryImpl implements CustomActaRepository {
    * @param pageable la información de la paginación.
    * @return la lista de {@link ActaWithNumEvaluaciones} paginadas y/o filtradas.
    */
-  public Page<ActaWithNumEvaluaciones> findAllActaWithNumEvaluaciones(List<QueryCriteria> query, Pageable pageable) {
-    log.debug("findAllActaWithNumEvaluaciones(List<QueryCriteria> query, Pageable paging) - start");
+  public Page<ActaWithNumEvaluaciones> findAllActaWithNumEvaluaciones(String query, Pageable pageable) {
+    // TODO: Revisar la consulta cuando se filtra por número de acta, ya que busca
+    // restando 1 al valor introducido
+    log.debug("findAllActaWithNumEvaluaciones(String query, Pageable paging) - start");
 
     // Crete query
     CriteriaBuilder cb = entityManager.getCriteriaBuilder();
@@ -74,7 +75,7 @@ public class CustomActaRepositoryImpl implements CustomActaRepository {
 
     // Where
     if (query != null) {
-      Specification<Acta> spec = new QuerySpecification<Acta>(query);
+      Specification<Acta> spec = SgiRSQLJPASupport.toSpecification(query);
       listPredicates.add(spec.toPredicate(root, cq, cb));
       listPredicatesCount.add(spec.toPredicate(rootCount, cq, cb));
     }
@@ -109,7 +110,7 @@ public class CustomActaRepositoryImpl implements CustomActaRepository {
     List<ActaWithNumEvaluaciones> result = typedQuery.getResultList();
     Page<ActaWithNumEvaluaciones> returnValue = new PageImpl<ActaWithNumEvaluaciones>(result, pageable, count);
 
-    log.debug("findAllActaWithNumEvaluaciones(List<QueryCriteria> query, Pageable paging) - end");
+    log.debug("findAllActaWithNumEvaluaciones(String query, Pageable paging) - end");
 
     return returnValue;
   }
@@ -119,7 +120,7 @@ public class CustomActaRepositoryImpl implements CustomActaRepository {
    * versión con valor 1 ) o reevaluadas (campo versión con valor > 1 ) que se van
    * a revisar o se han revisado en la reunión de evaluación asociada a la acta.Se
    * obtiene sumando el número de evaluaciones asociadas a la convocatoria del
-   * acta que son de tipo Memoria
+   * acta que son de tipo Memoria y revisión mínima sea false
    * 
    * 
    * @param root      Query root
@@ -144,7 +145,8 @@ public class CustomActaRepositoryImpl implements CustomActaRepository {
                 root.get(Acta_.convocatoriaReunion).get(ConvocatoriaReunion_.id)),
             cb.equal(subqRoot.get(Evaluacion_.tipoEvaluacion), tipoEvaluacionMemoria),
             (iniciales) ? cb.equal(subqRoot.get(Evaluacion_.version), 1)
-                : cb.greaterThan(subqRoot.get(Evaluacion_.version), 1)));
+                : cb.greaterThan(subqRoot.get(Evaluacion_.version), 1),
+            cb.equal(subqRoot.get(Evaluacion_.esRevMinima), false)));
 
     log.debug(
         "getNumEvaluaciones(Root<Acta> root, CriteriaBuilder cb, CriteriaQuery<ActaWithNumEvaluaciones> cq, boolean iniciales) - end");
@@ -154,7 +156,7 @@ public class CustomActaRepositoryImpl implements CustomActaRepository {
 
   /**
    * Recupera el número evaluaciones que no se encuentren evaluadas, es decir, que
-   * tengan un dictamen.
+   * tengan un dictamen y revisión mínima sea false
    * 
    * @param root Query root
    * @param cb   Criteria builder
@@ -172,7 +174,8 @@ public class CustomActaRepositoryImpl implements CustomActaRepository {
     queryNumEvaluaciones.select(cb.count(subqRoot.get(Evaluacion_.id)))
         .where(cb.and(cb.isNull(subqRoot.get(Evaluacion_.dictamen)), cb.isTrue(subqRoot.get(Evaluacion_.activo)),
             cb.equal(subqRoot.get(Evaluacion_.convocatoriaReunion).get(ConvocatoriaReunion_.id),
-                root.get(Acta_.convocatoriaReunion).get(ConvocatoriaReunion_.id))));
+                root.get(Acta_.convocatoriaReunion).get(ConvocatoriaReunion_.id)),
+            cb.equal(subqRoot.get(Evaluacion_.esRevMinima), false)));
     log.debug(
         "getNumEvaluacionesNoEvaluadas(Root<Acta> root, CriteriaBuilder cb, CriteriaQuery<ActaWithNumEvaluaciones> cq) - end");
     return queryNumEvaluaciones;

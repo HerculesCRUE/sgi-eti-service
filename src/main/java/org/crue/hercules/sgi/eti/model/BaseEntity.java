@@ -4,10 +4,12 @@ import java.io.Serializable;
 
 import javax.validation.groups.Default;
 
+import org.crue.hercules.sgi.framework.data.jpa.domain.Auditable;
+
 /**
  * Base Entity.
  */
-public class BaseEntity implements Serializable {
+public class BaseEntity extends Auditable implements Serializable {
 
   /** Serial version. */
   private static final long serialVersionUID = 1L;

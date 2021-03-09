@@ -1,6 +1,5 @@
 package org.crue.hercules.sgi.eti.controller;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -14,7 +13,6 @@ import org.crue.hercules.sgi.eti.model.Bloque;
 import org.crue.hercules.sgi.eti.model.Formulario;
 import org.crue.hercules.sgi.eti.service.ApartadoService;
 import org.crue.hercules.sgi.eti.service.BloqueService;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -33,7 +31,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * BloqueControllerTest
@@ -86,8 +83,7 @@ public class BloqueControllerTest extends BaseControllerTest {
       bloques.add(generarMockBloque(Long.valueOf(i), "Bloque" + String.format("%03d", i)));
     }
 
-    BDDMockito
-        .given(bloqueService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(bloqueService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willReturn(new PageImpl<>(bloques));
 
     // when: find unlimited
@@ -102,6 +98,21 @@ public class BloqueControllerTest extends BaseControllerTest {
 
   @Test
   @WithMockUser(username = "user", authorities = { "ETI-Bloque-VER" })
+  public void findAll_ReturnsNotContent() throws Exception {
+    // given: Bloque empty
+    List<Bloque> bloques = new ArrayList<>();
+
+    BDDMockito.given(bloqueService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
+        .willReturn(new PageImpl<>(bloques));
+
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(BLOQUE_CONTROLLER_BASE_PATH)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print()).andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-Bloque-VER" })
   public void findAll_WithPaging_ReturnsBloqueSubList() throws Exception {
     // given: One hundred Bloque
     List<Bloque> bloques = new ArrayList<>();
@@ -109,8 +120,7 @@ public class BloqueControllerTest extends BaseControllerTest {
       bloques.add(generarMockBloque(Long.valueOf(i), "Bloque" + String.format("%03d", i)));
     }
 
-    BDDMockito
-        .given(bloqueService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(bloqueService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willAnswer(new Answer<Page<Bloque>>() {
           @Override
           public Page<Bloque> answer(InvocationOnMock invocation) throws Throwable {
@@ -162,66 +172,13 @@ public class BloqueControllerTest extends BaseControllerTest {
     }
     String query = "nombre~Bloque%,id:5";
 
-    BDDMockito
-        .given(bloqueService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(bloqueService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willAnswer(new Answer<Page<Bloque>>() {
           @Override
           public Page<Bloque> answer(InvocationOnMock invocation) throws Throwable {
-            List<QueryCriteria> queryCriterias = invocation.<List<QueryCriteria>>getArgument(0);
-
             List<Bloque> content = new ArrayList<>();
             for (Bloque bloque : bloques) {
-              boolean add = true;
-              for (QueryCriteria queryCriteria : queryCriterias) {
-                Field field = ReflectionUtils.findField(Bloque.class, queryCriteria.getKey());
-                field.setAccessible(true);
-                String fieldValue = ReflectionUtils.getField(field, bloque).toString();
-                switch (queryCriteria.getOperation()) {
-                  case EQUALS:
-                    if (!fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) > 0)) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) >= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LIKE:
-                    if (!fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) < 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) <= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_EQUALS:
-                    if (fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_LIKE:
-                    if (fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  default:
-                    break;
-                }
-              }
-              if (add) {
+              if (bloque.getNombre().startsWith("Bloque") && bloque.getId() == 5L) {
                 content.add(bloque);
               }
             }

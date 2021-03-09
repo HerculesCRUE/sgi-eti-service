@@ -1,10 +1,6 @@
 package org.crue.hercules.sgi.eti.service;
 
 import org.crue.hercules.sgi.eti.model.TipoInvestigacionTutelada;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
-
-import java.util.List;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -22,6 +18,6 @@ public interface TipoInvestigacionTuteladaService {
    * @return la lista de entidades {@link TipoInvestigacionTutelada} paginadas y/o
    *         filtradas.
    */
-  Page<TipoInvestigacionTutelada> findAll(List<QueryCriteria> query, Pageable pageable);
+  Page<TipoInvestigacionTutelada> findAll(String query, Pageable pageable);
 
 }

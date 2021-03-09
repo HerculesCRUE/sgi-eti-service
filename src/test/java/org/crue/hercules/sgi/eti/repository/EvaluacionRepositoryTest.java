@@ -324,7 +324,7 @@ public class EvaluacionRepositoryTest extends BaseRepositoryTest {
         .persist(generarMockEvaluacion(dictamen, memoria, c2, tipoEvaluacion, evaluador1, evaluador2, Boolean.TRUE, 2));
 
     // when: Se buscan los datos
-    Optional<Evaluacion> result = repository.findFirstByMemoriaIdOrderByVersionDesc(memoria.getId());
+    Optional<Evaluacion> result = repository.findFirstByMemoriaIdAndActivoTrueOrderByVersionDesc(memoria.getId());
 
     // then: Se comprueba que se recupera la misma memoria y la útlima versión
     Assertions.assertThat(result.get().getMemoria().getId()).isEqualTo(memoria.getId());
@@ -369,7 +369,7 @@ public class EvaluacionRepositoryTest extends BaseRepositoryTest {
         .persist(generarMockEvaluacion(dictamen, memoria, c2, tipoEvaluacion, evaluador1, evaluador2, Boolean.TRUE, 2));
 
     // then: Se comprueba que no recupera ninguna evaluación.
-    Optional<Evaluacion> resultEmpty = repository.findFirstByMemoriaIdOrderByVersionDesc(111L);
+    Optional<Evaluacion> resultEmpty = repository.findFirstByMemoriaIdAndActivoTrueOrderByVersionDesc(111L);
     Assertions.assertThat(resultEmpty).isEmpty();
 
   }

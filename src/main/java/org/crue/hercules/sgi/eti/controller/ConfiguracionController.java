@@ -44,6 +44,8 @@ public class ConfiguracionController {
   @GetMapping()
   @PreAuthorize("hasAnyAuthorityForAnyUO('ETI-CNF-E', 'ETI-EVC-V', 'ETI-EVC-VR', 'ETI-EVC-EVAL', 'ETI-EVC-EVALR')")
   ResponseEntity<Configuracion> findConfiguracion() {
+    // TODO: Añadir permisos necesarios para la consulta desde el módulo de
+    // investigador
     log.debug("findConfiguracion() - start");
     Configuracion configuracion = service.findConfiguracion();
     log.debug("findConfiguracion() - end");

@@ -42,8 +42,11 @@ public class MemoriaPeticionEvaluacion implements Serializable {
 
   private boolean isResponsable;
 
+  private boolean activo;
+
   public MemoriaPeticionEvaluacion(Long id, String numReferencia, String titulo, Comite comite,
-      TipoEstadoMemoria estadoActual, LocalDateTime fechaEvaluacion, LocalDate fechaLimite, boolean isResponsable) {
+      TipoEstadoMemoria estadoActual, LocalDateTime fechaEvaluacion, LocalDate fechaLimite, boolean isResponsable,
+      boolean activo) {
 
     this.id = id;
     this.numReferencia = numReferencia;
@@ -53,7 +56,7 @@ public class MemoriaPeticionEvaluacion implements Serializable {
     this.fechaEvaluacion = fechaEvaluacion;
     this.fechaLimite = fechaLimite;
     this.isResponsable = isResponsable;
-
+    this.activo = activo;
   }
 
 }

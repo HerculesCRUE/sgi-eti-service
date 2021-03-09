@@ -1,13 +1,11 @@
 package org.crue.hercules.sgi.eti.service.impl;
 
-import java.util.List;
 import org.crue.hercules.sgi.eti.exceptions.ApartadoNotFoundException;
 import org.crue.hercules.sgi.eti.model.Apartado;
 import org.crue.hercules.sgi.eti.model.Bloque;
 import org.crue.hercules.sgi.eti.repository.ApartadoRepository;
 import org.crue.hercules.sgi.eti.service.ApartadoService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -35,20 +33,19 @@ public class ApartadoServiceImpl implements ApartadoService {
    * Obtiene las entidades {@link Apartado} filtradas y paginadas según los
    * criterios de búsqueda.
    *
-   * @param query  filtro de {@link QueryCriteria}.
+   * @param query  filtro de búsqueda.
    * @param paging pageable
    * @return el listado de entidades {@link Apartado} paginadas y filtradas.
    */
   @Override
-  public Page<Apartado> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAll(List<QueryCriteria> query, Pageable paging) - start");
+  public Page<Apartado> findAll(String query, Pageable paging) {
+    log.debug("findAll(String query, Pageable paging) - start");
 
-    Specification<Apartado> specByQuery = new QuerySpecification<Apartado>(query);
+    Specification<Apartado> specs = SgiRSQLJPASupport.toSpecification(query);
 
-    Specification<Apartado> specs = Specification.where(specByQuery);
     Page<Apartado> returnValue = repository.findAll(specs, paging);
 
-    log.debug("findAll(List<QueryCriteria> query, Pageable paging) - end");
+    log.debug("findAll(String query, Pageable paging) - end");
 
     return returnValue;
   }

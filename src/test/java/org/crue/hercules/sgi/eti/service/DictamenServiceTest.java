@@ -13,12 +13,10 @@ import org.crue.hercules.sgi.eti.repository.DictamenRepository;
 import org.crue.hercules.sgi.eti.service.impl.DictamenServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -29,7 +27,6 @@ import org.springframework.data.jpa.domain.Specification;
 /**
  * DictamenServiceTest
  */
-@ExtendWith(MockitoExtension.class)
 public class DictamenServiceTest extends BaseServiceTest {
 
   @Mock
@@ -161,6 +158,23 @@ public class DictamenServiceTest extends BaseServiceTest {
     Assertions.assertThatCode(
         // when: Delete con id existente
         () -> dictamenService.delete(1L))
+        // then: No se lanza ninguna excepción
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  public void deleteAll_DeleteAllDictamen() {
+    // given: One hundred dictamenes
+    List<Dictamen> dictamenes = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      dictamenes.add(generarMockDictamen(Long.valueOf(i), "Dictamen" + String.format("%03d", i)));
+    }
+
+    BDDMockito.doNothing().when(dictamenRepository).deleteAll();
+
+    Assertions.assertThatCode(
+        // when: Delete all
+        () -> dictamenService.deleteAll())
         // then: No se lanza ninguna excepción
         .doesNotThrowAnyException();
   }

@@ -16,17 +16,16 @@ import org.crue.hercules.sgi.eti.model.PeticionEvaluacion;
 import org.crue.hercules.sgi.eti.model.Retrospectiva;
 import org.crue.hercules.sgi.eti.model.TipoActividad;
 import org.crue.hercules.sgi.eti.model.TipoEstadoMemoria;
+import org.crue.hercules.sgi.eti.model.TipoEvaluacion;
 import org.crue.hercules.sgi.eti.model.TipoMemoria;
 import org.crue.hercules.sgi.eti.repository.InformeRepository;
 import org.crue.hercules.sgi.eti.service.impl.InformeServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -37,7 +36,6 @@ import org.springframework.data.jpa.domain.Specification;
 /**
  * InformeServiceTest
  */
-@ExtendWith(MockitoExtension.class)
 public class InformeServiceTest extends BaseServiceTest {
 
   @Mock
@@ -175,6 +173,23 @@ public class InformeServiceTest extends BaseServiceTest {
   }
 
   @Test
+  public void deleteAll_DeleteAllInforme() {
+    // given: One hundred Informe
+    List<Informe> informes = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      informes.add(generarMockInforme(Long.valueOf(i), "DocumentoFormulario" + String.format("%03d", i)));
+    }
+
+    BDDMockito.doNothing().when(informeRepository).deleteAll();
+
+    Assertions.assertThatCode(
+        // when: Delete all
+        () -> informeService.deleteAll())
+        // then: No se lanza ninguna excepción
+        .doesNotThrowAnyException();
+  }
+
+  @Test
   public void findAll_Unlimited_ReturnsFullInformeList() {
     // given: One hundred Informe
     List<Informe> informes = new ArrayList<>();
@@ -239,12 +254,49 @@ public class InformeServiceTest extends BaseServiceTest {
   }
 
   @Test
+  public void findAllByMemoriaId_ReturnsInformes() {
+
+    Long informeId = 1L;
+    // given: 10 Informes
+    List<Informe> informes = new ArrayList<>();
+    for (int i = 1; i <= 10; i++) {
+      informes.add(generarMockInforme(Long.valueOf(i), "Informe" + String.format("%03d", i)));
+    }
+
+    BDDMockito.given(informeRepository.findByMemoriaId(ArgumentMatchers.anyLong(), ArgumentMatchers.<Pageable>any()))
+        .willReturn(new PageImpl<>(informes));
+
+    // when: Se buscan todos las datos
+    Page<Informe> result = informeService.findByMemoria(informeId, Pageable.unpaged());
+
+    // then: Se recuperan todos los datos
+    Assertions.assertThat(result.getContent()).isEqualTo(informes);
+    Assertions.assertThat(result.getSize()).isEqualTo(10);
+    Assertions.assertThat(result.getSize()).isEqualTo(informes.size());
+    Assertions.assertThat(result.getTotalElements()).isEqualTo(informes.size());
+  }
+
+  @Test
   public void deleteInformeMemoria() {
 
     BDDMockito.given(informeRepository.findFirstByMemoriaIdOrderByVersionDesc(ArgumentMatchers.anyLong()))
         .willReturn(generarMockInforme(1L, "DocumentoFormulario1"));
 
     BDDMockito.doNothing().when(informeRepository).delete(ArgumentMatchers.<Informe>any());
+
+    Assertions.assertThatCode(
+        // when: Delete con id existente
+        () -> informeService.deleteInformeMemoria(1L))
+        // then: No se lanza ninguna excepción
+        .doesNotThrowAnyException();
+
+  }
+
+  @Test
+  public void deleteInformeMemoria_informeNull() {
+
+    BDDMockito.given(informeRepository.findFirstByMemoriaIdOrderByVersionDesc(ArgumentMatchers.anyLong()))
+        .willReturn(null);
 
     Assertions.assertThatCode(
         // when: Delete con id existente
@@ -299,11 +351,17 @@ public class InformeServiceTest extends BaseServiceTest {
         new Retrospectiva(id, new EstadoRetrospectiva(1L, "Pendiente", Boolean.TRUE), LocalDate.now()), 3,
         "codOrganoCompetente", Boolean.TRUE, null);
 
+    TipoEvaluacion tipoEvaluacion = new TipoEvaluacion();
+    tipoEvaluacion.setId(1L);
+    tipoEvaluacion.setActivo(true);
+    tipoEvaluacion.setNombre("Memoria");
+
     Informe informe = new Informe();
     informe.setId(id);
     informe.setDocumentoRef(documentoRef);
     informe.setMemoria(memoria);
     informe.setVersion(3);
+    informe.setTipoEvaluacion(tipoEvaluacion);
 
     return informe;
   }

@@ -1,6 +1,5 @@
 package org.crue.hercules.sgi.eti.controller;
 
-import java.lang.reflect.Field;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -30,7 +29,6 @@ import org.crue.hercules.sgi.eti.model.TipoMemoria;
 import org.crue.hercules.sgi.eti.service.ConflictoInteresService;
 import org.crue.hercules.sgi.eti.service.EvaluacionService;
 import org.crue.hercules.sgi.eti.service.EvaluadorService;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -49,7 +47,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * EvaluadorControllerTest
@@ -199,8 +196,7 @@ public class EvaluadorControllerTest extends BaseControllerTest {
       evaluadores.add(generarMockEvaluador(Long.valueOf(i), "Evaluador" + String.format("%03d", i)));
     }
 
-    BDDMockito
-        .given(evaluadorService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(evaluadorService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willReturn(new PageImpl<>(evaluadores));
 
     // when: find unlimited
@@ -222,8 +218,7 @@ public class EvaluadorControllerTest extends BaseControllerTest {
       evaluadores.add(generarMockEvaluador(Long.valueOf(i), "Evaluador" + String.format("%03d", i)));
     }
 
-    BDDMockito
-        .given(evaluadorService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(evaluadorService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willAnswer(new Answer<Page<Evaluador>>() {
           @Override
           public Page<Evaluador> answer(InvocationOnMock invocation) throws Throwable {
@@ -276,66 +271,13 @@ public class EvaluadorControllerTest extends BaseControllerTest {
     }
     String query = "resumen~Evaluador%,id:5";
 
-    BDDMockito
-        .given(evaluadorService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(evaluadorService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willAnswer(new Answer<Page<Evaluador>>() {
           @Override
           public Page<Evaluador> answer(InvocationOnMock invocation) throws Throwable {
-            List<QueryCriteria> queryCriterias = invocation.<List<QueryCriteria>>getArgument(0);
-
             List<Evaluador> content = new ArrayList<>();
             for (Evaluador evaluador : evaluadores) {
-              boolean add = true;
-              for (QueryCriteria queryCriteria : queryCriterias) {
-                Field field = ReflectionUtils.findField(Evaluador.class, queryCriteria.getKey());
-                field.setAccessible(true);
-                String fieldValue = ReflectionUtils.getField(field, evaluador).toString();
-                switch (queryCriteria.getOperation()) {
-                  case EQUALS:
-                    if (!fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) > 0)) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) >= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LIKE:
-                    if (!fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) < 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) <= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_EQUALS:
-                    if (fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_LIKE:
-                    if (fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  default:
-                    break;
-                }
-              }
-              if (add) {
+              if (evaluador.getResumen().startsWith("Evaluador") && evaluador.getId().equals(5L)) {
                 content.add(evaluador);
               }
             }
@@ -355,6 +297,23 @@ public class EvaluadorControllerTest extends BaseControllerTest {
   }
 
   @Test
+  @WithMockUser(username = "user", authorities = { "ETI-EVR-V" })
+  public void findAll_ReturnsNoContent() throws Exception {
+    // given: Evaluadores empty
+    List<Evaluador> evaluadores = new ArrayList<>();
+
+    BDDMockito.given(evaluadorService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
+        .willReturn(new PageImpl<>(evaluadores));
+    // when: find unlimited
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(EVALUADOR_CONTROLLER_BASE_PATH)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print())
+        // then: Devuelve error No Content
+        .andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
   @WithMockUser(username = "user", authorities = { "ETI-EVC-VR", "ETI-EVC-EVALR" })
   public void getEvaluaciones_Unlimited_ReturnsFullEvaluacionList() throws Exception {
     // given: Existen 100 evaluaciones
@@ -363,10 +322,8 @@ public class EvaluadorControllerTest extends BaseControllerTest {
       evaluaciones.add(generarMockEvaluacion(Long.valueOf(i), String.format("%03d", i)));
     }
 
-    BDDMockito
-        .given(evaluacionService.findByEvaluador(ArgumentMatchers.anyString(),
-            ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
-        .willReturn(new PageImpl<>(evaluaciones));
+    BDDMockito.given(evaluacionService.findByEvaluador(ArgumentMatchers.anyString(), ArgumentMatchers.<String>any(),
+        ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(evaluaciones));
 
     // when: las recupero sin paginación
     mockMvc
@@ -382,10 +339,8 @@ public class EvaluadorControllerTest extends BaseControllerTest {
   @WithMockUser(username = "user", authorities = { "ETI-EVC-VR", "ETI-EVC-EVALR" })
   public void getEvaluaciones_Unlimited_ReturnsFullEmptyList() throws Exception {
     // given: No hay evaluaciones
-    BDDMockito
-        .given(evaluacionService.findByEvaluador(ArgumentMatchers.anyString(),
-            ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
-        .willReturn(new PageImpl<>(new ArrayList<>()));
+    BDDMockito.given(evaluacionService.findByEvaluador(ArgumentMatchers.anyString(), ArgumentMatchers.<String>any(),
+        ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(new ArrayList<>()));
 
     // when: listo todo
     mockMvc
@@ -406,10 +361,8 @@ public class EvaluadorControllerTest extends BaseControllerTest {
       evaluaciones.add(generarMockEvaluacion(Long.valueOf(i), String.format("%03d", i)));
     }
 
-    BDDMockito
-        .given(evaluacionService.findEvaluacionesEnSeguimientosByEvaluador(ArgumentMatchers.anyString(),
-            ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
-        .willReturn(new PageImpl<>(evaluaciones));
+    BDDMockito.given(evaluacionService.findEvaluacionesEnSeguimientosByEvaluador(ArgumentMatchers.anyString(),
+        ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(evaluaciones));
 
     // when: las recupero sin paginación
     mockMvc
@@ -427,7 +380,7 @@ public class EvaluadorControllerTest extends BaseControllerTest {
     // given: No hay evaluaciones
     BDDMockito
         .given(evaluacionService.findEvaluacionesEnSeguimientosByEvaluador(ArgumentMatchers.anyString(),
-            ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+            ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willReturn(new PageImpl<>(new ArrayList<>()));
 
     // when: listo todo
@@ -518,6 +471,26 @@ public class EvaluadorControllerTest extends BaseControllerTest {
       Evaluador evaluador = actual.get(i);
       Assertions.assertThat(evaluador.getResumen()).isEqualTo("Evaluador" + String.format("%03d", j));
     }
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-CNV-C", "ETI-CNV-E" })
+  public void findAllByComiteSinconflictoInteresesMemoria_ReturnsNoContent() throws Exception {
+    // given: Evaluadores empty
+    Long idComite = 1L;
+    Long idMemoria = 1L;
+    List<Evaluador> evaluadores = new ArrayList<>();
+
+    BDDMockito.given(evaluadorService.findAllByComiteSinconflictoInteresesMemoria(ArgumentMatchers.anyLong(),
+        ArgumentMatchers.anyLong(), ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(evaluadores));
+    // when: find unlimited
+    mockMvc
+        .perform(MockMvcRequestBuilders
+            .get(EVALUADOR_CONTROLLER_BASE_PATH + PATH_PARAMETER_SINCONFLICTOINTERES, idComite, idMemoria)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print())
+        // then: Devuelve error No Content
+        .andExpect(MockMvcResultMatchers.status().isNoContent());
   }
 
   @Test

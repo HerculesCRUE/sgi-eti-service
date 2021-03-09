@@ -19,12 +19,23 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Test de integracion de TipoMemoriaComite.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off  
+  "classpath:scripts/formulario.sql",
+  "classpath:scripts/tipo_memoria.sql",
+  "classpath:scripts/tipo_memoria_comite.sql" 
+// @formatter:on  
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class TipoMemoriaComiteIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -41,36 +52,32 @@ public class TipoMemoriaComiteIT extends BaseIT {
     return request;
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void getTipoMemoriaComite_WithId_ReturnsTipoMemoriaComite() throws Exception {
 
-    Formulario formulario = new Formulario(1L, "M10", "Descripcion");
-    Comite comite = new Comite(1L, "Comite1", formulario, Boolean.TRUE);
-    TipoMemoria tipoMemoria = new TipoMemoria(1L, "TipoMemoria1", Boolean.TRUE);
+    Formulario formulario = new Formulario(1L, "M10", "Formulario M10");
+    Comite comite = new Comite(2L, "Comite2", formulario, Boolean.TRUE);
+    TipoMemoria tipoMemoria = new TipoMemoria(1L, "TipoMemoria001", Boolean.TRUE);
 
     final ResponseEntity<TipoMemoriaComite> response = restTemplate.exchange(
         TIPO_MEMORIA_COMITE_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.GET, buildRequest(null, null),
-        TipoMemoriaComite.class, 1L);
+        TipoMemoriaComite.class, 2L);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
     final TipoMemoriaComite tipoMemoriaComite = response.getBody();
 
-    Assertions.assertThat(tipoMemoriaComite.getId()).isEqualTo(1L);
+    Assertions.assertThat(tipoMemoriaComite.getId()).isEqualTo(2L);
     Assertions.assertThat(tipoMemoriaComite.getComite()).isEqualTo(comite);
     Assertions.assertThat(tipoMemoriaComite.getTipoMemoria()).isEqualTo(tipoMemoria);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void addTipoMemoriaComite_ReturnsTipoMemoriaComite() throws Exception {
 
-    Formulario formulario = new Formulario(1L, "M10", "Descripcion");
-    Comite comite = new Comite(1L, "Comite", formulario, Boolean.TRUE);
-    TipoMemoria tipoMemoria = new TipoMemoria(1L, "TipoMemoria", Boolean.TRUE);
+    Formulario formulario = new Formulario(2L, "M20", "Formulario M20");
+    Comite comite = new Comite(2L, "Comite2", formulario, Boolean.TRUE);
+    TipoMemoria tipoMemoria = new TipoMemoria(1L, "TipoMemoria001", Boolean.TRUE);
 
     TipoMemoriaComite nuevoTipoMemoriaComite = generarMockTipoMemoriaComite(null, comite, tipoMemoria);
 
@@ -80,13 +87,11 @@ public class TipoMemoriaComiteIT extends BaseIT {
     Assertions.assertThat(response.getBody().getId()).isNotNull();
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeTipoMemoriaComite_Success() throws Exception {
 
     // when: Delete con id existente
-    long id = 1L;
+    long id = 2L;
     final ResponseEntity<TipoMemoriaComite> response = restTemplate.exchange(
         TIPO_MEMORIA_COMITE_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.DELETE, buildRequest(null, null),
         TipoMemoriaComite.class, id);
@@ -96,8 +101,6 @@ public class TipoMemoriaComiteIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeTipoMemoriaComite_DoNotGetTipoMemoriaComite() throws Exception {
     restTemplate.exchange(TIPO_MEMORIA_COMITE_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.GET,
@@ -111,20 +114,18 @@ public class TipoMemoriaComiteIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void replaceTipoMemoriaComite_ReturnsTipoMemoriaComite() throws Exception {
 
-    Formulario formulario = new Formulario(1L, "M10", "Descripcion");
-    Comite comite = new Comite(1L, "Comite", formulario, Boolean.TRUE);
-    TipoMemoria tipoMemoria = new TipoMemoria(1L, "TipoMemoria", Boolean.TRUE);
+    Formulario formulario = new Formulario(2L, "M20", "Formulario M20");
+    Comite comite = new Comite(2L, "Comite2", formulario, Boolean.TRUE);
+    TipoMemoria tipoMemoria = new TipoMemoria(1L, "TipoMemoria001", Boolean.TRUE);
 
-    TipoMemoriaComite replaceTipoMemoriaComite = generarMockTipoMemoriaComite(1L, comite, tipoMemoria);
+    TipoMemoriaComite replaceTipoMemoriaComite = generarMockTipoMemoriaComite(2L, comite, tipoMemoria);
 
     final ResponseEntity<TipoMemoriaComite> response = restTemplate.exchange(
         TIPO_MEMORIA_COMITE_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.PUT,
-        buildRequest(null, replaceTipoMemoriaComite), TipoMemoriaComite.class, 1L);
+        buildRequest(null, replaceTipoMemoriaComite), TipoMemoriaComite.class, 2L);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
@@ -135,8 +136,6 @@ public class TipoMemoriaComiteIT extends BaseIT {
     Assertions.assertThat(tipoMemoriaComite.getTipoMemoria()).isEqualTo(replaceTipoMemoriaComite.getTipoMemoria());
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPaging_ReturnsTipoMemoriaComiteSubList() throws Exception {
     // when: Obtiene la page=3 con pagesize=10
@@ -154,24 +153,21 @@ public class TipoMemoriaComiteIT extends BaseIT {
     // correcta en el header
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     final List<TipoMemoriaComite> tipoMemoriaComites = response.getBody();
-    Assertions.assertThat(tipoMemoriaComites.size()).isEqualTo(3);
+    Assertions.assertThat(tipoMemoriaComites.size()).isEqualTo(2);
     Assertions.assertThat(response.getHeaders().getFirst("X-Page")).isEqualTo("1");
     Assertions.assertThat(response.getHeaders().getFirst("X-Page-Size")).isEqualTo("5");
-    Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("8");
+    Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("7");
 
-    // Contiene de id='6' a '8'
-    Assertions.assertThat(tipoMemoriaComites.get(0).getId()).isEqualTo(6L);
-    Assertions.assertThat(tipoMemoriaComites.get(1).getId()).isEqualTo(7L);
-    Assertions.assertThat(tipoMemoriaComites.get(2).getId()).isEqualTo(8L);
+    // Contiene de id='7' a '8'
+    Assertions.assertThat(tipoMemoriaComites.get(0).getId()).isEqualTo(7L);
+    Assertions.assertThat(tipoMemoriaComites.get(1).getId()).isEqualTo(8L);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSearchQuery_ReturnsFilteredTipoMemoriaComiteList() throws Exception {
     // when: Búsqueda por nombre like e id equals
     Long id = 5L;
-    String query = "id:" + id;
+    String query = "id==" + id;
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_MEMORIA_COMITE_CONTROLLER_BASE_PATH).queryParam("q", query)
         .build(false).toUri();
@@ -189,12 +185,10 @@ public class TipoMemoriaComiteIT extends BaseIT {
     Assertions.assertThat(tipoMemoriaComites.get(0).getId()).isEqualTo(id);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSortQuery_ReturnsOrderedTipoMemoriaComiteList() throws Exception {
     // when: Ordenación por id desc
-    String query = "id-";
+    String query = "id,desc";
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_MEMORIA_COMITE_CONTROLLER_BASE_PATH).queryParam("s", query)
         .build(false).toUri();
@@ -208,27 +202,25 @@ public class TipoMemoriaComiteIT extends BaseIT {
     // correcta en el header
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     final List<TipoMemoriaComite> tipoMemoriaComites = response.getBody();
-    Assertions.assertThat(tipoMemoriaComites.size()).isEqualTo(8);
-    for (int i = 0; i < 8; i++) {
+    Assertions.assertThat(tipoMemoriaComites.size()).isEqualTo(7);
+    for (int i = 0; i < 7; i++) {
       TipoMemoriaComite tipoMemoriaComite = tipoMemoriaComites.get(i);
       Assertions.assertThat(tipoMemoriaComite.getId()).isEqualTo(8 - i);
     }
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPagingSortingAndFiltering_ReturnsTipoMemoriaComiteSubList() throws Exception {
     // when: Obtiene page=1 con pagesize=10
     HttpHeaders headers = new HttpHeaders();
     headers.add("X-Page", "0");
     headers.add("X-Page-Size", "1");
-    Long id = 1L;
+    Long id = 2L;
 
     // when: Ordena por id desc
-    String sort = "id-";
+    String sort = "id,desc";
     // when: Filtra por id equals
-    String filter = "id:" + id;
+    String filter = "id==" + id;
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_MEMORIA_COMITE_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .queryParam("q", filter).build(false).toUri();
@@ -248,7 +240,7 @@ public class TipoMemoriaComiteIT extends BaseIT {
     Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("1");
 
     // Contiene id='1'
-    Assertions.assertThat(tipoMemoriaComites.get(0).getId()).isEqualTo(1L);
+    Assertions.assertThat(tipoMemoriaComites.get(0).getId()).isEqualTo(2L);
   }
 
   /**

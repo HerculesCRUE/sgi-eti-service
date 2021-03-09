@@ -1,7 +1,5 @@
 package org.crue.hercules.sgi.eti.service.impl;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.dto.EquipoTrabajoWithIsEliminable;
 import org.crue.hercules.sgi.eti.exceptions.EquipoTrabajoNotFoundException;
 import org.crue.hercules.sgi.eti.model.EquipoTrabajo;
@@ -10,8 +8,7 @@ import org.crue.hercules.sgi.eti.model.PeticionEvaluacion;
 import org.crue.hercules.sgi.eti.model.Tarea;
 import org.crue.hercules.sgi.eti.repository.EquipoTrabajoRepository;
 import org.crue.hercules.sgi.eti.service.EquipoTrabajoService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -55,12 +52,12 @@ public class EquipoTrabajoServiceImpl implements EquipoTrabajoService {
    * @param query  información del filtro.
    * @return el listado de entidades {@link EquipoTrabajo} paginadas y filtradas.
    */
-  public Page<EquipoTrabajo> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAllEquipoTrabajo(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<EquipoTrabajo> spec = new QuerySpecification<EquipoTrabajo>(query);
+  public Page<EquipoTrabajo> findAll(String query, Pageable paging) {
+    log.debug("findAllEquipoTrabajo(String query,Pageable paging) - start");
+    Specification<EquipoTrabajo> specs = SgiRSQLJPASupport.toSpecification(query);
 
-    Page<EquipoTrabajo> returnValue = equipoTrabajoRepository.findAll(spec, paging);
-    log.debug("findAllEquipoTrabajo(List<QueryCriteria> query,Pageable paging) - end");
+    Page<EquipoTrabajo> returnValue = equipoTrabajoRepository.findAll(specs, paging);
+    log.debug("findAllEquipoTrabajo(String query,Pageable paging) - end");
     return returnValue;
   }
 

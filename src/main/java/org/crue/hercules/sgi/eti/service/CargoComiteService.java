@@ -1,11 +1,7 @@
 package org.crue.hercules.sgi.eti.service;
 
-import org.crue.hercules.sgi.eti.model.CargoComite;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
-
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.CargoComiteNotFoundException;
+import org.crue.hercules.sgi.eti.model.CargoComite;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -36,7 +32,7 @@ public interface CargoComiteService {
    * @param query    la información del filtro.
    * @return la lista de entidades {@link CargoComite} paginadas y/o filtradas.
    */
-  Page<CargoComite> findAll(List<QueryCriteria> query, Pageable pageable);
+  Page<CargoComite> findAll(String query, Pageable pageable);
 
   /**
    * Obtiene {@link CargoComite} por id.

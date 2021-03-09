@@ -56,7 +56,8 @@ public class CustomEquipoTrabajoRepositoryImpl implements CustomEquipoTrabajoRep
   @Override
   public Page<EquipoTrabajoWithIsEliminable> findAllByPeticionEvaluacionId(Long idPeticionEvaluacion,
       Pageable pageable) {
-
+    // TODO: Revisar uso pageable, porque aunque se pagina no se está sacando el
+    // totalCount.
     log.debug("findAllByPeticionEvaluacionId : {} - start");
 
     // Crete query

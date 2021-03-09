@@ -18,11 +18,22 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 
 /**
  * Test de integracion de ConflictoInteres.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off      
+  "classpath:scripts/formulario.sql",
+  "classpath:scripts/cargo_comite.sql",
+  "classpath:scripts/conflicto_interes.sql"
+// @formatter:on    
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class ConflictoInteresIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -39,8 +50,6 @@ public class ConflictoInteresIT extends BaseIT {
     return request;
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void getConflictoInteres_WithId_ReturnsConflictoInteres() throws Exception {
 
@@ -59,8 +68,6 @@ public class ConflictoInteresIT extends BaseIT {
     Assertions.assertThat(conflictoInteres.getPersonaConflictoRef()).isEqualTo("user-001");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void addConflictoInteres_ReturnsConflictoInteres() throws Exception {
 
@@ -75,8 +82,6 @@ public class ConflictoInteresIT extends BaseIT {
     Assertions.assertThat(response.getBody().getId()).isNotNull();
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeConflictoInteres_Success() throws Exception {
 
@@ -95,8 +100,6 @@ public class ConflictoInteresIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeConflictoInteres_DoNotGetConflictoInteres() throws Exception {
 
@@ -114,8 +117,6 @@ public class ConflictoInteresIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void replaceConflictoInteres_ReturnsConflictoInteres() throws Exception {
 
@@ -150,7 +151,7 @@ public class ConflictoInteresIT extends BaseIT {
     cargoComite.setNombre("CargoComite1");
     cargoComite.setActivo(Boolean.TRUE);
 
-    Formulario formulario = new Formulario(1L, "M10", "Descripcion");
+    Formulario formulario = new Formulario(1L, "M10", "Formulario M10");
     Comite comite = new Comite(1L, "Comite1", formulario, Boolean.TRUE);
 
     Evaluador evaluador = new Evaluador();

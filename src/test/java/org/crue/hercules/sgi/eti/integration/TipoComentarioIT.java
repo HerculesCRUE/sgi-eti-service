@@ -16,12 +16,21 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Test de integracion de TipoComentario.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off  
+  "classpath:scripts/tipo_comentario.sql"
+// @formatter:on
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class TipoComentarioIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -38,8 +47,6 @@ public class TipoComentarioIT extends BaseIT {
     return request;
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void getTipoComentario_WithId_ReturnsTipoComentario() throws Exception {
     final ResponseEntity<TipoComentario> response = restTemplate.exchange(
@@ -54,7 +61,6 @@ public class TipoComentarioIT extends BaseIT {
     Assertions.assertThat(tipoComentario.getNombre()).isEqualTo("GESTOR");
   }
 
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void addTipoComentario_ReturnsTipoComentario() throws Exception {
 
@@ -67,8 +73,6 @@ public class TipoComentarioIT extends BaseIT {
     Assertions.assertThat(response.getBody()).isEqualTo(nuevoTipoComentario);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeTipoComentario_Success() throws Exception {
 
@@ -83,22 +87,18 @@ public class TipoComentarioIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeTipoComentario_DoNotGetTipoComentario() throws Exception {
     restTemplate.delete(TIPO_COMENTARIO_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, 1L);
 
     final ResponseEntity<TipoComentario> response = restTemplate.exchange(
         TIPO_COMENTARIO_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.GET, buildRequest(null, null),
-        TipoComentario.class, 1L);
+        TipoComentario.class, 3L);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void replaceTipoComentario_ReturnsTipoComentario() throws Exception {
 
@@ -117,8 +117,6 @@ public class TipoComentarioIT extends BaseIT {
     Assertions.assertThat(tipoComentario.getActivo()).isEqualTo(replaceTipoComentario.getActivo());
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPaging_ReturnsTipoComentarioSubList() throws Exception {
     // when: Obtiene la page=3 con pagesize=10
@@ -145,13 +143,11 @@ public class TipoComentarioIT extends BaseIT {
     Assertions.assertThat(tipoComentarios.get(0).getNombre()).isEqualTo("EVALUADOR");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSearchQuery_ReturnsFilteredTipoComentarioList() throws Exception {
     // when: Búsqueda por nombre like e id equals
     Long id = 1L;
-    String query = "nombre~gestor%,id:" + id;
+    String query = "nombre=ik=gestor;id==" + id;
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_COMENTARIO_CONTROLLER_BASE_PATH).queryParam("q", query)
         .build(false).toUri();
@@ -170,12 +166,10 @@ public class TipoComentarioIT extends BaseIT {
     Assertions.assertThat(tipoComentarios.get(0).getNombre()).startsWith("GESTOR");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSortQuery_ReturnsOrderedTipoComentarioList() throws Exception {
     // when: Ordenación por nombre desc
-    String query = "nombre-";
+    String query = "nombre,desc";
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_COMENTARIO_CONTROLLER_BASE_PATH).queryParam("s", query)
         .build(false).toUri();
@@ -196,8 +190,6 @@ public class TipoComentarioIT extends BaseIT {
     Assertions.assertThat(tipoComentarios.get(1).getNombre()).isEqualTo("EVALUADOR");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPagingSortingAndFiltering_ReturnsTipoComentarioSubList() throws Exception {
     // when: Obtiene page=3 con pagesize=10
@@ -205,9 +197,9 @@ public class TipoComentarioIT extends BaseIT {
     headers.add("X-Page", "0");
     headers.add("X-Page-Size", "3");
     // when: Ordena por nombre desc
-    String sort = "nombre-";
+    String sort = "nombre,desc";
     // when: Filtra por nombre like
-    String filter = "nombre~%gest%";
+    String filter = "nombre=ke=GEST";
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_COMENTARIO_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .queryParam("q", filter).build(false).toUri();

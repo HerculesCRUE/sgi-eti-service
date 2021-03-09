@@ -1,14 +1,11 @@
 package org.crue.hercules.sgi.eti.service.impl;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.AsistentesNotFoundException;
-import org.crue.hercules.sgi.eti.model.ConvocatoriaReunion;
 import org.crue.hercules.sgi.eti.model.Asistentes;
+import org.crue.hercules.sgi.eti.model.ConvocatoriaReunion;
 import org.crue.hercules.sgi.eti.repository.AsistentesRepository;
 import org.crue.hercules.sgi.eti.service.AsistentesService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -52,12 +49,12 @@ public class AsistentesServiceImpl implements AsistentesService {
    * @param query  información del filtro.
    * @return el listado de entidades {@link Asistentes} paginadas y filtradas.
    */
-  public Page<Asistentes> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAll(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<Asistentes> spec = new QuerySpecification<Asistentes>(query);
+  public Page<Asistentes> findAll(String query, Pageable paging) {
+    log.debug("findAll(String query,Pageable paging) - start");
+    Specification<Asistentes> specs = SgiRSQLJPASupport.toSpecification(query);
 
-    Page<Asistentes> returnValue = asistentesRepository.findAll(spec, paging);
-    log.debug("findAll(List<QueryCriteria> query,Pageable paging) - end");
+    Page<Asistentes> returnValue = asistentesRepository.findAll(specs, paging);
+    log.debug("findAll(String query,Pageable paging) - end");
     return returnValue;
   }
 

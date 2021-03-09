@@ -1,12 +1,10 @@
 package org.crue.hercules.sgi.eti.service;
 
-import org.crue.hercules.sgi.eti.model.Dictamen;
-import org.crue.hercules.sgi.eti.model.TipoEvaluacion;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
-
 import java.util.List;
 
 import org.crue.hercules.sgi.eti.exceptions.TipoEvaluacionNotFoundException;
+import org.crue.hercules.sgi.eti.model.Dictamen;
+import org.crue.hercules.sgi.eti.model.TipoEvaluacion;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -37,7 +35,7 @@ public interface TipoEvaluacionService {
    * @param query    la información del filtro.
    * @return la lista de entidades {@link TipoEvaluacion} paginadas y/o filtradas.
    */
-  Page<TipoEvaluacion> findAll(List<QueryCriteria> query, Pageable pageable);
+  Page<TipoEvaluacion> findAll(String query, Pageable pageable);
 
   /**
    * Obtiene {@link TipoEvaluacion} por id.

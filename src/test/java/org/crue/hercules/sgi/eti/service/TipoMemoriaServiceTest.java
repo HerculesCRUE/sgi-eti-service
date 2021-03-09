@@ -11,12 +11,10 @@ import org.crue.hercules.sgi.eti.repository.TipoMemoriaRepository;
 import org.crue.hercules.sgi.eti.service.impl.TipoMemoriaServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -27,7 +25,6 @@ import org.springframework.data.jpa.domain.Specification;
 /**
  * TipoMemoriaServiceTest
  */
-@ExtendWith(MockitoExtension.class)
 public class TipoMemoriaServiceTest extends BaseServiceTest {
 
   @Mock
@@ -163,6 +160,23 @@ public class TipoMemoriaServiceTest extends BaseServiceTest {
     Assertions.assertThatCode(
         // when: Delete con id existente
         () -> tipoMemoriaService.delete(1L))
+        // then: No se lanza ninguna excepción
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  public void deleteAll_DeleteAllTipoMemoria() {
+    // given: One hundred TipoMemoria
+    List<TipoMemoria> tipoMemorias = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      tipoMemorias.add(generarMockTipoMemoria(Long.valueOf(i), "TipoMemoria" + String.format("%03d", i)));
+    }
+
+    BDDMockito.doNothing().when(tipoMemoriaRepository).deleteAll();
+
+    Assertions.assertThatCode(
+        // when: Delete all
+        () -> tipoMemoriaService.deleteAll())
         // then: No se lanza ninguna excepción
         .doesNotThrowAnyException();
   }

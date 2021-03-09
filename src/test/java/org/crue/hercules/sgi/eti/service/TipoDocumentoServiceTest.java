@@ -12,12 +12,10 @@ import org.crue.hercules.sgi.eti.repository.TipoDocumentoRepository;
 import org.crue.hercules.sgi.eti.service.impl.TipoDocumentoServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -28,7 +26,6 @@ import org.springframework.data.jpa.domain.Specification;
 /**
  * TipoDocumentoServiceTest
  */
-@ExtendWith(MockitoExtension.class)
 public class TipoDocumentoServiceTest extends BaseServiceTest {
 
   @Mock
@@ -239,6 +236,23 @@ public class TipoDocumentoServiceTest extends BaseServiceTest {
       TipoDocumento tipoDocumento = page.getContent().get(i);
       Assertions.assertThat(tipoDocumento.getNombre()).isEqualTo("TipoDocumento" + String.format("%03d", j));
     }
+  }
+
+  @Test
+  public void deleteAll_DeleteAllTipoDocumento() {
+    // given: One hundred TipoDocumento
+    List<TipoDocumento> tipoDocumentos = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      tipoDocumentos.add(generarMockTipoDocumento(Long.valueOf(i), "TipoDocumento" + String.format("%03d", i)));
+    }
+
+    BDDMockito.doNothing().when(tipoDocumentoRepository).deleteAll();
+
+    Assertions.assertThatCode(
+        // when: Delete all
+        () -> tipoDocumentoService.deleteAll())
+        // then: No se lanza ninguna excepción
+        .doesNotThrowAnyException();
   }
 
   /**

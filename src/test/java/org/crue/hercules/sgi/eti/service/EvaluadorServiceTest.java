@@ -15,12 +15,10 @@ import org.crue.hercules.sgi.eti.repository.EvaluadorRepository;
 import org.crue.hercules.sgi.eti.service.impl.EvaluadorServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -31,7 +29,6 @@ import org.springframework.data.jpa.domain.Specification;
 /**
  * EvaluadorServiceTest
  */
-@ExtendWith(MockitoExtension.class)
 public class EvaluadorServiceTest extends BaseServiceTest {
 
   @Mock
@@ -82,6 +79,86 @@ public class EvaluadorServiceTest extends BaseServiceTest {
   }
 
   @Test
+  public void create_EvaluadorWithCargoPresidenteAndFechaBajaInformada_ReturnsEvaluador() {
+    // given: Un nuevo Evaluador con cargo presidente
+    String cargoComite = "presidente";
+    LocalDate fecha = LocalDate.now().plusYears(1);
+
+    Evaluador evaluadorNew = generarMockEvaluadorWithCargoComiteAndFechaBaja(null, "EvaluadorNew", 1L, cargoComite,
+        fecha);
+
+    Evaluador evaluador = generarMockEvaluadorWithCargoComiteAndFechaBaja(1L, "EvaluadorNew", 1L, cargoComite, fecha);
+
+    BDDMockito.given(evaluadorRepository.save(evaluadorNew)).willReturn(evaluador);
+
+    Evaluador evaluadorCreado = evaluadorService.create(evaluadorNew);
+
+    // then: El evaluador tiene cargo presidente
+    Assertions.assertThat(evaluadorCreado).isNotNull();
+    Assertions.assertThat(evaluadorCreado.getCargoComite().getNombre().toLowerCase()).isEqualTo("presidente");
+  }
+
+  @Test
+  public void create_EvaluadorWithCargoPresidenteAndFechaBajaNull_ReturnsEvaluador() {
+    // given: Un nuevo Evaluador con cargo presidente
+    String cargoComite = "presidente";
+    LocalDate fecha = null;
+
+    Evaluador evaluadorNew = generarMockEvaluadorWithCargoComiteAndFechaBaja(null, "EvaluadorNew", 1L, cargoComite,
+        fecha);
+
+    Evaluador evaluador = generarMockEvaluadorWithCargoComiteAndFechaBaja(1L, "EvaluadorNew", 1L, cargoComite, fecha);
+
+    BDDMockito.given(evaluadorRepository.save(evaluadorNew)).willReturn(evaluador);
+
+    Evaluador evaluadorCreado = evaluadorService.create(evaluadorNew);
+
+    // then: El evaluador tiene cargo presidente
+    Assertions.assertThat(evaluadorCreado).isNotNull();
+    Assertions.assertThat(evaluadorCreado.getCargoComite().getNombre().toLowerCase()).isEqualTo("presidente");
+  }
+
+  @Test
+  public void create_EvaluadorWithCargoVocalAndFechaBajaInformada_ReturnsEvaluador() {
+    // given: Un nuevo Evaluador con cargo vocal
+    String cargoComite = "vocal";
+    LocalDate fecha = LocalDate.now().plusYears(1);
+
+    Evaluador evaluadorNew = generarMockEvaluadorWithCargoComiteAndFechaBaja(null, "EvaluadorNew", 2L, cargoComite,
+        fecha);
+
+    Evaluador evaluador = generarMockEvaluadorWithCargoComiteAndFechaBaja(1L, "EvaluadorNew", 2L, cargoComite, fecha);
+
+    BDDMockito.given(evaluadorRepository.save(evaluadorNew)).willReturn(evaluador);
+
+    Evaluador evaluadorCreado = evaluadorService.create(evaluadorNew);
+
+    // then: El evaluador tiene cargo vocal
+    Assertions.assertThat(evaluadorCreado).isNotNull();
+    Assertions.assertThat(evaluadorCreado.getCargoComite().getNombre().toLowerCase()).isEqualTo("vocal");
+  }
+
+  @Test
+  public void create_EvaluadorWithCargoVocalAndFechaBajaNull_ReturnsEvaluador() {
+    // given: Un nuevo Evaluador con cargo vocal
+    String cargoComite = "vocal";
+    LocalDate fecha = null;
+
+    Evaluador evaluadorNew = generarMockEvaluadorWithCargoComiteAndFechaBaja(null, "EvaluadorNew", 2L, cargoComite,
+        fecha);
+
+    Evaluador evaluador = generarMockEvaluadorWithCargoComiteAndFechaBaja(1L, "EvaluadorNew", 2L, cargoComite, fecha);
+
+    BDDMockito.given(evaluadorRepository.save(evaluadorNew)).willReturn(evaluador);
+
+    Evaluador evaluadorCreado = evaluadorService.create(evaluadorNew);
+
+    // then: El evaluador tiene cargo vocal
+    Assertions.assertThat(evaluadorCreado).isNotNull();
+    Assertions.assertThat(evaluadorCreado.getCargoComite().getNombre().toLowerCase()).isEqualTo("vocal");
+  }
+
+  @Test
   public void create_EvaluadorWithId_ThrowsIllegalArgumentException() {
     // given: Un nuevo evaluador que ya tiene id
     Evaluador evaluadorNew = generarMockEvaluador(1L, "EvaluadorNew");
@@ -97,6 +174,98 @@ public class EvaluadorServiceTest extends BaseServiceTest {
     Evaluador evaluadorServicioActualizado = generarMockEvaluador(1L, "Evaluador1 actualizada");
 
     Evaluador evaluador = generarMockEvaluador(1L, "Evaluador1");
+
+    BDDMockito.given(evaluadorRepository.findById(1L)).willReturn(Optional.of(evaluador));
+    BDDMockito.given(evaluadorRepository.save(evaluador)).willReturn(evaluadorServicioActualizado);
+
+    // when: Actualizamos el evaluador
+    Evaluador evaluadorActualizado = evaluadorService.update(evaluador);
+
+    // then: El evaluador se actualiza correctamente.
+    Assertions.assertThat(evaluadorActualizado.getId()).isEqualTo(1L);
+    Assertions.assertThat(evaluadorActualizado.getResumen()).isEqualTo("Evaluador1 actualizada");
+
+  }
+
+  @Test
+  public void update_EvaluadorWithCargoPresidenteAndFechaBajaInformada_ReturnsEvaluador() {
+    // given: Un nuevo Evaluador con cargo presidente
+    String cargoComite = "presidente";
+    LocalDate fecha = LocalDate.now().plusYears(1);
+
+    Evaluador evaluadorServicioActualizado = generarMockEvaluadorWithCargoComiteAndFechaBaja(1L,
+        "Evaluador1 actualizada", 1L, cargoComite, fecha);
+
+    Evaluador evaluador = generarMockEvaluadorWithCargoComiteAndFechaBaja(1L, "Evaluador1", 1L, cargoComite, fecha);
+
+    BDDMockito.given(evaluadorRepository.findById(1L)).willReturn(Optional.of(evaluador));
+    BDDMockito.given(evaluadorRepository.save(evaluador)).willReturn(evaluadorServicioActualizado);
+
+    // when: Actualizamos el evaluador
+    Evaluador evaluadorActualizado = evaluadorService.update(evaluador);
+
+    // then: El evaluador se actualiza correctamente.
+    Assertions.assertThat(evaluadorActualizado.getId()).isEqualTo(1L);
+    Assertions.assertThat(evaluadorActualizado.getResumen()).isEqualTo("Evaluador1 actualizada");
+
+  }
+
+  @Test
+  public void update_EvaluadorWithCargoPresidenteAndFechaBajaNull_ReturnsEvaluador() {
+    // given: Un nuevo Evaluador con cargo presidente
+    String cargoComite = "presidente";
+    LocalDate fecha = null;
+
+    Evaluador evaluadorServicioActualizado = generarMockEvaluadorWithCargoComiteAndFechaBaja(1L,
+        "Evaluador1 actualizada", 1L, cargoComite, fecha);
+
+    Evaluador evaluador = generarMockEvaluadorWithCargoComiteAndFechaBaja(1L, "Evaluador1", 1L, cargoComite, fecha);
+
+    BDDMockito.given(evaluadorRepository.findById(1L)).willReturn(Optional.of(evaluador));
+    BDDMockito.given(evaluadorRepository.save(evaluador)).willReturn(evaluadorServicioActualizado);
+
+    // when: Actualizamos el evaluador
+    Evaluador evaluadorActualizado = evaluadorService.update(evaluador);
+
+    // then: El evaluador se actualiza correctamente.
+    Assertions.assertThat(evaluadorActualizado.getId()).isEqualTo(1L);
+    Assertions.assertThat(evaluadorActualizado.getResumen()).isEqualTo("Evaluador1 actualizada");
+
+  }
+
+  @Test
+  public void update_EvaluadorWithCargoVocalAndFechaBajaInformada_ReturnsEvaluador() {
+    // given: Un nuevo Evaluador con cargo vocal
+    String cargoComite = "vocal";
+    LocalDate fecha = LocalDate.now().plusYears(1);
+
+    Evaluador evaluadorServicioActualizado = generarMockEvaluadorWithCargoComiteAndFechaBaja(1L,
+        "Evaluador1 actualizada", 2L, cargoComite, fecha);
+
+    Evaluador evaluador = generarMockEvaluadorWithCargoComiteAndFechaBaja(1L, "Evaluador1", 2L, cargoComite, fecha);
+
+    BDDMockito.given(evaluadorRepository.findById(1L)).willReturn(Optional.of(evaluador));
+    BDDMockito.given(evaluadorRepository.save(evaluador)).willReturn(evaluadorServicioActualizado);
+
+    // when: Actualizamos el evaluador
+    Evaluador evaluadorActualizado = evaluadorService.update(evaluador);
+
+    // then: El evaluador se actualiza correctamente.
+    Assertions.assertThat(evaluadorActualizado.getId()).isEqualTo(1L);
+    Assertions.assertThat(evaluadorActualizado.getResumen()).isEqualTo("Evaluador1 actualizada");
+
+  }
+
+  @Test
+  public void update_EvaluadorWithCargoVocalAndFechaBajaNull_ReturnsEvaluador() {
+    // given: Un nuevo Evaluador con cargo vocal
+    String cargoComite = "vocal";
+    LocalDate fecha = null;
+
+    Evaluador evaluadorServicioActualizado = generarMockEvaluadorWithCargoComiteAndFechaBaja(1L,
+        "Evaluador1 actualizada", 2L, cargoComite, fecha);
+
+    Evaluador evaluador = generarMockEvaluadorWithCargoComiteAndFechaBaja(1L, "Evaluador1", 2L, cargoComite, fecha);
 
     BDDMockito.given(evaluadorRepository.findById(1L)).willReturn(Optional.of(evaluador));
     BDDMockito.given(evaluadorRepository.save(evaluador)).willReturn(evaluadorServicioActualizado);
@@ -319,6 +488,26 @@ public class EvaluadorServiceTest extends BaseServiceTest {
     evaluador.setComite(comite);
     evaluador.setFechaAlta(LocalDate.now());
     evaluador.setFechaBaja(LocalDate.now());
+    evaluador.setResumen(resumen);
+    evaluador.setPersonaRef("user-00" + id);
+    evaluador.setActivo(Boolean.TRUE);
+
+    return evaluador;
+  }
+
+  public Evaluador generarMockEvaluadorWithCargoComiteAndFechaBaja(Long id, String resumen, Long cargoComiteId,
+      String cargoComiteNombre, LocalDate fecha) {
+    CargoComite cargoComite = new CargoComite(cargoComiteId, cargoComiteNombre, Boolean.TRUE);
+
+    Formulario formulario = new Formulario(1L, "M10", "Descripcion");
+    Comite comite = new Comite(1L, "Comite1", formulario, Boolean.TRUE);
+
+    Evaluador evaluador = new Evaluador();
+    evaluador.setId(id);
+    evaluador.setCargoComite(cargoComite);
+    evaluador.setComite(comite);
+    evaluador.setFechaAlta(LocalDate.now());
+    evaluador.setFechaBaja(fecha);
     evaluador.setResumen(resumen);
     evaluador.setPersonaRef("user-00" + id);
     evaluador.setActivo(Boolean.TRUE);

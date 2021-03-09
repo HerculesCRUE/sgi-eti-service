@@ -17,12 +17,21 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Test de integracion de EstadoRetrospectiva.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off    
+  "classpath:scripts/estado_retrospectiva.sql"
+// @formatter:on
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class EstadoRetrospectivaIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -40,7 +49,6 @@ public class EstadoRetrospectivaIT extends BaseIT {
     return request;
   }
 
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void create_ReturnsEstadoRetrospectiva() throws Exception {
 
@@ -61,8 +69,6 @@ public class EstadoRetrospectivaIT extends BaseIT {
     Assertions.assertThat(estadoRetrospectiva).isEqualTo(newEstadoRetrospectiva);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void update_WithExistingId_ReturnsEstadoRetrospectiva() throws Exception {
 
@@ -83,8 +89,6 @@ public class EstadoRetrospectivaIT extends BaseIT {
     Assertions.assertThat(response.getBody()).isEqualTo(updatedEstadoRetrospectiva);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void delete_WithExistingId_Return204() throws Exception {
 
@@ -111,8 +115,6 @@ public class EstadoRetrospectivaIT extends BaseIT {
     Assertions.assertThat(response.getBody().getActivo()).isEqualTo(Boolean.FALSE);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findById_WithExistingId_ReturnsEstadoRetrospectiva() throws Exception {
 
@@ -132,12 +134,11 @@ public class EstadoRetrospectivaIT extends BaseIT {
     Assertions.assertThat(response.getBody()).isEqualTo(estadoRetrospectiva);
   }
 
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findById_WithNotExistingId_Returns404() throws Exception {
 
     // given: No existe entidad con el id indicado
-    Long id = 1L;
+    Long id = 6L;
     final String url = new StringBuilder(ESTADO_RETROSPECTIVA_CONTROLLER_BASE_PATH)//
         .append(PATH_PARAMETER_ID)//
         .toString();
@@ -150,8 +151,6 @@ public class EstadoRetrospectivaIT extends BaseIT {
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_Unlimited_ReturnsFullEstadoRetrospectivaList() throws Exception {
 
@@ -159,11 +158,15 @@ public class EstadoRetrospectivaIT extends BaseIT {
     List<EstadoRetrospectiva> response = new LinkedList<>();
     response.add(getMockData(1L));
     response.add(getMockData(2L));
+    response.add(getMockData(3L));
+    response.add(getMockData(4L));
+    response.add(getMockData(5L));
+    String sort = "id,asc";
 
-    final String url = new StringBuilder(ESTADO_RETROSPECTIVA_CONTROLLER_BASE_PATH).toString();
-
+    URI uri = UriComponentsBuilder.fromUriString(ESTADO_RETROSPECTIVA_CONTROLLER_BASE_PATH).queryParam("s", sort)
+        .build(false).toUri();
     // when: Se buscan todos los datos
-    final ResponseEntity<List<EstadoRetrospectiva>> result = restTemplate.exchange(url, HttpMethod.GET,
+    final ResponseEntity<List<EstadoRetrospectiva>> result = restTemplate.exchange(uri, HttpMethod.GET,
         buildRequest(null, null), new ParameterizedTypeReference<List<EstadoRetrospectiva>>() {
         });
 
@@ -172,8 +175,6 @@ public class EstadoRetrospectivaIT extends BaseIT {
     Assertions.assertThat(result.getBody()).isEqualTo(response);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPaging_ReturnsEstadoRetrospectivaSubList() throws Exception {
 
@@ -204,8 +205,6 @@ public class EstadoRetrospectivaIT extends BaseIT {
     Assertions.assertThat(result.getHeaders().getFirst("X-Total-Count")).isEqualTo("5");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSearchQuery_ReturnsFilteredEstadoRetrospectivaList() throws Exception {
 
@@ -215,7 +214,7 @@ public class EstadoRetrospectivaIT extends BaseIT {
 
     // search by codigo like, id equals
     Long id = 3L;
-    String query = "nombre~EstadoRetrospectiva0%,id:" + id;
+    String query = "nombre=ke=EstadoRetrospectiva0;id==" + id;
 
     URI uri = UriComponentsBuilder.fromUriString(ESTADO_RETROSPECTIVA_CONTROLLER_BASE_PATH).queryParam("q", query)
         .build(false).toUri();
@@ -236,15 +235,13 @@ public class EstadoRetrospectivaIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSortQuery_ReturnsOrderedEstadoRetrospectivaList() throws Exception {
 
     // given: Datos existentes
 
     // sort by id desc
-    String sort = "id-";
+    String sort = "id,desc";
 
     URI uri = UriComponentsBuilder.fromUriString(ESTADO_RETROSPECTIVA_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .build(false).toUri();
@@ -265,8 +262,6 @@ public class EstadoRetrospectivaIT extends BaseIT {
     Assertions.assertThat(result.getHeaders().getFirst("X-Total-Count")).isEqualTo("5");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPagingSortingAndFiltering_ReturnsEstadoRetrospectivaSubList() throws Exception {
 
@@ -280,10 +275,10 @@ public class EstadoRetrospectivaIT extends BaseIT {
     headers.add("X-Page-Size", "2");
 
     // sort
-    String sort = "id-";
+    String sort = "id,desc";
 
     // search
-    String query = "nombre~EstadoRetrospectiva0%";
+    String query = "nombre=ke=EstadoRetrospectiva0";
 
     URI uri = UriComponentsBuilder.fromUriString(ESTADO_RETROSPECTIVA_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .queryParam("q", query).build(false).toUri();

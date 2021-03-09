@@ -1,6 +1,5 @@
 package org.crue.hercules.sgi.eti.controller;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +10,6 @@ import org.crue.hercules.sgi.eti.config.SecurityConfig;
 import org.crue.hercules.sgi.eti.exceptions.CargoComiteNotFoundException;
 import org.crue.hercules.sgi.eti.model.CargoComite;
 import org.crue.hercules.sgi.eti.service.CargoComiteService;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -31,7 +29,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * CargoComiteControllerTest
@@ -176,9 +173,7 @@ public class CargoComiteControllerTest extends BaseControllerTest {
       cargoComites.add(generarMockCargoComite(Long.valueOf(i), "CargoComite" + String.format("%03d", i)));
     }
 
-    BDDMockito
-        .given(
-            cargoComiteService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(cargoComiteService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willReturn(new PageImpl<>(cargoComites));
 
     // when: find unlimited
@@ -193,6 +188,21 @@ public class CargoComiteControllerTest extends BaseControllerTest {
 
   @Test
   @WithMockUser(username = "user", authorities = { "ETI-CARGOCOMITE-VER" })
+  public void findAll_ReturnsNotContent() throws Exception {
+    // given: CargoComite empty
+    List<CargoComite> cargoComites = new ArrayList<>();
+
+    BDDMockito.given(cargoComiteService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
+        .willReturn(new PageImpl<>(cargoComites));
+
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(CARGO_COMITE_CONTROLLER_BASE_PATH)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print()).andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-CARGOCOMITE-VER" })
   public void findAll_WithPaging_ReturnsCargoComiteSubList() throws Exception {
     // given: One hundred CargoComite
     List<CargoComite> cargoComites = new ArrayList<>();
@@ -200,9 +210,7 @@ public class CargoComiteControllerTest extends BaseControllerTest {
       cargoComites.add(generarMockCargoComite(Long.valueOf(i), "CargoComite" + String.format("%03d", i)));
     }
 
-    BDDMockito
-        .given(
-            cargoComiteService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(cargoComiteService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willAnswer(new Answer<Page<CargoComite>>() {
           @Override
           public Page<CargoComite> answer(InvocationOnMock invocation) throws Throwable {
@@ -254,67 +262,13 @@ public class CargoComiteControllerTest extends BaseControllerTest {
     }
     String query = "nombre~CargoComite%,id:5";
 
-    BDDMockito
-        .given(
-            cargoComiteService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(cargoComiteService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willAnswer(new Answer<Page<CargoComite>>() {
           @Override
           public Page<CargoComite> answer(InvocationOnMock invocation) throws Throwable {
-            List<QueryCriteria> queryCriterias = invocation.<List<QueryCriteria>>getArgument(0);
-
             List<CargoComite> content = new ArrayList<>();
             for (CargoComite cargoComite : cargoComites) {
-              boolean add = true;
-              for (QueryCriteria queryCriteria : queryCriterias) {
-                Field field = ReflectionUtils.findField(CargoComite.class, queryCriteria.getKey());
-                field.setAccessible(true);
-                String fieldValue = ReflectionUtils.getField(field, cargoComite).toString();
-                switch (queryCriteria.getOperation()) {
-                  case EQUALS:
-                    if (!fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) > 0)) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) >= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LIKE:
-                    if (!fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) < 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) <= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_EQUALS:
-                    if (fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_LIKE:
-                    if (fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  default:
-                    break;
-                }
-              }
-              if (add) {
+              if (cargoComite.getNombre().startsWith("CargoComite") && cargoComite.getId().equals(5L)) {
                 content.add(cargoComite);
               }
             }

@@ -1,10 +1,7 @@
 package org.crue.hercules.sgi.eti.service;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.EstadoRetrospectivaNotFoundException;
 import org.crue.hercules.sgi.eti.model.EstadoRetrospectiva;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -60,12 +57,12 @@ public interface EstadoRetrospectivaService {
    * Obtiene las entidades {@link EstadoRetrospectiva} filtradas y paginadas según
    * los criterios de búsqueda.
    *
-   * @param query  filtro de {@link QueryCriteria}.
+   * @param query  filtro de búsqueda.
    * @param paging pageable
    * @return el listado de entidades {@link EstadoRetrospectiva} paginadas y
    *         filtradas.
    */
-  Page<EstadoRetrospectiva> findAll(List<QueryCriteria> query, Pageable paging);
+  Page<EstadoRetrospectiva> findAll(String query, Pageable paging);
 
   /**
    * Obtiene {@link EstadoRetrospectiva} por id.

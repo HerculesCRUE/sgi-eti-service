@@ -1,11 +1,7 @@
 package org.crue.hercules.sgi.eti.service;
 
-import org.crue.hercules.sgi.eti.model.TipoComentario;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
-
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.TipoComentarioNotFoundException;
+import org.crue.hercules.sgi.eti.model.TipoComentario;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -36,7 +32,7 @@ public interface TipoComentarioService {
    * @param query    la información del filtro.
    * @return la lista de entidades {@link TipoComentario} paginadas y/o filtradas.
    */
-  Page<TipoComentario> findAll(List<QueryCriteria> query, Pageable pageable);
+  Page<TipoComentario> findAll(String query, Pageable pageable);
 
   /**
    * Obtiene {@link TipoComentario} por id.

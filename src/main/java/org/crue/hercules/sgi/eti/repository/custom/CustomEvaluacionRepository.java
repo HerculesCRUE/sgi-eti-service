@@ -1,11 +1,8 @@
 package org.crue.hercules.sgi.eti.repository.custom;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.dto.EvaluacionWithNumComentario;
 import org.crue.hercules.sgi.eti.model.Evaluacion;
 import org.crue.hercules.sgi.eti.model.Evaluador;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -38,18 +35,18 @@ public interface CustomEvaluacionRepository {
    * @return la lista de entidades {@link Evaluacion} paginadas y/o filtradas.
    */
 
-  Page<Evaluacion> findAllByMemoriaAndRetrospectivaEnEvaluacion(List<QueryCriteria> query, Pageable pageable);
+  Page<Evaluacion> findAllByMemoriaAndRetrospectivaEnEvaluacion(String query, Pageable pageable);
 
   /**
    * Obtener todas las entidades {@link Evaluacion} paginadas asociadas a un
    * evaluador
    *
    * @param personaRef Identificador del {@link Evaluacion}
-   * @param query      filtro de {@link QueryCriteria}.
+   * @param query      filtro de búsqueda.
    * @param pageable   pageable
    * @return la lista de entidades {@link Evaluacion} paginadas y/o filtradas.
    */
-  Page<Evaluacion> findByEvaluador(String personaRef, List<QueryCriteria> query, Pageable pageable);
+  Page<Evaluacion> findByEvaluador(String personaRef, String query, Pageable pageable);
 
   /**
    * Obtiene todas las entidades {@link Evaluacion}, en estado "En evaluación
@@ -58,21 +55,20 @@ public interface CustomEvaluacionRepository {
    * a un evaluador
    * 
    * @param personaRef Persona Ref del {@link Evaluador}
-   * @param query      filtro de {@link QueryCriteria}.
+   * @param query      filtro de búsqueda.
    * @param pageable   pageable
    * @return la lista de entidades {@link Evaluacion} paginadas y/o filtradas.
    */
-  Page<Evaluacion> findEvaluacionesEnSeguimientosByEvaluador(String personaRef, List<QueryCriteria> query,
-      Pageable pageable);
+  Page<Evaluacion> findEvaluacionesEnSeguimientosByEvaluador(String personaRef, String query, Pageable pageable);
 
   /**
    * Obtener todas las entidades {@link Evaluacion} paginadas asociadas a
    * determinados tipos de seguimiento final
    *
-   * @param query    filtro de {@link QueryCriteria}.
+   * @param query    filtro de búsqueda.
    * @param pageable pageable
    * @return la lista de entidades {@link Evaluacion} paginadas y/o filtradas.
    */
 
-  public Page<Evaluacion> findByEvaluacionesEnSeguimientoFinal(List<QueryCriteria> query, Pageable pageable);
+  public Page<Evaluacion> findByEvaluacionesEnSeguimientoFinal(String query, Pageable pageable);
 }

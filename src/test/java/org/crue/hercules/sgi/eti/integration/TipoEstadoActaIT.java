@@ -16,12 +16,21 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Test de integracion de TipoEstadoActa.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off  
+  "classpath:scripts/tipo_estado_acta.sql" 
+// @formatter:on
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class TipoEstadoActaIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -39,8 +48,6 @@ public class TipoEstadoActaIT extends BaseIT {
     return request;
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void getTipoEstadoActa_WithId_ReturnsTipoEstadoActa() throws Exception {
     final ResponseEntity<TipoEstadoActa> response = restTemplate.exchange(
@@ -55,8 +62,6 @@ public class TipoEstadoActaIT extends BaseIT {
     Assertions.assertThat(tipoEstadoActa.getNombre()).isEqualTo("En elaboración");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void addTipoEstadoActa_ReturnsTipoEstadoActa() throws Exception {
 
@@ -69,8 +74,6 @@ public class TipoEstadoActaIT extends BaseIT {
     Assertions.assertThat(response.getBody()).isEqualTo(nuevoTipoEstadoActa);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeTipoEstadoActa_Success() throws Exception {
 
@@ -85,8 +88,6 @@ public class TipoEstadoActaIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeTipoEstadoActa_DoNotGetTipoEstadoActa() throws Exception {
     restTemplate.exchange(TIPO_ESTADO_ACTA_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.DELETE,
@@ -94,14 +95,12 @@ public class TipoEstadoActaIT extends BaseIT {
 
     final ResponseEntity<TipoEstadoActa> response = restTemplate.exchange(
         TIPO_ESTADO_ACTA_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.GET, buildRequest(null, null),
-        TipoEstadoActa.class, 1L);
+        TipoEstadoActa.class, 3L);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void replaceTipoEstadoActa_ReturnsTipoEstadoActa() throws Exception {
 
@@ -120,8 +119,6 @@ public class TipoEstadoActaIT extends BaseIT {
     Assertions.assertThat(tipoEstadoActa.getActivo()).isEqualTo(replaceTipoEstadoActa.getActivo());
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPaging_ReturnsTipoEstadoActaSubList() throws Exception {
     // when: Obtiene la page=3 con pagesize=10
@@ -150,13 +147,11 @@ public class TipoEstadoActaIT extends BaseIT {
     Assertions.assertThat(tipoEstadoActas.get(0).getNombre()).isEqualTo("Finalizada");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSearchQuery_ReturnsFilteredTipoEstadoActaList() throws Exception {
     // when: Búsqueda por nombre like e id equals
     Long id = 1L;
-    String query = "nombre~En%,id:" + id;
+    String query = "nombre=ke=En;id==" + id;
 
     // Authorization
     HttpHeaders headers = new HttpHeaders();
@@ -179,12 +174,10 @@ public class TipoEstadoActaIT extends BaseIT {
     Assertions.assertThat(tipoEstadoActas.get(0).getNombre()).startsWith("En elaboración");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSortQuery_ReturnsOrderedTipoEstadoActaList() throws Exception {
     // when: Ordenación por nombre desc
-    String query = "nombre-";
+    String query = "nombre,desc";
 
     // Authorization
     HttpHeaders headers = new HttpHeaders();
@@ -210,8 +203,6 @@ public class TipoEstadoActaIT extends BaseIT {
     Assertions.assertThat(tipoEstadoActas.get(1).getNombre()).isEqualTo("En elaboración");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPagingSortingAndFiltering_ReturnsTipoEstadoActaSubList() throws Exception {
     // when: Obtiene page=3 con pagesize=10
@@ -221,9 +212,9 @@ public class TipoEstadoActaIT extends BaseIT {
     // Authorization
     headers.set("Authorization", String.format("bearer %s", tokenBuilder.buildToken("user", "ETI-ACT-V")));
     // when: Ordena por nombre desc
-    String sort = "nombre-";
+    String sort = "nombre,desc";
     // when: Filtra por nombre like
-    String filter = "nombre~%finalizada%";
+    String filter = "nombre=ke=Finalizada";
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_ESTADO_ACTA_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .queryParam("q", filter).build(false).toUri();

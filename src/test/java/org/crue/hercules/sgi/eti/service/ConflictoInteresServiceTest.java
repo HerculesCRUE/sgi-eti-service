@@ -1,5 +1,8 @@
 package org.crue.hercules.sgi.eti.service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import java.time.LocalDate;
 import java.util.Optional;
 
@@ -13,18 +16,19 @@ import org.crue.hercules.sgi.eti.model.Formulario;
 import org.crue.hercules.sgi.eti.repository.ConflictoInteresRepository;
 import org.crue.hercules.sgi.eti.repository.EvaluadorRepository;
 import org.crue.hercules.sgi.eti.service.impl.ConflictoInteresServiceImpl;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.domain.PageImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
  * ConflictoInteresServiceTest
  */
-@ExtendWith(MockitoExtension.class)
 public class ConflictoInteresServiceTest extends BaseServiceTest {
 
   @Mock
@@ -54,6 +58,41 @@ public class ConflictoInteresServiceTest extends BaseServiceTest {
   }
 
   @Test
+  public void findAll_Unlimited_ReturnsFullConflictoInteresList() {
+    List<ConflictoInteres> conflictoInteres = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      conflictoInteres.add(generarMockConflictoInteres(Long.valueOf(i), "user-123"));
+    }
+
+    BDDMockito.given(conflictoInteresRepository.findAll(ArgumentMatchers.<Specification<ConflictoInteres>>any(),
+        ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(conflictoInteres));
+
+    Page<ConflictoInteres> page = conflictoInteresService.findAll(null, Pageable.unpaged());
+
+    Assertions.assertThat(page.getContent().size()).isEqualTo(100);
+    Assertions.assertThat(page.getSize()).isEqualTo(conflictoInteres.size());
+    Assertions.assertThat(page.getTotalElements()).isEqualTo(conflictoInteres.size());
+
+  }
+
+  @Test
+  public void findAllByEvaluadorId() {
+    Long evaluadorId = 1L;
+    List<ConflictoInteres> conflictoInteres = new ArrayList<>();
+    conflictoInteres.add(generarMockConflictoInteres(1L, "ConflictoInteres"));
+
+    BDDMockito.given(conflictoInteresRepository.findAllByEvaluadorId(evaluadorId, Pageable.unpaged()))
+        .willReturn(new PageImpl<>(conflictoInteres));
+
+    Page<ConflictoInteres> page = conflictoInteresService.findAllByEvaluadorId(evaluadorId, Pageable.unpaged());
+
+    Assertions.assertThat(page.getContent().size()).isEqualTo(1);
+    Assertions.assertThat(page.getSize()).isEqualTo(conflictoInteres.size());
+    Assertions.assertThat(page.getTotalElements()).isEqualTo(conflictoInteres.size());
+
+  }
+
+  @Test
   public void find_NotFound_ThrowsConflictoInteresNotFoundException() throws Exception {
     BDDMockito.given(conflictoInteresRepository.findById(1L)).willReturn(Optional.empty());
 
@@ -78,6 +117,16 @@ public class ConflictoInteresServiceTest extends BaseServiceTest {
     Assertions.assertThat(conflictoInteresCreado).isNotNull();
     Assertions.assertThat(conflictoInteresCreado.getId()).isEqualTo(1L);
     Assertions.assertThat(conflictoInteresCreado.getPersonaConflictoRef()).isEqualTo("user-001");
+  }
+
+  @Test
+  public void create_ReturnsConflictoInteres_ThrowsConflictoInteresNotFoundException() {
+    // given: Un nuevo ConflictoInteres
+    ConflictoInteres conflictoInteresNew = generarMockConflictoInteres(null, null);
+    conflictoInteresNew.getEvaluador().setId(1L);
+
+    Assertions.assertThatThrownBy(() -> conflictoInteresService.create(conflictoInteresNew))
+        .isInstanceOf(ConflictoInteresNotFoundException.class);
   }
 
   @Test
@@ -216,4 +265,5 @@ public class ConflictoInteresServiceTest extends BaseServiceTest {
     }
     return conflicto;
   }
+
 }

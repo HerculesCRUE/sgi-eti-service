@@ -61,4 +61,26 @@ public class MemoriaSpecifications {
       return cb.equal(root.get(Memoria_.peticionEvaluacion).get(PeticionEvaluacion_.personaRef), personaRef);
     };
   }
+
+  public static Specification<Memoria> byPeticionEvaluacion(Long id) {
+    return (root, query, cb) -> {
+      return cb.equal(root.get(Memoria_.peticionEvaluacion).get(PeticionEvaluacion_.id), id);
+    };
+  }
+
+  public static Specification<Memoria> byPeticionesEvaluacion(List<Long> ids) {
+    return (root, query, cb) -> {
+      if (ids != null && !ids.isEmpty()) {
+        return root.get(Memoria_.peticionEvaluacion).get(PeticionEvaluacion_.id).in(ids);
+      } else {
+        return cb.and();
+      }
+    };
+  }
+
+  public static Specification<Memoria> byPeticionEvaluacionActivo() {
+    return (root, query, cb) -> {
+      return cb.equal(root.get(Memoria_.peticionEvaluacion).get(PeticionEvaluacion_.activo), Boolean.TRUE);
+    };
+  }
 }

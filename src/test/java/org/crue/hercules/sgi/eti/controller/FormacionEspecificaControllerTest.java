@@ -1,6 +1,5 @@
 package org.crue.hercules.sgi.eti.controller;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,7 +9,6 @@ import org.assertj.core.api.Assertions;
 import org.crue.hercules.sgi.eti.exceptions.FormacionEspecificaNotFoundException;
 import org.crue.hercules.sgi.eti.model.FormacionEspecifica;
 import org.crue.hercules.sgi.eti.service.FormacionEspecificaService;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -29,7 +27,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * FormacionEspecificaControllerTest
@@ -175,8 +172,9 @@ public class FormacionEspecificaControllerTest extends BaseControllerTest {
           .add(generarMockFormacionEspecifica(Long.valueOf(i), "FormacionEspecifica" + String.format("%03d", i)));
     }
 
-    BDDMockito.given(formacionEspecificaService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(),
-        ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(formacionEspecificas));
+    BDDMockito
+        .given(formacionEspecificaService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
+        .willReturn(new PageImpl<>(formacionEspecificas));
 
     // when: find unlimited
     mockMvc
@@ -190,6 +188,22 @@ public class FormacionEspecificaControllerTest extends BaseControllerTest {
 
   @Test
   @WithMockUser(username = "user", authorities = { "ETI-FORMACIONESPECIFICA-VER" })
+  public void findAll_ReturnsNotContent() throws Exception {
+    // given: FormacionEspecifica empty
+    List<FormacionEspecifica> formacionEspecificas = new ArrayList<>();
+
+    BDDMockito
+        .given(formacionEspecificaService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
+        .willReturn(new PageImpl<>(formacionEspecificas));
+
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(FORMACION_ESPECIFICA_CONTROLLER_BASE_PATH)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print()).andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-FORMACIONESPECIFICA-VER" })
   public void findAll_WithPaging_ReturnsFormacionEspecificaSubList() throws Exception {
     // given: One hundred FormacionEspecifica
     List<FormacionEspecifica> formacionEspecificas = new ArrayList<>();
@@ -198,8 +212,9 @@ public class FormacionEspecificaControllerTest extends BaseControllerTest {
           .add(generarMockFormacionEspecifica(Long.valueOf(i), "FormacionEspecifica" + String.format("%03d", i)));
     }
 
-    BDDMockito.given(formacionEspecificaService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(),
-        ArgumentMatchers.<Pageable>any())).willAnswer(new Answer<Page<FormacionEspecifica>>() {
+    BDDMockito
+        .given(formacionEspecificaService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
+        .willAnswer(new Answer<Page<FormacionEspecifica>>() {
           @Override
           public Page<FormacionEspecifica> answer(InvocationOnMock invocation) throws Throwable {
             Pageable pageable = invocation.getArgument(1, Pageable.class);
@@ -253,65 +268,15 @@ public class FormacionEspecificaControllerTest extends BaseControllerTest {
     }
     String query = "nombre~FormacionEspecifica%,id:5";
 
-    BDDMockito.given(formacionEspecificaService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(),
-        ArgumentMatchers.<Pageable>any())).willAnswer(new Answer<Page<FormacionEspecifica>>() {
+    BDDMockito
+        .given(formacionEspecificaService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
+        .willAnswer(new Answer<Page<FormacionEspecifica>>() {
           @Override
           public Page<FormacionEspecifica> answer(InvocationOnMock invocation) throws Throwable {
-            List<QueryCriteria> queryCriterias = invocation.<List<QueryCriteria>>getArgument(0);
-
             List<FormacionEspecifica> content = new ArrayList<>();
             for (FormacionEspecifica formacionEspecifica : formacionEspecificas) {
-              boolean add = true;
-              for (QueryCriteria queryCriteria : queryCriterias) {
-                Field field = ReflectionUtils.findField(FormacionEspecifica.class, queryCriteria.getKey());
-                field.setAccessible(true);
-                String fieldValue = ReflectionUtils.getField(field, formacionEspecifica).toString();
-                switch (queryCriteria.getOperation()) {
-                  case EQUALS:
-                    if (!fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) > 0)) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) >= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LIKE:
-                    if (!fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) < 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) <= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_EQUALS:
-                    if (fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_LIKE:
-                    if (fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  default:
-                    break;
-                }
-              }
-              if (add) {
+              if (formacionEspecifica.getNombre().startsWith("FormacionEspecifica")
+                  && formacionEspecifica.getId().equals(5L)) {
                 content.add(formacionEspecifica);
               }
             }

@@ -1,11 +1,7 @@
 package org.crue.hercules.sgi.eti.service;
 
-import org.crue.hercules.sgi.eti.model.TipoEstadoActa;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
-
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.TipoEstadoActaNotFoundException;
+import org.crue.hercules.sgi.eti.model.TipoEstadoActa;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -37,7 +33,7 @@ public interface TipoEstadoActaService {
    * @param query    la información del filtro.
    * @return la lista de entidades {@link TipoEstadoActa} paginadas y/o filtradas.
    */
-  Page<TipoEstadoActa> findAll(List<QueryCriteria> query, Pageable pageable);
+  Page<TipoEstadoActa> findAll(String query, Pageable pageable);
 
   /**
    * Obtiene {@link TipoEstadoActa} por id.

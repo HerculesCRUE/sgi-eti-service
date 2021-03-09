@@ -1,12 +1,8 @@
 package org.crue.hercules.sgi.eti.service;
 
+import org.crue.hercules.sgi.eti.exceptions.InformeNotFoundException;
 import org.crue.hercules.sgi.eti.model.Informe;
 import org.crue.hercules.sgi.eti.model.Memoria;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
-
-import java.util.List;
-
-import org.crue.hercules.sgi.eti.exceptions.InformeNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -37,7 +33,7 @@ public interface InformeService {
    * @param query    la información del filtro.
    * @return la lista de entidades {@link Informe} paginadas y/o filtradas.
    */
-  Page<Informe> findAll(List<QueryCriteria> query, Pageable pageable);
+  Page<Informe> findAll(String query, Pageable pageable);
 
   /**
    * Obtiene {@link Informe} por id.

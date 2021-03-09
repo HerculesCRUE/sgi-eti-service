@@ -20,12 +20,28 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Test de integracion de Respuesta.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off  
+  "classpath:scripts/tipo_actividad.sql", 
+  "classpath:scripts/formulario.sql",
+  "classpath:scripts/tipo_memoria.sql", 
+  "classpath:scripts/tipo_estado_memoria.sql",
+  "classpath:scripts/estado_retrospectiva.sql", 
+  "classpath:scripts/bloque.sql", 
+  "classpath:scripts/apartado.sql",
+  "classpath:scripts/respuesta.sql" 
+// @formatter:on  
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class RespuestaIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -43,23 +59,19 @@ public class RespuestaIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void getRespuesta_WithId_ReturnsRespuesta() throws Exception {
     final ResponseEntity<Respuesta> response = restTemplate.exchange(RESPUESTA_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID,
-        HttpMethod.GET, buildRequest(null, null), Respuesta.class, 1L);
+        HttpMethod.GET, buildRequest(null, null), Respuesta.class, 2L);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
     final Respuesta respuesta = response.getBody();
 
-    Assertions.assertThat(respuesta.getId()).isEqualTo(1L);
-    Assertions.assertThat(respuesta.getValor()).isEqualTo("{\"valor\":\"Valor1\"}");
+    Assertions.assertThat(respuesta.getId()).isEqualTo(2L);
+    Assertions.assertThat(respuesta.getValor()).isEqualTo("{\"valor\":\"Valor2\"}");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void addRespuesta_ReturnsRespuesta() throws Exception {
 
@@ -70,13 +82,11 @@ public class RespuestaIT extends BaseIT {
         Respuesta.class);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeRespuesta_Success() throws Exception {
 
     // when: Delete con id existente
-    long id = 1L;
+    long id = 2L;
     final ResponseEntity<Respuesta> response = restTemplate.exchange(RESPUESTA_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID,
         HttpMethod.DELETE, buildRequest(null, null), Respuesta.class, id);
 
@@ -85,8 +95,6 @@ public class RespuestaIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeRespuesta_DoNotGetRespuesta() throws Exception {
 
@@ -97,15 +105,13 @@ public class RespuestaIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void replaceRespuesta_ReturnsRespuesta() throws Exception {
 
     Respuesta replaceRespuesta = generarMockRespuesta(1L);
 
     final ResponseEntity<Respuesta> response = restTemplate.exchange(RESPUESTA_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID,
-        HttpMethod.PUT, buildRequest(null, replaceRespuesta), Respuesta.class, 1L);
+        HttpMethod.PUT, buildRequest(null, replaceRespuesta), Respuesta.class, 2L);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
@@ -115,8 +121,6 @@ public class RespuestaIT extends BaseIT {
     Assertions.assertThat(respuesta.getValor()).isEqualTo(replaceRespuesta.getValor());
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPaging_ReturnsRespuestaSubList() throws Exception {
     // when: Obtiene la page=3 con pagesize=10
@@ -132,24 +136,21 @@ public class RespuestaIT extends BaseIT {
     // correcta en el header
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     final List<Respuesta> respuestas = response.getBody();
-    Assertions.assertThat(respuestas.size()).isEqualTo(3);
+    Assertions.assertThat(respuestas.size()).isEqualTo(2);
     Assertions.assertThat(response.getHeaders().getFirst("X-Page")).isEqualTo("1");
     Assertions.assertThat(response.getHeaders().getFirst("X-Page-Size")).isEqualTo("5");
-    Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("8");
+    Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("7");
 
-    // Contiene de valor='Valor6' a 'Valor8'
-    Assertions.assertThat(respuestas.get(0).getValor()).isEqualTo("{\"valor\":\"Valor6\"}");
-    Assertions.assertThat(respuestas.get(1).getValor()).isEqualTo("{\"valor\":\"Valor7\"}");
-    Assertions.assertThat(respuestas.get(2).getValor()).isEqualTo("{\"valor\":\"Valor8\"}");
+    // Contiene de valor='Valor7' y 'Valor8'
+    Assertions.assertThat(respuestas.get(0).getValor()).isEqualTo("{\"valor\":\"Valor7\"}");
+    Assertions.assertThat(respuestas.get(1).getValor()).isEqualTo("{\"valor\":\"Valor8\"}");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSearchQuery_ReturnsFilteredRespuestaList() throws Exception {
     // when: Búsqueda por valor like e id equals
     Long id = 5L;
-    String query = "valor~Valor%,id:" + id;
+    String query = "valor=ke=Valor;id==" + id;
 
     URI uri = UriComponentsBuilder.fromUriString(RESPUESTA_CONTROLLER_BASE_PATH).queryParam("q", query).build(false)
         .toUri();
@@ -168,12 +169,10 @@ public class RespuestaIT extends BaseIT {
     Assertions.assertThat(respuestas.get(0).getValor()).startsWith("{\"valor\":\"Valor");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSortQuery_ReturnsOrderedRespuestaList() throws Exception {
     // when: Ordenación por valor desc
-    String query = "valor-";
+    String query = "valor,desc";
 
     URI uri = UriComponentsBuilder.fromUriString(RESPUESTA_CONTROLLER_BASE_PATH).queryParam("s", query).build(false)
         .toUri();
@@ -187,17 +186,14 @@ public class RespuestaIT extends BaseIT {
     // correcta en el header
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     final List<Respuesta> respuestas = response.getBody();
-    Assertions.assertThat(respuestas.size()).isEqualTo(8);
-    for (int i = 0; i < 8; i++) {
+    Assertions.assertThat(respuestas.size()).isEqualTo(7);
+    for (int i = 0; i < 7; i++) {
       Respuesta respuesta = respuestas.get(i);
       Assertions.assertThat(respuesta.getId()).isEqualTo(8 - i);
-      Assertions.assertThat(respuesta.getValor())
-          .isEqualTo("{\"valor\":\"Valor" + String.format("%03d", 8 - i) + "\"}");
+      Assertions.assertThat(respuesta.getValor()).isEqualTo("{\"valor\":\"Valor" + String.format("%d", 8 - i) + "\"}");
     }
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPagingSortingAndFiltering_ReturnsRespuestaSubList() throws Exception {
     // when: Obtiene page=3 con pagesize=10
@@ -205,9 +201,9 @@ public class RespuestaIT extends BaseIT {
     headers.add("X-Page", "0");
     headers.add("X-Page-Size", "3");
     // when: Ordena por valor desc
-    String sort = "valor-";
+    String sort = "valor,desc";
     // when: Filtra por valor like e id equals
-    String filter = "valor~%00%";
+    String filter = "valor=ke=Valor";
 
     URI uri = UriComponentsBuilder.fromUriString(RESPUESTA_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .queryParam("q", filter).build(false).toUri();
@@ -224,13 +220,12 @@ public class RespuestaIT extends BaseIT {
     HttpHeaders responseHeaders = response.getHeaders();
     Assertions.assertThat(responseHeaders.getFirst("X-Page")).isEqualTo("0");
     Assertions.assertThat(responseHeaders.getFirst("X-Page-Size")).isEqualTo("3");
-    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("3");
+    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("7");
 
-    // Contiene valor='Valor001', 'Valor002',
-    // 'Valor003'
-    Assertions.assertThat(respuestas.get(0).getValor()).isEqualTo("{\"valor\":\"Valor003\"}");
-    Assertions.assertThat(respuestas.get(1).getValor()).isEqualTo("{\"valor\":\"Valor002\"}");
-    Assertions.assertThat(respuestas.get(2).getValor()).isEqualTo("{\"valor\":\"Valor001\"}");
+    // Contiene valor= 'Valor6' 'Valor7', 'Valor8'
+    Assertions.assertThat(respuestas.get(0).getValor()).isEqualTo("{\"valor\":\"Valor8\"}");
+    Assertions.assertThat(respuestas.get(1).getValor()).isEqualTo("{\"valor\":\"Valor7\"}");
+    Assertions.assertThat(respuestas.get(2).getValor()).isEqualTo("{\"valor\":\"Valor6\"}");
 
   }
 
@@ -270,7 +265,7 @@ public class RespuestaIT extends BaseIT {
    */
   private Apartado getMockApartado(Long id, Long bloqueId, Long padreId) {
 
-    Formulario formulario = new Formulario(1L, "M10", "Descripcion1");
+    Formulario formulario = new Formulario(1L, "M10", "Formulario M10");
     Bloque Bloque = new Bloque(bloqueId, formulario, "Bloque " + bloqueId, bloqueId.intValue());
 
     Apartado padre = (padreId != null) ? getMockApartado(padreId, bloqueId, null) : null;

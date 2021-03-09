@@ -60,7 +60,8 @@ public class CustomTareaRepositoryImpl implements CustomTareaRepository {
    */
   @Override
   public Page<TareaWithIsEliminable> findAllByPeticionEvaluacionId(Long idPeticionEvaluacion, Pageable pageable) {
-
+    // TODO: Revisar uso de pageable. Se pagina pero no se tienen en cuenta la
+    // ordenación ni se realiza el count total.
     log.debug("findAllByPeticionEvaluacionId : {} - start");
 
     // Crete query

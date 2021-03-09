@@ -1,9 +1,9 @@
 package org.crue.hercules.sgi.eti.service.impl;
 
-import java.time.LocalDateTime;
 import java.time.LocalDate;
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Optional;
+
 import org.crue.hercules.sgi.eti.converter.EvaluacionConverter;
 import org.crue.hercules.sgi.eti.dto.EvaluacionWithIsEliminable;
 import org.crue.hercules.sgi.eti.dto.EvaluacionWithNumComentario;
@@ -26,10 +26,9 @@ import org.crue.hercules.sgi.eti.repository.MemoriaRepository;
 import org.crue.hercules.sgi.eti.repository.RetrospectivaRepository;
 import org.crue.hercules.sgi.eti.repository.specification.EvaluacionSpecifications;
 import org.crue.hercules.sgi.eti.service.EvaluacionService;
-import org.crue.hercules.sgi.eti.util.Constantes;
 import org.crue.hercules.sgi.eti.service.MemoriaService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.eti.util.Constantes;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -195,7 +194,7 @@ public class EvaluacionServiceImpl implements EvaluacionService {
       evaluacion.setVersion(evaluacion.getMemoria().getVersion() + 1);
       evaluacion.getMemoria().setVersion(evaluacion.getVersion());
     } else {
-      evaluacionRepository.findFirstByMemoriaIdOrderByVersionDesc(evaluacion.getMemoria().getId())
+      evaluacionRepository.findFirstByMemoriaIdAndActivoTrueOrderByVersionDesc(evaluacion.getMemoria().getId())
           .map(evaluacionAnterior -> {
 
             if (evaluacionAnterior != null) {
@@ -217,15 +216,12 @@ public class EvaluacionServiceImpl implements EvaluacionService {
    * @param query  información del filtro.
    * @return el listado de entidades {@link Evaluacion} paginadas y filtradas.
    */
-  public Page<Evaluacion> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAll(List<QueryCriteria> query,Pageable paging) - start");
-    Specification<Evaluacion> specByQuery = new QuerySpecification<Evaluacion>(query);
-    Specification<Evaluacion> specActivos = EvaluacionSpecifications.activos();
-
-    Specification<Evaluacion> specs = Specification.where(specActivos).and(specByQuery);
+  public Page<Evaluacion> findAll(String query, Pageable paging) {
+    log.debug("findAll(String query,Pageable paging) - start");
+    Specification<Evaluacion> specs = EvaluacionSpecifications.activos().and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<Evaluacion> returnValue = evaluacionRepository.findAll(specs, paging);
-    log.debug("findAll(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAll(String query,Pageable paging) - end");
     return returnValue;
   }
 
@@ -240,17 +236,12 @@ public class EvaluacionServiceImpl implements EvaluacionService {
    */
   @Override
   public Page<EvaluacionWithIsEliminable> findAllByConvocatoriaReunionIdAndNoEsRevMinima(Long idConvocatoriaReunion,
-      List<QueryCriteria> query, Pageable paging) {
+      String query, Pageable paging) {
     log.debug(
-        "findAllByConvocatoriaReunionIdAndNoEsRevMinima(Long idConvocatoriaReunion, List<QueryCriteria> query, Pageable pageable) - start");
-    Specification<Evaluacion> specByQuery = new QuerySpecification<Evaluacion>(query);
-    Specification<Evaluacion> specByConvocatoriaReunion = EvaluacionSpecifications
-        .byConvocatoriaReunionId(idConvocatoriaReunion);
-    Specification<Evaluacion> specByEsRevMinima = EvaluacionSpecifications.byEsRevMinima(false);
-    Specification<Evaluacion> specActivas = EvaluacionSpecifications.activos();
-
-    Specification<Evaluacion> specs = Specification.where(specByConvocatoriaReunion).and(specByEsRevMinima)
-        .and(specActivas).and(specByQuery);
+        "findAllByConvocatoriaReunionIdAndNoEsRevMinima(Long idConvocatoriaReunion, String query, Pageable pageable) - start");
+    Specification<Evaluacion> specs = EvaluacionSpecifications.byConvocatoriaReunionId(idConvocatoriaReunion)
+        .and(EvaluacionSpecifications.byEsRevMinima(false)).and(EvaluacionSpecifications.activos())
+        .and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<Evaluacion> returnValue = evaluacionRepository.findAll(specs, paging);
 
@@ -301,16 +292,16 @@ public class EvaluacionServiceImpl implements EvaluacionService {
    * {@link Evaluador}.
    * 
    * @param personaRef Identificador del {@link Evaluacion}
-   * @param query      filtro de {@link QueryCriteria}.
+   * @param query      filtro de búsqueda.
    * @param pageable   pageable
    * @return la lista de entidades {@link Evaluacion} paginadas.
    */
   @Override
-  public Page<Evaluacion> findByEvaluadorPersonaRef(String personaRef, List<QueryCriteria> query, Pageable pageable) {
-    log.debug("findByEvaluador(Long id, Pageable pageable) - start");
+  public Page<Evaluacion> findByEvaluadorPersonaRef(String personaRef, String query, Pageable pageable) {
+    log.debug("findByEvaluador(String personaRef, String query, Pageable pageable) - start");
     Assert.notNull(personaRef, "El userRefId de la evaluación no puede ser nulo para mostrar sus evaluaciones");
     Page<Evaluacion> returnValue = evaluacionRepository.findByEvaluador(personaRef, query, pageable);
-    log.debug("findByEvaluador(Long id, Pageable pageable) - end");
+    log.debug("findByEvaluador(String personaRef, String query, Pageable pageable) - end");
     return returnValue;
   }
 
@@ -319,16 +310,16 @@ public class EvaluacionServiceImpl implements EvaluacionService {
    * {@link Evaluador}.
    * 
    * @param personaRef Identificador del {@link Evaluacion}
-   * @param query      filtro de {@link QueryCriteria}.
+   * @param query      filtro de búsqueda.
    * @param pageable   pageable
    * @return la lista de entidades {@link Evaluacion} paginadas.
    */
   @Override
-  public Page<Evaluacion> findByEvaluador(String personaRef, List<QueryCriteria> query, Pageable pageable) {
-    log.debug("findByEvaluador(Long id, Pageable pageable) - start");
+  public Page<Evaluacion> findByEvaluador(String personaRef, String query, Pageable pageable) {
+    log.debug("findByEvaluador(String personaRef, String query, Pageable pageable) - start");
     Assert.notNull(personaRef, "El personaRef de la evaluación no puede ser nulo para mostrar sus evaluaciones");
     Page<Evaluacion> returnValue = evaluacionRepository.findByEvaluador(personaRef, query, pageable);
-    log.debug("findByEvaluador(Long id, Pageable pageable) - end");
+    log.debug("findByEvaluador(String personaRef, String query, Pageable pageable) - end");
     return returnValue;
   }
 
@@ -342,11 +333,11 @@ public class EvaluacionServiceImpl implements EvaluacionService {
    * @return el listado de entidades {@link Evaluacion} paginadas y filtradas.
    */
   @Override
-  public Page<Evaluacion> findAllByMemoriaAndRetrospectivaEnEvaluacion(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAllByMemoriaAndRetrospectivaEnEvaluacion(List<QueryCriteria> query,Pageable paging) - start");
+  public Page<Evaluacion> findAllByMemoriaAndRetrospectivaEnEvaluacion(String query, Pageable paging) {
+    log.debug("findAllByMemoriaAndRetrospectivaEnEvaluacion(String query,Pageable paging) - start");
 
     Page<Evaluacion> returnValue = evaluacionRepository.findAllByMemoriaAndRetrospectivaEnEvaluacion(query, paging);
-    log.debug("findAllByMemoriaAndRetrospectivaEnEvaluacion(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAllByMemoriaAndRetrospectivaEnEvaluacion(String query,Pageable paging) - end");
     return returnValue;
   }
 
@@ -357,21 +348,19 @@ public class EvaluacionServiceImpl implements EvaluacionService {
    * a un evaluador
    * 
    * @param personaRef Persona ref del {@link Evaluador}
-   * @param query      filtro de {@link QueryCriteria}.
+   * @param query      filtro de búsqueda.
    * @param pageable   pageable
    * @return la lista de entidades {@link Evaluacion} paginadas y/o filtradas.
    */
   @Override
-  public Page<Evaluacion> findEvaluacionesEnSeguimientosByEvaluador(String personaRef, List<QueryCriteria> query,
+  public Page<Evaluacion> findEvaluacionesEnSeguimientosByEvaluador(String personaRef, String query,
       Pageable pageable) {
-    log.debug(
-        "findEvaluacionesEnSeguimientosByEvaluador(String idEvaluador, List<QueryCriteria> query, Pageable pageable) - start");
+    log.debug("findEvaluacionesEnSeguimientosByEvaluador(String personaRef, String query, Pageable pageable) - start");
     Assert.notNull(personaRef,
         "El personaRef de la evaluación no puede ser nulo para mostrar sus evaluaciones en seguimiento");
     Page<Evaluacion> evaluaciones = evaluacionRepository.findEvaluacionesEnSeguimientosByEvaluador(personaRef, query,
         pageable);
-    log.debug(
-        "findEvaluacionesEnSeguimientosByEvaluador(String personaRef, List<QueryCriteria> query, Pageable pageable) - end");
+    log.debug("findEvaluacionesEnSeguimientosByEvaluador(String personaRef, String query, Pageable pageable) - end");
     return evaluaciones;
   }
 
@@ -501,11 +490,11 @@ public class EvaluacionServiceImpl implements EvaluacionService {
    */
 
   @Override
-  public Page<Evaluacion> findByEvaluacionesEnSeguimientoFinal(List<QueryCriteria> query, Pageable pageable) {
-    log.debug("findByEvaluacionesEnSeguimientoFinal(List<QueryCriteria> query,Pageable paging) - start");
+  public Page<Evaluacion> findByEvaluacionesEnSeguimientoFinal(String query, Pageable pageable) {
+    log.debug("findByEvaluacionesEnSeguimientoFinal(String query,Pageable paging) - start");
 
     Page<Evaluacion> returnValue = evaluacionRepository.findByEvaluacionesEnSeguimientoFinal(query, pageable);
-    log.debug("findByEvaluacionesEnSeguimientoFinal(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findByEvaluacionesEnSeguimientoFinal(String query,Pageable paging) - end");
 
     return returnValue;
   }
@@ -517,6 +506,7 @@ public class EvaluacionServiceImpl implements EvaluacionService {
    * @param idEvaluacion          id de la {@link Evaluacion}
    */
   @Override
+  @Transactional
   public void deleteEvaluacion(Long idConvocatoriaReunion, Long idEvaluacion) {
     Memoria memoria = null;
 
@@ -538,6 +528,8 @@ public class EvaluacionServiceImpl implements EvaluacionService {
 
     // Volvemos al estado anterior de la memoria
     memoria = memoriaService.getEstadoAnteriorMemoria(memoria);
+
+    memoria.setVersion(memoria.getVersion() - 1);
 
     Assert.isTrue(evaluacion.get().getConvocatoriaReunion().getFechaEvaluacion().isAfter(LocalDateTime.now()),
         "La fecha de la convocatoria es anterior a la actual");

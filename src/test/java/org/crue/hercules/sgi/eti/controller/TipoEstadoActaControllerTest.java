@@ -1,6 +1,5 @@
 package org.crue.hercules.sgi.eti.controller;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,7 +9,6 @@ import org.assertj.core.api.Assertions;
 import org.crue.hercules.sgi.eti.exceptions.TipoEstadoActaNotFoundException;
 import org.crue.hercules.sgi.eti.model.TipoEstadoActa;
 import org.crue.hercules.sgi.eti.service.TipoEstadoActaService;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -29,7 +27,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * TipoEstadoActaControllerTest
@@ -171,8 +168,7 @@ public class TipoEstadoActaControllerTest extends BaseControllerTest {
       tipoEstadoActas.add(generarMockTipoEstadoActa(Long.valueOf(i), "TipoEstadoActa" + String.format("%03d", i)));
     }
 
-    BDDMockito.given(
-        tipoEstadoActaService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(tipoEstadoActaService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willReturn(new PageImpl<>(tipoEstadoActas));
 
     // when: find unlimited
@@ -187,6 +183,24 @@ public class TipoEstadoActaControllerTest extends BaseControllerTest {
 
   @Test
   @WithMockUser(username = "user", authorities = { "ETI-ACT-V" })
+  public void findAll_Unlimited_ReturnsNoContent() throws Exception {
+    // given: TipoEstadoActa empty
+    List<TipoEstadoActa> tipoEstadoActas = new ArrayList<>();
+
+    BDDMockito.given(tipoEstadoActaService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
+        .willReturn(new PageImpl<>(tipoEstadoActas));
+
+    // when: find unlimited
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(TIPO_ESTADO_ACTA_CONTROLLER_BASE_PATH)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print())
+        // then: Devuelve error No Content
+        .andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-ACT-V" })
   public void findAll_WithPaging_ReturnsTipoEstadoActaSubList() throws Exception {
     // given: One hundred TipoEstadoActa
     List<TipoEstadoActa> tipoEstadoActas = new ArrayList<>();
@@ -194,8 +208,7 @@ public class TipoEstadoActaControllerTest extends BaseControllerTest {
       tipoEstadoActas.add(generarMockTipoEstadoActa(Long.valueOf(i), "TipoEstadoActa" + String.format("%03d", i)));
     }
 
-    BDDMockito.given(
-        tipoEstadoActaService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(tipoEstadoActaService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willAnswer(new Answer<Page<TipoEstadoActa>>() {
           @Override
           public Page<TipoEstadoActa> answer(InvocationOnMock invocation) throws Throwable {
@@ -247,66 +260,13 @@ public class TipoEstadoActaControllerTest extends BaseControllerTest {
     }
     String query = "nombre~TipoEstadoActa%,id:5";
 
-    BDDMockito.given(
-        tipoEstadoActaService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(tipoEstadoActaService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willAnswer(new Answer<Page<TipoEstadoActa>>() {
           @Override
           public Page<TipoEstadoActa> answer(InvocationOnMock invocation) throws Throwable {
-            List<QueryCriteria> queryCriterias = invocation.<List<QueryCriteria>>getArgument(0);
-
             List<TipoEstadoActa> content = new ArrayList<>();
             for (TipoEstadoActa tipoEstadoActa : tipoEstadoActas) {
-              boolean add = true;
-              for (QueryCriteria queryCriteria : queryCriterias) {
-                Field field = ReflectionUtils.findField(TipoEstadoActa.class, queryCriteria.getKey());
-                field.setAccessible(true);
-                String fieldValue = ReflectionUtils.getField(field, tipoEstadoActa).toString();
-                switch (queryCriteria.getOperation()) {
-                  case EQUALS:
-                    if (!fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) > 0)) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) >= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LIKE:
-                    if (!fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) < 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) <= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_EQUALS:
-                    if (fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_LIKE:
-                    if (fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  default:
-                    break;
-                }
-              }
-              if (add) {
+              if (tipoEstadoActa.getNombre().startsWith("TipoEstadoActa") && tipoEstadoActa.getId().equals(5L)) {
                 content.add(tipoEstadoActa);
               }
             }

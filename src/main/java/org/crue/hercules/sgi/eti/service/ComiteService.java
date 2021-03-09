@@ -2,10 +2,6 @@ package org.crue.hercules.sgi.eti.service;
 
 import org.crue.hercules.sgi.eti.exceptions.ComiteNotFoundException;
 import org.crue.hercules.sgi.eti.model.Comite;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
-
-import java.util.List;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -36,7 +32,7 @@ public interface ComiteService {
    * @param query    la información del filtro.
    * @return la lista de entidades {@link Comite} paginadas y/o filtradas.
    */
-  Page<Comite> findAll(List<QueryCriteria> query, Pageable pageable);
+  Page<Comite> findAll(String query, Pageable pageable);
 
   /**
    * Obtiene {@link Comite} por id.

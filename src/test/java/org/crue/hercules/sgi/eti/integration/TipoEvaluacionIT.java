@@ -18,12 +18,22 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Test de integracion de TipoEvaluacion.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off  
+  "classpath:scripts/tipo_evaluacion.sql", 
+  "classpath:scripts/dictamen.sql" 
+// @formatter:on
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class TipoEvaluacionIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -45,8 +55,6 @@ public class TipoEvaluacionIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void getTipoEvaluacion_WithId_ReturnsTipoEvaluacion() throws Exception {
     final ResponseEntity<TipoEvaluacion> response = restTemplate.exchange(
@@ -61,8 +69,6 @@ public class TipoEvaluacionIT extends BaseIT {
     Assertions.assertThat(tipoEvaluacion.getNombre()).isEqualTo("TipoEvaluacion1");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void addTipoEvaluacion_ReturnsTipoEvaluacion() throws Exception {
 
@@ -78,8 +84,6 @@ public class TipoEvaluacionIT extends BaseIT {
     Assertions.assertThat(response.getBody().getId()).isNotNull();
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeTipoEvaluacion_Success() throws Exception {
 
@@ -94,21 +98,17 @@ public class TipoEvaluacionIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeTipoEvaluacion_DoNotGetTipoEvaluacion() throws Exception {
 
     final ResponseEntity<TipoEvaluacion> response = restTemplate.exchange(
         TIPO_EVALUACION_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.DELETE, buildRequest(null, null),
-        TipoEvaluacion.class, 1L);
+        TipoEvaluacion.class, 12L);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void replaceTipoEvaluacion_ReturnsTipoEvaluacion() throws Exception {
 
@@ -127,41 +127,42 @@ public class TipoEvaluacionIT extends BaseIT {
     Assertions.assertThat(tipoEvaluacion.getActivo()).isEqualTo(replaceTipoEvaluacion.getActivo());
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPaging_ReturnsTipoEvaluacionSubList() throws Exception {
     // when: Obtiene la page=3 con pagesize=10
     HttpHeaders headers = new HttpHeaders();
     headers.add("X-Page", "1");
-    headers.add("X-Page-Size", "5");
+    headers.add("X-Page-Size", "4");
+    String sort = "nombre,desc";
 
-    final ResponseEntity<List<TipoEvaluacion>> response = restTemplate.exchange(TIPO_EVALUACION_CONTROLLER_BASE_PATH,
-        HttpMethod.GET, buildRequest(headers, null), new ParameterizedTypeReference<List<TipoEvaluacion>>() {
+    URI uri = UriComponentsBuilder.fromUriString(TIPO_EVALUACION_CONTROLLER_BASE_PATH).queryParam("s", sort)
+        .build(false).toUri();
+
+    final ResponseEntity<List<TipoEvaluacion>> response = restTemplate.exchange(uri, HttpMethod.GET,
+        buildRequest(headers, null), new ParameterizedTypeReference<List<TipoEvaluacion>>() {
         });
 
     // then: Respuesta OK, TipoEvaluaciones retorna la información de la página
     // correcta en el header
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     final List<TipoEvaluacion> tipoEvaluaciones = response.getBody();
-    Assertions.assertThat(tipoEvaluaciones.size()).isEqualTo(3);
+    Assertions.assertThat(tipoEvaluaciones.size()).isEqualTo(4);
     Assertions.assertThat(response.getHeaders().getFirst("X-Page")).isEqualTo("1");
-    Assertions.assertThat(response.getHeaders().getFirst("X-Page-Size")).isEqualTo("5");
+    Assertions.assertThat(response.getHeaders().getFirst("X-Page-Size")).isEqualTo("4");
     Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("8");
 
-    // Contiene de nombre='TipoEvaluacion6' a 'TipoEvaluacion8'
-    Assertions.assertThat(tipoEvaluaciones.get(0).getNombre()).isEqualTo("TipoEvaluacion6");
-    Assertions.assertThat(tipoEvaluaciones.get(1).getNombre()).isEqualTo("TipoEvaluacion7");
-    Assertions.assertThat(tipoEvaluaciones.get(2).getNombre()).isEqualTo("TipoEvaluacion8");
+    // Contiene de nombre='TipoEvaluacion4' a 'TipoEvaluacion1'
+    Assertions.assertThat(tipoEvaluaciones.get(0).getNombre()).isEqualTo("TipoEvaluacion4");
+    Assertions.assertThat(tipoEvaluaciones.get(1).getNombre()).isEqualTo("TipoEvaluacion3");
+    Assertions.assertThat(tipoEvaluaciones.get(2).getNombre()).isEqualTo("TipoEvaluacion2");
+    Assertions.assertThat(tipoEvaluaciones.get(3).getNombre()).isEqualTo("TipoEvaluacion1");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSearchQuery_ReturnsFilteredTipoEvaluacionList() throws Exception {
     // when: Búsqueda por nombre like e id equals
     Long id = 5L;
-    String query = "nombre~TipoEvaluacion%,id:" + id;
+    String query = "nombre=ke=TipoEvaluacion;id==" + id;
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_EVALUACION_CONTROLLER_BASE_PATH).queryParam("q", query)
         .build(false).toUri();
@@ -180,12 +181,10 @@ public class TipoEvaluacionIT extends BaseIT {
     Assertions.assertThat(tipoEvaluaciones.get(0).getNombre()).startsWith("TipoEvaluacion");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSortQuery_ReturnsOrderedTipoEvaluacionList() throws Exception {
     // when: Ordenación por nombre desc
-    String query = "nombre-";
+    String query = "nombre,desc";
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_EVALUACION_CONTROLLER_BASE_PATH).queryParam("s", query)
         .build(false).toUri();
@@ -203,12 +202,10 @@ public class TipoEvaluacionIT extends BaseIT {
     for (int i = 0; i < 8; i++) {
       TipoEvaluacion tipoEvaluacion = tipoEvaluaciones.get(i);
       Assertions.assertThat(tipoEvaluacion.getId()).isEqualTo(8 - i);
-      Assertions.assertThat(tipoEvaluacion.getNombre()).isEqualTo("TipoEvaluacion" + String.format("%03d", 8 - i));
+      Assertions.assertThat(tipoEvaluacion.getNombre()).isEqualTo("TipoEvaluacion" + String.format("%d", 8 - i));
     }
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPagingSortingAndFiltering_ReturnsTipoEvaluacionSubList() throws Exception {
     // when: Obtiene page=3 con pagesize=10
@@ -216,9 +213,9 @@ public class TipoEvaluacionIT extends BaseIT {
     headers.add("X-Page", "0");
     headers.add("X-Page-Size", "3");
     // when: Ordena por nombre desc
-    String sort = "nombre-";
+    String sort = "nombre,desc";
     // when: Filtra por nombre like e id equals
-    String filter = "nombre~%00%";
+    String filter = "nombre=ke=TipoEvaluacion";
 
     URI uri = UriComponentsBuilder.fromUriString(TIPO_EVALUACION_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .queryParam("q", filter).build(false).toUri();
@@ -235,25 +232,23 @@ public class TipoEvaluacionIT extends BaseIT {
     HttpHeaders responseHeaders = response.getHeaders();
     Assertions.assertThat(responseHeaders.getFirst("X-Page")).isEqualTo("0");
     Assertions.assertThat(responseHeaders.getFirst("X-Page-Size")).isEqualTo("3");
-    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("3");
+    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("8");
 
-    // Contiene nombre='TipoEvaluacion001', 'TipoEvaluacion002',
-    // 'TipoEvaluacion003'
-    Assertions.assertThat(tipoEvaluaciones.get(0).getNombre()).isEqualTo("TipoEvaluacion" + String.format("%03d", 3));
-    Assertions.assertThat(tipoEvaluaciones.get(1).getNombre()).isEqualTo("TipoEvaluacion" + String.format("%03d", 2));
-    Assertions.assertThat(tipoEvaluaciones.get(2).getNombre()).isEqualTo("TipoEvaluacion" + String.format("%03d", 1));
+    // Contiene nombre='TipoEvaluacion8', 'TipoEvaluacion7',
+    // 'TipoEvaluacion6'
+    Assertions.assertThat(tipoEvaluaciones.get(0).getNombre()).isEqualTo("TipoEvaluacion" + String.format("%d", 8));
+    Assertions.assertThat(tipoEvaluaciones.get(1).getNombre()).isEqualTo("TipoEvaluacion" + String.format("%d", 7));
+    Assertions.assertThat(tipoEvaluaciones.get(2).getNombre()).isEqualTo("TipoEvaluacion" + String.format("%d", 6));
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAllDictamenByTipoEvaluacionAndRevisionMinima_WithTipoEvaluacionId_ReturnsListaDictamen()
       throws Exception {
 
-    TipoEvaluacion tipoEvaluacion = generarMockTipoEvaluacion(3L, "Seguimiento anual");
+    TipoEvaluacion tipoEvaluacion = generarMockTipoEvaluacion(1L, "TipoEvaluacion1");
     Dictamen dictamen1 = generarMockDictamen(5L, "Favorable", tipoEvaluacion);
-    Dictamen dictamen2 = generarMockDictamen(6L, "Solicitud de modificaciones", tipoEvaluacion);
+    Dictamen dictamen2 = generarMockDictamen(6L, "Desfavorable", tipoEvaluacion);
     List<Dictamen> listaDictamenes = new ArrayList<Dictamen>();
     listaDictamenes.add(dictamen1);
     listaDictamenes.add(dictamen2);
@@ -263,20 +258,18 @@ public class TipoEvaluacionIT extends BaseIT {
 
     final ResponseEntity<List<Dictamen>> response = restTemplate.exchange(url, HttpMethod.GET, buildRequest(null, null),
         new ParameterizedTypeReference<List<Dictamen>>() {
-        }, 3L, Boolean.TRUE);
+        }, 1L, Boolean.TRUE);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     final List<Dictamen> dictamenes = response.getBody();
     Assertions.assertThat(dictamenes).isEqualTo(listaDictamenes);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findTipoEvaluacionMemoriaRetrospectiva_ReturnsListaTipoEvaluacion() throws Exception {
 
-    TipoEvaluacion tipoEvaluacion1 = generarMockTipoEvaluacion(1L, "Retrospectiva");
-    TipoEvaluacion tipoEvaluacion2 = generarMockTipoEvaluacion(2L, "Memoria");
+    TipoEvaluacion tipoEvaluacion1 = generarMockTipoEvaluacion(1L, "TipoEvaluacion1");
+    TipoEvaluacion tipoEvaluacion2 = generarMockTipoEvaluacion(2L, "TipoEvaluacion2");
 
     List<TipoEvaluacion> listaTipoEvaluacion = new ArrayList<TipoEvaluacion>();
     listaTipoEvaluacion.add(tipoEvaluacion1);
@@ -294,13 +287,11 @@ public class TipoEvaluacionIT extends BaseIT {
     Assertions.assertThat(tipoEvaluaciones).isEqualTo(listaTipoEvaluacion);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findTipoEvaluacionSeguimientoAnualFinal_ReturnsListaTipoEvaluacion() throws Exception {
 
-    TipoEvaluacion tipoEvaluacion1 = generarMockTipoEvaluacion(3L, "Seguimiento anual");
-    TipoEvaluacion tipoEvaluacion2 = generarMockTipoEvaluacion(4L, "Seguimiento final");
+    TipoEvaluacion tipoEvaluacion1 = generarMockTipoEvaluacion(3L, "TipoEvaluacion3");
+    TipoEvaluacion tipoEvaluacion2 = generarMockTipoEvaluacion(4L, "TipoEvaluacion4");
 
     List<TipoEvaluacion> listaTipoEvaluacion = new ArrayList<TipoEvaluacion>();
     listaTipoEvaluacion.add(tipoEvaluacion1);

@@ -15,12 +15,10 @@ import org.crue.hercules.sgi.eti.repository.RespuestaRepository;
 import org.crue.hercules.sgi.eti.service.impl.RespuestaServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -31,7 +29,6 @@ import org.springframework.data.jpa.domain.Specification;
 /**
  * RespuestaServiceTest
  */
-@ExtendWith(MockitoExtension.class)
 public class RespuestaServiceTest extends BaseServiceTest {
 
   @Mock
@@ -232,6 +229,23 @@ public class RespuestaServiceTest extends BaseServiceTest {
       Respuesta Respuesta = page.getContent().get(i);
       Assertions.assertThat(Respuesta.getId()).isEqualTo(j);
     }
+  }
+
+  @Test
+  public void deleteAll_DeleteAllRespuesta() {
+    // given: One hundred Respuestas
+    List<Respuesta> respuestas = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      respuestas.add(generarMockRespuesta(Long.valueOf(i)));
+    }
+
+    BDDMockito.doNothing().when(respuestaRepository).deleteAll();
+
+    Assertions.assertThatCode(
+        // when: Delete all
+        () -> respuestaService.deleteAll())
+        // then: No se lanza ninguna excepción
+        .doesNotThrowAnyException();
   }
 
   /**

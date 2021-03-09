@@ -1,14 +1,11 @@
 package org.crue.hercules.sgi.eti.service.impl;
 
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.TipoTareaNotFoundException;
 import org.crue.hercules.sgi.eti.model.TipoTarea;
 import org.crue.hercules.sgi.eti.repository.TipoTareaRepository;
 import org.crue.hercules.sgi.eti.repository.specification.TipoTareaSpecifications;
 import org.crue.hercules.sgi.eti.service.TipoTareaService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -53,15 +50,12 @@ public class TipoTareaServiceImpl implements TipoTareaService {
    * @param query  información del filtro.
    * @return el listado de entidades {@link TipoTarea} paginadas y filtradas.
    */
-  public Page<TipoTarea> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAllTipoTarea(List<QueryCriteria> query, Pageable paging) - start");
-    Specification<TipoTarea> specByQuery = new QuerySpecification<TipoTarea>(query);
-    Specification<TipoTarea> specActivos = TipoTareaSpecifications.activos();
-
-    Specification<TipoTarea> specs = Specification.where(specActivos).and(specByQuery);
+  public Page<TipoTarea> findAll(String query, Pageable paging) {
+    log.debug("findAllTipoTarea(String query, Pageable paging) - start");
+    Specification<TipoTarea> specs = TipoTareaSpecifications.activos().and(SgiRSQLJPASupport.toSpecification(query));
 
     Page<TipoTarea> returnValue = tipoTareaRepository.findAll(specs, paging);
-    log.debug("findAllTipoTarea(List<QueryCriteria> query, Pageable paging) - end");
+    log.debug("findAllTipoTarea(String query, Pageable paging) - end");
     return returnValue;
   }
 

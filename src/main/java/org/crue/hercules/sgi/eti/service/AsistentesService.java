@@ -1,12 +1,8 @@
 package org.crue.hercules.sgi.eti.service;
 
-import org.crue.hercules.sgi.eti.model.ConvocatoriaReunion;
-import org.crue.hercules.sgi.eti.model.Asistentes;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
-
-import java.util.List;
-
 import org.crue.hercules.sgi.eti.exceptions.AsistentesNotFoundException;
+import org.crue.hercules.sgi.eti.model.Asistentes;
+import org.crue.hercules.sgi.eti.model.ConvocatoriaReunion;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -37,7 +33,7 @@ public interface AsistentesService {
    * @param query    la información del filtro.
    * @return la lista de entidades {@link Asistentes} paginadas y/o filtradas.
    */
-  Page<Asistentes> findAll(List<QueryCriteria> query, Pageable pageable);
+  Page<Asistentes> findAll(String query, Pageable pageable);
 
   /**
    * Obtener todas las entidades paginadas {@link Asistentes} activas para una

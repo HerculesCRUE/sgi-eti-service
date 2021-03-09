@@ -1,11 +1,9 @@
 package org.crue.hercules.sgi.eti.service;
 
-import org.crue.hercules.sgi.eti.model.Dictamen;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
-
 import java.util.List;
 
 import org.crue.hercules.sgi.eti.exceptions.DictamenNotFoundException;
+import org.crue.hercules.sgi.eti.model.Dictamen;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -36,7 +34,7 @@ public interface DictamenService {
    * @param query    la información del filtro.
    * @return la lista de entidades {@link Dictamen} paginadas y/o filtradas.
    */
-  Page<Dictamen> findAll(List<QueryCriteria> query, Pageable pageable);
+  Page<Dictamen> findAll(String query, Pageable pageable);
 
   /**
    * Obtiene {@link Dictamen} por id.

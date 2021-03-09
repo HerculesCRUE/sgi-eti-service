@@ -1,10 +1,35 @@
 package org.crue.hercules.sgi.eti.repository.custom;
 
-import lombok.extern.slf4j.Slf4j;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Order;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import javax.persistence.criteria.Subquery;
+
 import org.crue.hercules.sgi.eti.dto.EvaluacionWithNumComentario;
-import org.crue.hercules.sgi.eti.model.*;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.eti.model.Comentario;
+import org.crue.hercules.sgi.eti.model.Comentario_;
+import org.crue.hercules.sgi.eti.model.Comite_;
+import org.crue.hercules.sgi.eti.model.EstadoRetrospectiva_;
+import org.crue.hercules.sgi.eti.model.Evaluacion;
+import org.crue.hercules.sgi.eti.model.Evaluacion_;
+import org.crue.hercules.sgi.eti.model.Evaluador;
+import org.crue.hercules.sgi.eti.model.Evaluador_;
+import org.crue.hercules.sgi.eti.model.Memoria;
+import org.crue.hercules.sgi.eti.model.Memoria_;
+import org.crue.hercules.sgi.eti.model.Retrospectiva;
+import org.crue.hercules.sgi.eti.model.Retrospectiva_;
+import org.crue.hercules.sgi.eti.model.TipoEstadoMemoria_;
+import org.crue.hercules.sgi.eti.model.TipoEvaluacion_;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -12,23 +37,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.query.QueryUtils;
 import org.springframework.stereotype.Component;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import org.crue.hercules.sgi.eti.model.Evaluacion;
-import org.crue.hercules.sgi.eti.model.Evaluacion_;
-import org.crue.hercules.sgi.eti.model.Memoria;
-import org.crue.hercules.sgi.eti.model.Memoria_;
-import org.crue.hercules.sgi.eti.model.Retrospectiva;
-import org.crue.hercules.sgi.eti.model.Retrospectiva_;
-import org.crue.hercules.sgi.eti.model.TipoEstadoMemoria_;
-import org.crue.hercules.sgi.eti.model.TipoEvaluacion_;
-import org.crue.hercules.sgi.eti.model.EstadoRetrospectiva_;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Spring Data JPA repository para {@link Evaluacion}.
@@ -55,7 +64,8 @@ public class CustomEvaluacionRepositoryImpl implements CustomEvaluacionRepositor
    */
   public Page<EvaluacionWithNumComentario> findEvaluacionesAnterioresByMemoria(Long idMemoria, Long idEvaluacion,
       Pageable pageable) {
-
+    // TODO: Revisar uso de pageable, porque se página pero no se tiene en cuenta la
+    // ordenación y se está paginando pero sin hacer la count del query
     log.debug("findEvaluacionesAnterioresByMemoria : {} - start");
 
     // Crete query
@@ -69,7 +79,7 @@ public class CustomEvaluacionRepositoryImpl implements CustomEvaluacionRepositor
     cq.multiselect(root.alias("evaluacion"), getNumComentarios(root, cb, cq).alias("numComentarios"));
 
     cq.where(cb.equal(root.get(Evaluacion_.memoria).get(Memoria_.id), idMemoria),
-        cb.notEqual(root.get(Evaluacion_.id), idEvaluacion));
+        cb.notEqual(root.get(Evaluacion_.id), idEvaluacion), cb.isTrue(root.get(Evaluacion_.activo)));
 
     TypedQuery<EvaluacionWithNumComentario> typedQuery = entityManager.createQuery(cq);
     if (pageable != null && pageable.isPaged()) {
@@ -94,7 +104,7 @@ public class CustomEvaluacionRepositoryImpl implements CustomEvaluacionRepositor
    * @param pageable la información de la paginación.
    * @return la lista de entidades {@link Evaluacion} paginadas y/o filtradas.
    */
-  public Page<Evaluacion> findByEvaluacionesEnSeguimientoFinal(List<QueryCriteria> query, Pageable pageable) {
+  public Page<Evaluacion> findByEvaluacionesEnSeguimientoFinal(String query, Pageable pageable) {
 
     // Crete query
     CriteriaBuilder cb = entityManager.getCriteriaBuilder();
@@ -112,7 +122,7 @@ public class CustomEvaluacionRepositoryImpl implements CustomEvaluacionRepositor
 
     // Where
     if (query != null) {
-      Specification<Evaluacion> spec = new QuerySpecification<Evaluacion>(query);
+      Specification<Evaluacion> spec = SgiRSQLJPASupport.toSpecification(query);
       listPredicates.add(spec.toPredicate(root, cq, cb));
       listPredicatesCount.add(spec.toPredicate(rootCount, cq, cb));
     }
@@ -150,9 +160,8 @@ public class CustomEvaluacionRepositoryImpl implements CustomEvaluacionRepositor
    * @param pageable la información de la paginación.
    * @return la lista de entidades {@link Evaluacion} paginadas y/o filtradas.
    */
-  public Page<Evaluacion> findAllByMemoriaAndRetrospectivaEnEvaluacion(List<QueryCriteria> query, Pageable pageable) {
-
-    log.debug("findAllByMemoriaAndRetrospectivaEnEvaluacion : {} - start");
+  public Page<Evaluacion> findAllByMemoriaAndRetrospectivaEnEvaluacion(String query, Pageable pageable) {
+    log.debug("findAllByMemoriaAndRetrospectivaEnEvaluacion(String query, Pageable pageable) - start");
 
     // Crete query
     CriteriaBuilder cb = entityManager.getCriteriaBuilder();
@@ -165,26 +174,13 @@ public class CustomEvaluacionRepositoryImpl implements CustomEvaluacionRepositor
     Root<Evaluacion> rootCount = countQuery.from(Evaluacion.class);
     countQuery.select(cb.count(rootCount));
 
-    List<Predicate> listPredicates = new ArrayList<Predicate>();
-
-    listPredicates.add(cb.or(
-        cb.and(cb.equal(root.get(Evaluacion_.tipoEvaluacion).get(TipoEvaluacion_.id), 1L),
-            cb.in(root.get(Evaluacion_.memoria).get(Memoria_.id)).value(getIdsMemoriasRestropectivas(cb, cq, root))),
-        cb.and(cb.equal(root.get(Evaluacion_.tipoEvaluacion).get(TipoEvaluacion_.id), 2L),
-            cb.in(root.get(Evaluacion_.memoria).get(Memoria_.id)).value(getIdsMemoriasEstadoActual(cb, cq, root)))));
-
-    listPredicates.add(cb.and(cb.equal(root.get(Evaluacion_.activo), Boolean.TRUE)));
-
-    // Where
-    if (query != null) {
-      Specification<Evaluacion> spec = new QuerySpecification<Evaluacion>(query);
-      listPredicates.add(spec.toPredicate(root, cq, cb));
-    }
+    Predicate predicateContent = this.getByMemoriaAndRetrospectivaEnEvaluacionPredicate(query, root, cq, cb);
+    Predicate predicateCount = this.getByMemoriaAndRetrospectivaEnEvaluacionPredicate(query, rootCount, countQuery, cb);
 
     // Filtros
-    cq.where(listPredicates.toArray(new Predicate[] {}));
+    cq.where(predicateContent);
 
-    countQuery.where(listPredicates.toArray(new Predicate[] {}));
+    countQuery.where(predicateCount);
 
     // Ordenación
     List<Order> orders = QueryUtils.toOrders(pageable.getSort(), root, cb);
@@ -203,10 +199,29 @@ public class CustomEvaluacionRepositoryImpl implements CustomEvaluacionRepositor
     List<Evaluacion> result = typedQuery.getResultList();
     Page<Evaluacion> returnValue = new PageImpl<Evaluacion>(result, pageable, count);
 
-    log.debug("findAllByMemoriaAndRetrospectivaEnEvaluacion : {} - end");
+    log.debug("findAllByMemoriaAndRetrospectivaEnEvaluacion(String query, Pageable pageable) - end");
 
     return returnValue;
 
+  }
+
+  private Predicate getByMemoriaAndRetrospectivaEnEvaluacionPredicate(String query, Root<Evaluacion> root,
+      CriteriaQuery<?> cq, CriteriaBuilder cb) {
+    Predicate predicate = cb.and(cb.or(
+        cb.and(cb.equal(root.get(Evaluacion_.tipoEvaluacion).get(TipoEvaluacion_.id), 1L),
+            cb.in(root.get(Evaluacion_.memoria).get(Memoria_.id)).value(getIdsMemoriasRestropectivas(cb, cq, root))),
+        cb.and(cb.equal(root.get(Evaluacion_.tipoEvaluacion).get(TipoEvaluacion_.id), 2L),
+            cb.in(root.get(Evaluacion_.memoria).get(Memoria_.id)).value(getIdsMemoriasEstadoActual(cb, cq, root)))));
+
+    predicate = cb.and(predicate, cb.equal(root.get(Evaluacion_.activo), Boolean.TRUE));
+
+    // Where
+    if (query != null) {
+      Specification<Evaluacion> spec = SgiRSQLJPASupport.toSpecification(query);
+      predicate = cb.and(predicate, spec.toPredicate(root, cq, cb));
+    }
+
+    return predicate;
   }
 
   /**
@@ -217,8 +232,7 @@ public class CustomEvaluacionRepositoryImpl implements CustomEvaluacionRepositor
    * @return Subquery<Long> Listado de Memorias con estado En Evaluacion o En
    *         secretaría revisión mínima
    */
-  private Subquery<Long> getIdsMemoriasEstadoActual(CriteriaBuilder cb, CriteriaQuery<Evaluacion> cq,
-      Root<Evaluacion> root) {
+  private Subquery<Long> getIdsMemoriasEstadoActual(CriteriaBuilder cb, CriteriaQuery<?> cq, Root<Evaluacion> root) {
 
     log.debug("getIdsMemoriasEstadoActual : {} - start");
 
@@ -240,13 +254,13 @@ public class CustomEvaluacionRepositoryImpl implements CustomEvaluacionRepositor
    * = 4).
    * 
    * @param personaRef Identificador del {@link Evaluacion}
-   * @param query      filtro de {@link QueryCriteria}.
+   * @param query      filtro de búsqueda.
    * @param pageable   pageable
    * @return la lista de entidades {@link Evaluacion} paginadas y/o filtradas.
    */
   @Override
-  public Page<Evaluacion> findByEvaluador(String personaRef, List<QueryCriteria> query, Pageable pageable) {
-    log.debug("findByEvaluador : {} - start");
+  public Page<Evaluacion> findByEvaluador(String personaRef, String query, Pageable pageable) {
+    log.debug("findByEvaluador(String personaRef, String query, Pageable pageable) - start");
 
     // Create query
     CriteriaBuilder cb = entityManager.getCriteriaBuilder();
@@ -266,7 +280,7 @@ public class CustomEvaluacionRepositoryImpl implements CustomEvaluacionRepositor
 
     // Where
     if (query != null) {
-      Specification<Evaluacion> spec = new QuerySpecification<Evaluacion>(query);
+      Specification<Evaluacion> spec = SgiRSQLJPASupport.toSpecification(query);
       listPredicates.add(spec.toPredicate(rootEvaluacion, cq, cb));
       listPredicatesCount.add(spec.toPredicate(rootCount, cq, cb));
     }
@@ -291,7 +305,7 @@ public class CustomEvaluacionRepositoryImpl implements CustomEvaluacionRepositor
     List<Evaluacion> result = typedQuery.getResultList();
     Page<Evaluacion> returnValue = new PageImpl<Evaluacion>(result, pageable, count);
 
-    log.debug("findByEvaluador : {} - end");
+    log.debug("findByEvaluador(String personaRef, String query, Pageable pageable) - end");
     return returnValue;
   }
 
@@ -302,14 +316,16 @@ public class CustomEvaluacionRepositoryImpl implements CustomEvaluacionRepositor
    * a un evaluador.
    * 
    * @param personaRef Persona Ref del {@link Evaluador}
-   * @param query      filtro de {@link QueryCriteria}.
+   * @param query      filtro de búsqueda.
    * @param pageable   pageable
    * @return la lista de entidades {@link Evaluacion} paginadas y/o filtradas.
    */
   @Override
-  public Page<Evaluacion> findEvaluacionesEnSeguimientosByEvaluador(String personaRef, List<QueryCriteria> query,
+  public Page<Evaluacion> findEvaluacionesEnSeguimientosByEvaluador(String personaRef, String query,
       Pageable pageable) {
-    log.debug("findEvaluacionesEnSeguimientosByEvaluador : {} - start");
+    // TODO: Revisar uso pageable. Aunque se está paginando, no se está calculando
+    // el count total.
+    log.debug("findEvaluacionesEnSeguimientosByEvaluador(String personaRef, String query, Pageable pageable) - start");
 
     // Create query
     CriteriaBuilder cb = entityManager.getCriteriaBuilder();
@@ -323,7 +339,7 @@ public class CustomEvaluacionRepositoryImpl implements CustomEvaluacionRepositor
 
     // Where
     if (query != null) {
-      Specification<Evaluacion> spec = new QuerySpecification<Evaluacion>(query);
+      Specification<Evaluacion> spec = SgiRSQLJPASupport.toSpecification(query);
       listPredicates.add(spec.toPredicate(rootEvaluacion, cq, cb));
     }
 
@@ -343,7 +359,7 @@ public class CustomEvaluacionRepositoryImpl implements CustomEvaluacionRepositor
     List<Evaluacion> result = typedQuery.getResultList();
     Page<Evaluacion> returnValue = new PageImpl<Evaluacion>(result, pageable, result.size());
 
-    log.debug("findEvaluacionesEnSeguimientosByEvaluador : {} - end");
+    log.debug("findEvaluacionesEnSeguimientosByEvaluador(String personaRef, String query, Pageable pageable) - end");
     return returnValue;
   }
 
@@ -405,8 +421,7 @@ public class CustomEvaluacionRepositoryImpl implements CustomEvaluacionRepositor
    * @return Subquery<Long> Listado de Memorias con Retrospectivas en estado En
    *         Evaluacion
    */
-  private Subquery<Long> getIdsMemoriasRestropectivas(CriteriaBuilder cb, CriteriaQuery<Evaluacion> cq,
-      Root<Evaluacion> root) {
+  private Subquery<Long> getIdsMemoriasRestropectivas(CriteriaBuilder cb, CriteriaQuery<?> cq, Root<Evaluacion> root) {
 
     log.debug("getIdsMemoriasRestropectivas : {} - start");
 
@@ -428,7 +443,7 @@ public class CustomEvaluacionRepositoryImpl implements CustomEvaluacionRepositor
    * @return Subquery<Long> Listado de Retrospectivas en estado En Evaluacion
    */
 
-  private Subquery<Long> getRetrospectivas(CriteriaBuilder cb, CriteriaQuery<Evaluacion> cq) {
+  private Subquery<Long> getRetrospectivas(CriteriaBuilder cb, CriteriaQuery<?> cq) {
 
     log.debug("getRetrospectivas : {} - start");
 

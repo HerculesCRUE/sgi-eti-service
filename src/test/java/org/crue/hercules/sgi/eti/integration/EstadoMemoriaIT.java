@@ -27,12 +27,27 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Test de integracion de EstadoMemoria.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off      
+  "classpath:scripts/formulario.sql",
+  "classpath:scripts/tipo_actividad.sql",
+  "classpath:scripts/tipo_memoria.sql",
+  "classpath:scripts/tipo_estado_memoria.sql",
+  "classpath:scripts/estado_retrospectiva.sql",
+  "classpath:scripts/retrospectiva.sql",
+  "classpath:scripts/estado_memoria.sql" 
+// @formatter:on  
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class EstadoMemoriaIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -50,25 +65,21 @@ public class EstadoMemoriaIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void getEstadoMemoria_WithId_ReturnsEstadoMemoria() throws Exception {
     final ResponseEntity<EstadoMemoria> response = restTemplate.exchange(
         ESTADO_MEMORIA_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.GET, buildRequest(null, null),
-        EstadoMemoria.class, 1L);
+        EstadoMemoria.class, 3L);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
     final EstadoMemoria estadoMemoria = response.getBody();
 
-    Assertions.assertThat(estadoMemoria.getId()).isEqualTo(1L);
-    Assertions.assertThat(estadoMemoria.getMemoria().getTitulo()).isEqualTo("Memoria1");
-    Assertions.assertThat(estadoMemoria.getTipoEstadoMemoria().getNombre()).isEqualTo("TipoEstadoMemoria1");
+    Assertions.assertThat(estadoMemoria.getId()).isEqualTo(3L);
+    Assertions.assertThat(estadoMemoria.getMemoria().getTitulo()).isEqualTo("Memoria3");
+    Assertions.assertThat(estadoMemoria.getTipoEstadoMemoria().getNombre()).isEqualTo("En secretaría");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void addEstadoMemoria_ReturnsEstadoMemoria() throws Exception {
 
@@ -81,13 +92,11 @@ public class EstadoMemoriaIT extends BaseIT {
     Assertions.assertThat(response.getBody().getId()).isNotNull();
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeEstadoMemoria_Success() throws Exception {
 
     // when: Delete con id existente
-    long id = 1L;
+    long id = 3L;
     final ResponseEntity<EstadoMemoria> response = restTemplate.exchange(
         ESTADO_MEMORIA_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.DELETE, buildRequest(null, null),
         EstadoMemoria.class, id);
@@ -97,29 +106,25 @@ public class EstadoMemoriaIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeEstadoMemoria_DoNotGetEstadoMemoria() throws Exception {
 
     final ResponseEntity<EstadoMemoria> response = restTemplate.exchange(
         ESTADO_MEMORIA_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.DELETE, buildRequest(null, null),
-        EstadoMemoria.class, 2L);
+        EstadoMemoria.class, 9L);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void replaceEstadoMemoria_ReturnsEstadoMemoria() throws Exception {
 
-    EstadoMemoria replaceEstadoMemoria = generarMockEstadoMemoria(1L, 1L);
+    EstadoMemoria replaceEstadoMemoria = generarMockEstadoMemoria(2L, 1L);
 
     final ResponseEntity<EstadoMemoria> response = restTemplate.exchange(
         ESTADO_MEMORIA_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.PUT,
-        buildRequest(null, replaceEstadoMemoria), EstadoMemoria.class, 1L);
+        buildRequest(null, replaceEstadoMemoria), EstadoMemoria.class, 3L);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
@@ -132,8 +137,6 @@ public class EstadoMemoriaIT extends BaseIT {
         .isEqualTo(replaceEstadoMemoria.getTipoEstadoMemoria().getNombre());
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPaging_ReturnsEstadoMemoriaSubList() throws Exception {
     // when: Obtiene la page=3 con pagesize=10
@@ -149,28 +152,21 @@ public class EstadoMemoriaIT extends BaseIT {
     // correcta en el header
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     final List<EstadoMemoria> estadoMemorias = response.getBody();
-    Assertions.assertThat(estadoMemorias.size()).isEqualTo(3);
+    Assertions.assertThat(estadoMemorias.size()).isEqualTo(1);
     Assertions.assertThat(response.getHeaders().getFirst("X-Page")).isEqualTo("1");
     Assertions.assertThat(response.getHeaders().getFirst("X-Page-Size")).isEqualTo("5");
-    Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("8");
+    Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("6");
 
-    // Contiene de memoria titulo='Memoria6' a 'Memoria8' y tipo estado memoria
-    // nombre='TipoEstadoMemoria6' a nombre='TipoEstadoMemoria8'
-    Assertions.assertThat(estadoMemorias.get(0).getMemoria().getTitulo()).isEqualTo("Memoria6");
-    Assertions.assertThat(estadoMemorias.get(1).getMemoria().getTitulo()).isEqualTo("Memoria7");
-    Assertions.assertThat(estadoMemorias.get(2).getMemoria().getTitulo()).isEqualTo("Memoria8");
-    Assertions.assertThat(estadoMemorias.get(0).getTipoEstadoMemoria().getNombre()).isEqualTo("TipoEstadoMemoria6");
-    Assertions.assertThat(estadoMemorias.get(1).getTipoEstadoMemoria().getNombre()).isEqualTo("TipoEstadoMemoria7");
-    Assertions.assertThat(estadoMemorias.get(2).getTipoEstadoMemoria().getNombre()).isEqualTo("TipoEstadoMemoria8");
+    // Contiene la 'Memoria8' y tipo estado memoria nombre='No procede evaluar'
+    Assertions.assertThat(estadoMemorias.get(0).getMemoria().getTitulo()).isEqualTo("Memoria8");
+    Assertions.assertThat(estadoMemorias.get(0).getTipoEstadoMemoria().getNombre()).isEqualTo("No procede evaluar");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSearchQuery_ReturnsFilteredEstadoMemoriaList() throws Exception {
     // when: Búsqueda por titulo like e id equals
     Long id = 5L;
-    String query = "memoria.titulo~Memoria%,id:" + id;
+    String query = "memoria.titulo=ke=Memoria;id==" + id;
 
     URI uri = UriComponentsBuilder.fromUriString(ESTADO_MEMORIA_CONTROLLER_BASE_PATH).queryParam("q", query)
         .build(false).toUri();
@@ -187,15 +183,13 @@ public class EstadoMemoriaIT extends BaseIT {
     Assertions.assertThat(estadoMemorias.size()).isEqualTo(1);
     Assertions.assertThat(estadoMemorias.get(0).getId()).isEqualTo(id);
     Assertions.assertThat(estadoMemorias.get(0).getMemoria().getTitulo()).startsWith("Memoria");
-    Assertions.assertThat(estadoMemorias.get(0).getTipoEstadoMemoria().getNombre()).startsWith("TipoEstadoMemoria");
+    Assertions.assertThat(estadoMemorias.get(0).getTipoEstadoMemoria().getNombre()).startsWith("En evaluación");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSortQuery_ReturnsOrderedEstadoMemoriaList() throws Exception {
     // when: Ordenación por memoria titulo desc
-    String query = "id-";
+    String query = "id,desc";
 
     URI uri = UriComponentsBuilder.fromUriString(ESTADO_MEMORIA_CONTROLLER_BASE_PATH).queryParam("s", query)
         .build(false).toUri();
@@ -209,16 +203,14 @@ public class EstadoMemoriaIT extends BaseIT {
     // correcta en el header
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     final List<EstadoMemoria> estadoMemorias = response.getBody();
-    Assertions.assertThat(estadoMemorias.size()).isEqualTo(8);
-    for (int i = 0; i < 8; i++) {
+    Assertions.assertThat(estadoMemorias.size()).isEqualTo(6);
+    for (int i = 0; i < 6; i++) {
       EstadoMemoria estadoMemoria = estadoMemorias.get(i);
       Assertions.assertThat(estadoMemoria.getId()).isEqualTo(8 - i);
-      Assertions.assertThat(estadoMemoria.getMemoria().getTitulo()).isEqualTo("Memoria" + String.format("%03d", 8 - i));
+      Assertions.assertThat(estadoMemoria.getMemoria().getTitulo()).isEqualTo("Memoria" + String.format("%d", 8 - i));
     }
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPagingSortingAndFiltering_ReturnsEstadoMemoriaSubList() throws Exception {
     // when: Obtiene page=3 con pagesize=10
@@ -226,9 +218,9 @@ public class EstadoMemoriaIT extends BaseIT {
     headers.add("X-Page", "0");
     headers.add("X-Page-Size", "3");
     // when: Ordena por memoria titulo desc
-    String sort = "id-";
+    String sort = "id,desc";
     // when: Filtra por titulo like e id equals
-    String filter = "memoria.titulo~%00%";
+    String filter = "memoria.titulo=ke=Memoria";
 
     URI uri = UriComponentsBuilder.fromUriString(ESTADO_MEMORIA_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .queryParam("q", filter).build(false).toUri();
@@ -245,16 +237,12 @@ public class EstadoMemoriaIT extends BaseIT {
     HttpHeaders responseHeaders = response.getHeaders();
     Assertions.assertThat(responseHeaders.getFirst("X-Page")).isEqualTo("0");
     Assertions.assertThat(responseHeaders.getFirst("X-Page-Size")).isEqualTo("3");
-    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("3");
+    Assertions.assertThat(responseHeaders.getFirst("X-Total-Count")).isEqualTo("6");
 
-    // Contiene titulo='Memoria003', 'Memoria002',
-    // 'Memoria001'
-    Assertions.assertThat(estadoMemorias.get(0).getMemoria().getTitulo())
-        .isEqualTo("Memoria" + String.format("%03d", 3));
-    Assertions.assertThat(estadoMemorias.get(1).getMemoria().getTitulo())
-        .isEqualTo("Memoria" + String.format("%03d", 2));
-    Assertions.assertThat(estadoMemorias.get(2).getMemoria().getTitulo())
-        .isEqualTo("Memoria" + String.format("%03d", 1));
+    // Contiene titulo='Memoria8', 'Memoria7', 'Memoria6'
+    Assertions.assertThat(estadoMemorias.get(0).getMemoria().getTitulo()).isEqualTo("Memoria" + String.format("%d", 8));
+    Assertions.assertThat(estadoMemorias.get(1).getMemoria().getTitulo()).isEqualTo("Memoria" + String.format("%d", 7));
+    Assertions.assertThat(estadoMemorias.get(2).getMemoria().getTitulo()).isEqualTo("Memoria" + String.format("%d", 6));
 
   }
 

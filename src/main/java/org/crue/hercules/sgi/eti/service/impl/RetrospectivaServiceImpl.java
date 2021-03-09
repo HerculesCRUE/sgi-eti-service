@@ -1,12 +1,10 @@
 package org.crue.hercules.sgi.eti.service.impl;
 
-import java.util.List;
 import org.crue.hercules.sgi.eti.exceptions.RetrospectivaNotFoundException;
 import org.crue.hercules.sgi.eti.model.Retrospectiva;
 import org.crue.hercules.sgi.eti.repository.RetrospectivaRepository;
 import org.crue.hercules.sgi.eti.service.RetrospectivaService;
-import org.crue.hercules.sgi.framework.data.jpa.domain.QuerySpecification;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
+import org.crue.hercules.sgi.framework.rsql.SgiRSQLJPASupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -112,18 +110,18 @@ public class RetrospectivaServiceImpl implements RetrospectivaService {
    * Obtiene las entidades {@link Retrospectiva} filtradas y paginadas según los
    * criterios de búsqueda.
    *
-   * @param query  filtro de {@link QueryCriteria}.
+   * @param query  filtro de búsqueda.
    * @param paging pageable
    * @return el listado de entidades {@link Retrospectiva} paginadas y filtradas.
    */
   @Override
-  public Page<Retrospectiva> findAll(List<QueryCriteria> query, Pageable paging) {
-    log.debug("findAll(List<QueryCriteria> query, Pageable paging) - start");
+  public Page<Retrospectiva> findAll(String query, Pageable paging) {
+    log.debug("findAll(String query, Pageable paging) - start");
 
-    Specification<Retrospectiva> spec = new QuerySpecification<Retrospectiva>(query);
-    Page<Retrospectiva> returnValue = repository.findAll(spec, paging);
+    Specification<Retrospectiva> specs = SgiRSQLJPASupport.toSpecification(query);
+    Page<Retrospectiva> returnValue = repository.findAll(specs, paging);
 
-    log.debug("findAll(List<QueryCriteria> query, Pageable paging) - end");
+    log.debug("findAll(String query, Pageable paging) - end");
 
     return returnValue;
   }

@@ -1,6 +1,5 @@
 package org.crue.hercules.sgi.eti.controller;
 
-import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -34,7 +33,6 @@ import org.crue.hercules.sgi.eti.model.TipoMemoria;
 import org.crue.hercules.sgi.eti.service.AsistentesService;
 import org.crue.hercules.sgi.eti.service.ConvocatoriaReunionService;
 import org.crue.hercules.sgi.eti.service.EvaluacionService;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -54,7 +52,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * ConvocatoriaReunionControllerTest
@@ -373,8 +370,9 @@ public class ConvocatoriaReunionControllerTest extends BaseControllerTest {
     response.add(getMockData(1L, 1L, 1L));
     response.add(getMockData(2L, 1L, 2L));
 
-    BDDMockito.given(convocatoriaReunionService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(),
-        ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(response));
+    BDDMockito
+        .given(convocatoriaReunionService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
+        .willReturn(new PageImpl<>(response));
 
     // when: Se buscan todos los datos
     MvcResult result = mockMvc
@@ -398,8 +396,9 @@ public class ConvocatoriaReunionControllerTest extends BaseControllerTest {
     // given: No hay datos
     final String url = new StringBuilder(CONVOCATORIA_REUNION_CONTROLLER_BASE_PATH).toString();
 
-    BDDMockito.given(convocatoriaReunionService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(),
-        ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(Collections.emptyList()));
+    BDDMockito
+        .given(convocatoriaReunionService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
+        .willReturn(new PageImpl<>(Collections.emptyList()));
     // when: Se buscan todos los datos
     mockMvc.perform(MockMvcRequestBuilders.get(url).with(SecurityMockMvcRequestPostProcessors.csrf()))
         .andDo(MockMvcResultHandlers.print())
@@ -423,8 +422,9 @@ public class ConvocatoriaReunionControllerTest extends BaseControllerTest {
     Pageable pageable = PageRequest.of(1, 2);
     Page<ConvocatoriaReunion> pageResponse = new PageImpl<>(response.subList(2, 3), pageable, response.size());
 
-    BDDMockito.given(convocatoriaReunionService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(),
-        ArgumentMatchers.<Pageable>any())).willReturn(pageResponse);
+    BDDMockito
+        .given(convocatoriaReunionService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
+        .willReturn(pageResponse);
 
     // when: Se buscan todos los datos paginados
     MvcResult result = mockMvc
@@ -456,8 +456,9 @@ public class ConvocatoriaReunionControllerTest extends BaseControllerTest {
     Pageable pageable = PageRequest.of(1, 2);
     Page<ConvocatoriaReunion> pageResponse = new PageImpl<>(response, pageable, response.size());
 
-    BDDMockito.given(convocatoriaReunionService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(),
-        ArgumentMatchers.<Pageable>any())).willReturn(pageResponse);
+    BDDMockito
+        .given(convocatoriaReunionService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
+        .willReturn(pageResponse);
 
     // when: Se buscan todos los datos paginados
     mockMvc
@@ -486,65 +487,14 @@ public class ConvocatoriaReunionControllerTest extends BaseControllerTest {
     // search
     String query = "numeroActa<4%,id:3";
 
-    BDDMockito.given(convocatoriaReunionService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(),
-        ArgumentMatchers.<Pageable>any())).willAnswer(new Answer<Page<ConvocatoriaReunion>>() {
+    BDDMockito
+        .given(convocatoriaReunionService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
+        .willAnswer(new Answer<Page<ConvocatoriaReunion>>() {
           @Override
           public Page<ConvocatoriaReunion> answer(InvocationOnMock invocation) throws Throwable {
-            List<QueryCriteria> queryCriterias = invocation.<List<QueryCriteria>>getArgument(0);
-
             List<ConvocatoriaReunion> content = new LinkedList<>();
             for (ConvocatoriaReunion item : response) {
-              boolean add = true;
-              for (QueryCriteria queryCriteria : queryCriterias) {
-                Field field = ReflectionUtils.findField(ConvocatoriaReunion.class, queryCriteria.getKey());
-                field.setAccessible(true);
-                String fieldValue = ReflectionUtils.getField(field, item).toString();
-                switch (queryCriteria.getOperation()) {
-                  case EQUALS:
-                    if (!fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) > 0)) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) >= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LIKE:
-                    if (!fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) < 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) <= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_EQUALS:
-                    if (fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_LIKE:
-                    if (fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  default:
-                    break;
-                }
-              }
-              if (add) {
+              if (item.getNumeroActa() < 4 && item.getId().equals(3L)) {
                 content.add(item);
               }
             }
@@ -977,6 +927,25 @@ public class ConvocatoriaReunionControllerTest extends BaseControllerTest {
     Assertions.assertThat(mapper.readValue(result.getResponse().getContentAsString(Charset.forName("UTF-8")),
         new TypeReference<List<ConvocatoriaReunion>>() {
         })).isEqualTo(response);
+
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-ACT-C", "ETI-ACT-E" })
+  public void findConvocatoriasSinActa_ReturnNoContent() throws Exception {
+
+    // given: ConvocatoriaReunion empty
+    List<ConvocatoriaReunion> response = new LinkedList<ConvocatoriaReunion>();
+
+    final String url = new StringBuilder(CONVOCATORIA_REUNION_CONTROLLER_BASE_PATH + "/acta-no-asignada").toString();
+
+    BDDMockito.given(convocatoriaReunionService.findConvocatoriasSinActa(ArgumentMatchers.<Pageable>any()))
+        .willReturn(new PageImpl<>(response));
+
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(url).with(SecurityMockMvcRequestPostProcessors.csrf())
+            .contentType(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print()).andExpect(MockMvcResultMatchers.status().isNoContent());
 
   }
 

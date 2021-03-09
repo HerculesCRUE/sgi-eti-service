@@ -16,12 +16,10 @@ import org.crue.hercules.sgi.eti.repository.TipoMemoriaComiteRepository;
 import org.crue.hercules.sgi.eti.service.impl.TipoMemoriaComiteServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -32,7 +30,6 @@ import org.springframework.data.jpa.domain.Specification;
 /**
  * TipoMemoriaComiteServiceTest
  */
-@ExtendWith(MockitoExtension.class)
 public class TipoMemoriaComiteServiceTest extends BaseServiceTest {
 
   @Mock
@@ -200,6 +197,28 @@ public class TipoMemoriaComiteServiceTest extends BaseServiceTest {
     Assertions.assertThatCode(
         // when: Delete con id existente
         () -> tipoMemoriaComiteService.deleteById(1L))
+        // then: No se lanza ninguna excepción
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  public void deleteAll_DeleteAllTipoMemoriaComite() {
+
+    Formulario formulario = new Formulario(1L, "M10", "Descripcion");
+    Comite comite = new Comite(1L, "Comite1", formulario, Boolean.TRUE);
+    TipoMemoria tipoMemoria = new TipoMemoria(1L, "TipoMemoria1", Boolean.TRUE);
+
+    // given: One hundred TipoMemoriaComite
+    List<TipoMemoriaComite> tipoMemoriaComites = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      tipoMemoriaComites.add(generarMockTipoMemoriaComite(Long.valueOf(i), comite, tipoMemoria));
+    }
+
+    BDDMockito.doNothing().when(tipoMemoriaComiteRepository).deleteAll();
+
+    Assertions.assertThatCode(
+        // when: Delete all
+        () -> tipoMemoriaComiteService.deleteAll())
         // then: No se lanza ninguna excepción
         .doesNotThrowAnyException();
   }

@@ -49,7 +49,7 @@ public interface EvaluacionRepository
    * @param idMemoria identificador de la memoria.
    * @return evaluación.
    */
-  Optional<Evaluacion> findFirstByMemoriaIdOrderByVersionDesc(Long idMemoria);
+  Optional<Evaluacion> findFirstByMemoriaIdAndActivoTrueOrderByVersionDesc(Long idMemoria);
 
   /**
    * Recupera la evaluación de la memoria con la última versión

@@ -1,22 +1,20 @@
 package org.crue.hercules.sgi.eti.repository.custom;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Subquery;
 
 import org.crue.hercules.sgi.eti.dto.ConvocatoriaReunionDatosGenerales;
-import javax.persistence.criteria.Predicate;
-
 import org.crue.hercules.sgi.eti.model.Acta;
 import org.crue.hercules.sgi.eti.model.Acta_;
 import org.crue.hercules.sgi.eti.model.ConvocatoriaReunion;
@@ -94,7 +92,9 @@ public class CustomConvocatoriaReunionRepositoryImpl implements CustomConvocator
    */
   @Override
   public Page<ConvocatoriaReunion> findConvocatoriasReunionSinActa(Pageable pageable) {
-    log.debug("findConvocatoriasReunionSinActa(List<QueryCriteria> query) - start");
+    // TODO: Revisar. Se recibe un pageable pero no se usa ni para paginar ni para
+    // el criterio de ordenación.
+    log.debug("findConvocatoriasReunionSinActa(Pageable pageable) - start");
 
     // Create Query
 
@@ -116,7 +116,7 @@ public class CustomConvocatoriaReunionRepositoryImpl implements CustomConvocator
     List<ConvocatoriaReunion> result = typedQuery.getResultList();
     Page<ConvocatoriaReunion> returnValue = new PageImpl<ConvocatoriaReunion>(result, pageable, result.size());
 
-    log.debug("findConvocatoriasReunionSinActa(List<QueryCriteria> query) - end");
+    log.debug("findConvocatoriasReunionSinActa(Pageable pageable) - end");
 
     return returnValue;
 

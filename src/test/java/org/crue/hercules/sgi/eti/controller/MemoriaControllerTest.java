@@ -1,6 +1,5 @@
 package org.crue.hercules.sgi.eti.controller;
 
-import java.lang.reflect.Field;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -34,7 +33,6 @@ import org.crue.hercules.sgi.eti.service.DocumentacionMemoriaService;
 import org.crue.hercules.sgi.eti.service.EvaluacionService;
 import org.crue.hercules.sgi.eti.service.InformeService;
 import org.crue.hercules.sgi.eti.service.MemoriaService;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -53,7 +51,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * MemoriaControllerTest
@@ -79,10 +76,10 @@ public class MemoriaControllerTest extends BaseControllerTest {
   private static final String PATH_PARAMETER_ASIGNABLES_SEG = "/tipo-convocatoria-seg";
   private static final String MEMORIA_CONTROLLER_BASE_PATH = "/memorias";
   private static final String PATH_PARAMETER_BY_DOCUMENTACION = "/documentaciones";
-  private static final String PATH_PARAMETER_PERSONA_PETICION_EVALUACION = "/persona/peticion-evaluacion";
   private static final String PATH_PARAMETER_EVALUACIONES = "/evaluaciones";
   private static final String PATH_PARAMETER_ENVIAR_SECRETARIA = "/enviar-secretaria";
   private static final String PATH_PARAMETER_ENVIAR_SECRETARIA_RETROSPECTIVA = "/enviar-secretaria-retrospectiva";
+  private static final String PATH_PARAMETER_PERSONA = "/persona";
 
   @Test
   @WithMockUser(username = "user", authorities = { "ETI-PEV-V", "ETI-PEV-VR-INV" })
@@ -308,8 +305,7 @@ public class MemoriaControllerTest extends BaseControllerTest {
       memorias.add(generarMockMemoriaPeticionEvaluacion(Long.valueOf(i)));
     }
 
-    BDDMockito
-        .given(memoriaService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(memoriaService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willReturn(new PageImpl<>(memorias));
 
     // when: find unlimited
@@ -331,8 +327,7 @@ public class MemoriaControllerTest extends BaseControllerTest {
           "Memoria" + String.format("%03d", i), i));
     }
 
-    BDDMockito
-        .given(memoriaService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(memoriaService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willAnswer(new Answer<Page<Memoria>>() {
           @Override
           public Page<Memoria> answer(InvocationOnMock invocation) throws Throwable {
@@ -385,66 +380,13 @@ public class MemoriaControllerTest extends BaseControllerTest {
     }
     String query = "titulo~Memoria%,id:5";
 
-    BDDMockito
-        .given(memoriaService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(memoriaService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willAnswer(new Answer<Page<Memoria>>() {
           @Override
           public Page<Memoria> answer(InvocationOnMock invocation) throws Throwable {
-            List<QueryCriteria> queryCriterias = invocation.<List<QueryCriteria>>getArgument(0);
-
             List<Memoria> content = new ArrayList<>();
             for (Memoria memoria : memorias) {
-              boolean add = true;
-              for (QueryCriteria queryCriteria : queryCriterias) {
-                Field field = ReflectionUtils.findField(Memoria.class, queryCriteria.getKey());
-                field.setAccessible(true);
-                String fieldValue = ReflectionUtils.getField(field, memoria).toString();
-                switch (queryCriteria.getOperation()) {
-                  case EQUALS:
-                    if (!fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) > 0)) {
-                      add = false;
-                    }
-                    break;
-                  case GREATER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) >= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LIKE:
-                    if (!fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) < 0)) {
-                      add = false;
-                    }
-                    break;
-                  case LOWER_OR_EQUAL:
-                    if (!(fieldValue.compareTo(queryCriteria.getValue().toString()) <= 0)) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_EQUALS:
-                    if (fieldValue.equals(queryCriteria.getValue())) {
-                      add = false;
-                    }
-                    break;
-                  case NOT_LIKE:
-                    if (fieldValue.matches((queryCriteria.getValue().toString().replaceAll("%", ".*")))) {
-                      add = false;
-                    }
-                    break;
-                  default:
-                    break;
-                }
-              }
-              if (add) {
+              if (memoria.getTitulo().startsWith("Memoria") && memoria.getId().equals(5L)) {
                 content.add(memoria);
               }
             }
@@ -461,6 +403,23 @@ public class MemoriaControllerTest extends BaseControllerTest {
         // then: Get a page one hundred Memoria
         .andExpect(MockMvcResultMatchers.status().isOk())
         .andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(1)));
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-PEV-VR-INV", "ETI-PEV-V", "ETI-PEV-E" })
+  public void findAll_ReturnsNoContent() throws Exception { // given: One hundred Memoria
+    // given: Memorias empty
+    List<MemoriaPeticionEvaluacion> memorias = new ArrayList<>();
+
+    BDDMockito.given(memoriaService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
+        .willReturn(new PageImpl<>(memorias));
+    // when: find unlimited
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(MEMORIA_CONTROLLER_BASE_PATH)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        // then: Devuelve error No Content
+        .andDo(MockMvcResultHandlers.print()).andExpect(MockMvcResultMatchers.status().isNoContent());
+
   }
 
   @Test
@@ -666,6 +625,25 @@ public class MemoriaControllerTest extends BaseControllerTest {
   }
 
   @Test
+  @WithMockUser(username = "user", authorities = { "ETI-CNV-E" })
+  public void findAllMemoriasAsignablesConvocatoria_ReturnsNoContent() throws Exception {
+    // given: idConvocatoria, Memorias empty
+    Long idConvocatoria = 1L;
+    List<Memoria> memorias = new ArrayList<>();
+
+    BDDMockito.given(memoriaService.findAllMemoriasAsignablesConvocatoria(ArgumentMatchers.anyLong(),
+        ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(memorias));
+
+    // when: find unlimited asignables by convocatoria
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(MEMORIA_CONTROLLER_BASE_PATH + PATH_PARAMETER_ASIGNABLES, idConvocatoria)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print())
+        // then: Devuelve error No Content
+        .andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
   @WithMockUser(username = "user", authorities = { "ETI-CNV-C", "ETI-CNV-E" })
   public void findAllAsignablesTipoConvocatoriaOrdExt_Unlimited_ReturnsFullMemoriaList() throws Exception {
 
@@ -678,7 +656,7 @@ public class MemoriaControllerTest extends BaseControllerTest {
     }
     // String query = "comite.id:1,fechaLimite<:2020-09-10";
 
-    BDDMockito.given(memoriaService.findAllAsignablesTipoConvocatoriaOrdExt(ArgumentMatchers.<List<QueryCriteria>>any(),
+    BDDMockito.given(memoriaService.findAllAsignablesTipoConvocatoriaOrdExt(ArgumentMatchers.<String>any(),
         ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(memorias));
 
     // when: find unlimited asignables para tipo convocatoria ordinaria o
@@ -696,6 +674,24 @@ public class MemoriaControllerTest extends BaseControllerTest {
   }
 
   @Test
+  @WithMockUser(username = "user", authorities = { "ETI-CNV-C" })
+  public void findAllAsignablesTipoConvocatoriaOrdExt_ReturnsNoContent() throws Exception {
+    // given: Memorias empty
+    List<Memoria> memorias = new ArrayList<>();
+
+    BDDMockito.given(memoriaService.findAllAsignablesTipoConvocatoriaOrdExt(ArgumentMatchers.<String>any(),
+        ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(memorias));
+
+    // when: find unlimited
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(MEMORIA_CONTROLLER_BASE_PATH + PATH_PARAMETER_ASIGNABLES_ORDEXT)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print())
+        // then: Devuelve error No Content
+        .andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
   @WithMockUser(username = "user", authorities = { "ETI-CNV-C", "ETI-CNV-E" })
   public void findAllAsignablesTipoConvocatoriaSeguimiento_Unlimited_ReturnsFullMemoriaList() throws Exception {
 
@@ -708,10 +704,8 @@ public class MemoriaControllerTest extends BaseControllerTest {
     }
     // String query = "comite.id:1,fechaLimite<:2020-09-10";
 
-    BDDMockito
-        .given(memoriaService.findAllAsignablesTipoConvocatoriaSeguimiento(ArgumentMatchers.<List<QueryCriteria>>any(),
-            ArgumentMatchers.<Pageable>any()))
-        .willReturn(new PageImpl<>(memorias));
+    BDDMockito.given(memoriaService.findAllAsignablesTipoConvocatoriaSeguimiento(ArgumentMatchers.<String>any(),
+        ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(memorias));
 
     // when: find unlimited asignables para tipo convocatoria seguimiento
     mockMvc
@@ -724,6 +718,24 @@ public class MemoriaControllerTest extends BaseControllerTest {
         // reunión.
         .andExpect(MockMvcResultMatchers.status().isOk())
         .andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(100)));
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-CNV-C" })
+  public void findAllAsignablesTipoConvocatoriaSeguimiento_ReturnsNoContent() throws Exception {
+    // given: Memorias empty
+    List<Memoria> memorias = new ArrayList<>();
+
+    BDDMockito.given(memoriaService.findAllAsignablesTipoConvocatoriaSeguimiento(ArgumentMatchers.<String>any(),
+        ArgumentMatchers.<Pageable>any())).willReturn(new PageImpl<>(memorias));
+
+    // when: find unlimited
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(MEMORIA_CONTROLLER_BASE_PATH + PATH_PARAMETER_ASIGNABLES_SEG)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print())
+        // then: Devuelve error No Content
+        .andExpect(MockMvcResultMatchers.status().isNoContent());
   }
 
   @Test
@@ -955,32 +967,6 @@ public class MemoriaControllerTest extends BaseControllerTest {
   }
 
   @Test
-  @WithMockUser(username = "user", authorities = { "ETI-PEV-VR-INV" })
-  public void findAllByPersonaRefPeticionEvaluacion_Unlimited_ReturnsFullMemoriaPeticionEvaluacionList()
-      throws Exception {
-    // given: One hundred Memoria
-    List<MemoriaPeticionEvaluacion> memoriasPeticionEvaluacion = new ArrayList<>();
-    for (int i = 1; i <= 100; i++) {
-      memoriasPeticionEvaluacion.add(generarMockMemoriaPeticionEvaluacion(Long.valueOf(i),
-          "numRef-55" + String.valueOf(i), "Memoria" + String.format("%03d", i)));
-    }
-
-    BDDMockito
-        .given(memoriaService.findAllByPersonaRefPeticionEvaluacion(ArgumentMatchers.<List<QueryCriteria>>any(),
-            ArgumentMatchers.<Pageable>any(), ArgumentMatchers.anyString()))
-        .willReturn(new PageImpl<>(memoriasPeticionEvaluacion));
-
-    // when: find unlimited asignables by convocatoria
-    mockMvc
-        .perform(MockMvcRequestBuilders.get(MEMORIA_CONTROLLER_BASE_PATH + PATH_PARAMETER_PERSONA_PETICION_EVALUACION)
-            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
-        .andDo(MockMvcResultHandlers.print())
-        // then: Get a page one hundred Memoria
-        .andExpect(MockMvcResultMatchers.status().isOk())
-        .andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(100)));
-  }
-
-  @Test
   @WithMockUser(username = "user", authorities = { "ETI-PEV-ER-INV" })
   public void replaceDocumentacionMemoria_ReturnsMemoria() throws Exception {
     // given: Una documentación memoria a modificar
@@ -1053,61 +1039,6 @@ public class MemoriaControllerTest extends BaseControllerTest {
         // then: obtengo un listado de 100 conflictos
         .andExpect(MockMvcResultMatchers.status().isOk())
         .andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(100)));
-  }
-
-  @Test
-  @WithMockUser(username = "user", authorities = { "ETI-PEV-VR-INV", "ETI-PEV-V", "ETI-MEM-CR-INV" })
-  public void findAllByPersonaRefPeticionEvaluacion_WithPaging_ReturnsMemoriaPeticionEvaluacionSubList()
-      throws Exception {
-    // given: One hundred Memoria
-    List<MemoriaPeticionEvaluacion> memoriasPeticionEvaluacion = new ArrayList<>();
-    for (int i = 1; i <= 100; i++) {
-      memoriasPeticionEvaluacion.add(generarMockMemoriaPeticionEvaluacion(Long.valueOf(i),
-          "numRef-55" + String.valueOf(i), "Memoria" + String.format("%03d", i)));
-    }
-
-    BDDMockito
-        .given(memoriaService.findAllByPersonaRefPeticionEvaluacion(ArgumentMatchers.<List<QueryCriteria>>any(),
-            ArgumentMatchers.<Pageable>any(), ArgumentMatchers.anyString()))
-        .willAnswer(new Answer<Page<MemoriaPeticionEvaluacion>>() {
-          @Override
-          public Page<MemoriaPeticionEvaluacion> answer(InvocationOnMock invocation) throws Throwable {
-            Pageable pageable = invocation.getArgument(1, Pageable.class);
-            int size = pageable.getPageSize();
-            int index = pageable.getPageNumber();
-            int fromIndex = size * index;
-            int toIndex = fromIndex + size;
-            List<MemoriaPeticionEvaluacion> content = memoriasPeticionEvaluacion.subList(fromIndex, toIndex);
-            Page<MemoriaPeticionEvaluacion> page = new PageImpl<>(content, pageable, memoriasPeticionEvaluacion.size());
-            return page;
-          }
-        });
-
-    // when: get page=3 with pagesize=10 asignables by convocatoria
-    MvcResult requestResult = mockMvc
-        .perform(MockMvcRequestBuilders.get(MEMORIA_CONTROLLER_BASE_PATH + PATH_PARAMETER_PERSONA_PETICION_EVALUACION)
-            .with(SecurityMockMvcRequestPostProcessors.csrf()).header("X-Page", "3").header("X-Page-Size", "10")
-            .accept(MediaType.APPLICATION_JSON))
-        .andDo(MockMvcResultHandlers.print())
-        // then: the asked Memorias are returned with the right page information
-        // in headers
-        .andExpect(MockMvcResultMatchers.status().isOk())
-        .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(MockMvcResultMatchers.header().string("X-Page", "3"))
-        .andExpect(MockMvcResultMatchers.header().string("X-Page-Size", "10"))
-        .andExpect(MockMvcResultMatchers.header().string("X-Total-Count", "100"))
-        .andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(10))).andReturn();
-
-    // this uses a TypeReference to inform Jackson about the Lists's generic type
-    List<Memoria> actual = mapper.readValue(requestResult.getResponse().getContentAsString(),
-        new TypeReference<List<Memoria>>() {
-        });
-
-    // containing titulo='Memoria031' to 'Memoria040'
-    for (int i = 0, j = 31; i < 10; i++, j++) {
-      Memoria memoria = actual.get(i);
-      Assertions.assertThat(memoria.getTitulo()).isEqualTo("Memoria" + String.format("%03d", j));
-    }
   }
 
   @Test
@@ -1210,6 +1141,175 @@ public class MemoriaControllerTest extends BaseControllerTest {
         .andDo(MockMvcResultHandlers.print()).andExpect(MockMvcResultMatchers.status().isOk());
   }
 
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-PEV-VR-INV" })
+  public void findAllMemoriasEvaluacionByPersonaRef_Unlimited_ReturnsFullMemoriaPeticionEvaluacionList()
+      throws Exception {
+    // given: One hundred Memoria
+    List<MemoriaPeticionEvaluacion> memoriasPeticionEvaluacion = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      memoriasPeticionEvaluacion.add(generarMockMemoriaPeticionEvaluacion(Long.valueOf(i),
+          "numRef-55" + String.valueOf(i), "Memoria" + String.format("%03d", i)));
+    }
+
+    BDDMockito
+        .given(memoriaService.findAllMemoriasWithPersonaRefCreadorPeticionesEvaluacionOrResponsableMemoria(
+            ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any(), ArgumentMatchers.anyString()))
+        .willReturn(new PageImpl<>(memoriasPeticionEvaluacion));
+
+    // when: find unlimited asignables by convocatoria
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(MEMORIA_CONTROLLER_BASE_PATH + PATH_PARAMETER_PERSONA)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print())
+        // then: Get a page one hundred Memoria
+        .andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(100)));
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-PEV-VR-INV", "ETI-PEV-V", "ETI-MEM-CR-INV" })
+  public void findAllMemoriasEvaluacionByPersonaRef_WithPaging_ReturnsMemoriaPeticionEvaluacionSubList()
+      throws Exception {
+    // given: One hundred Memoria
+    List<MemoriaPeticionEvaluacion> memoriasPeticionEvaluacion = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      memoriasPeticionEvaluacion.add(generarMockMemoriaPeticionEvaluacion(Long.valueOf(i),
+          "numRef-55" + String.valueOf(i), "Memoria" + String.format("%03d", i)));
+    }
+    BDDMockito
+        .given(memoriaService.findAllMemoriasWithPersonaRefCreadorPeticionesEvaluacionOrResponsableMemoria(
+            ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any(), ArgumentMatchers.anyString()))
+        .willAnswer(new Answer<Page<MemoriaPeticionEvaluacion>>() {
+          @Override
+          public Page<MemoriaPeticionEvaluacion> answer(InvocationOnMock invocation) throws Throwable {
+            Pageable pageable = invocation.getArgument(1, Pageable.class);
+            int size = pageable.getPageSize();
+            int index = pageable.getPageNumber();
+            int fromIndex = size * index;
+            int toIndex = fromIndex + size;
+            List<MemoriaPeticionEvaluacion> content = memoriasPeticionEvaluacion.subList(fromIndex, toIndex);
+            Page<MemoriaPeticionEvaluacion> page = new PageImpl<>(content, pageable, memoriasPeticionEvaluacion.size());
+            return page;
+          }
+        });
+
+    // when: get page=3 with pagesize=10 asignables by convocatoria
+    MvcResult requestResult = mockMvc
+        .perform(MockMvcRequestBuilders.get(MEMORIA_CONTROLLER_BASE_PATH + PATH_PARAMETER_PERSONA)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).header("X-Page", "3").header("X-Page-Size", "10")
+            .accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print())
+        // then: the asked Memorias are returned with the right page information
+        // in headers
+        .andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(MockMvcResultMatchers.header().string("X-Page", "3"))
+        .andExpect(MockMvcResultMatchers.header().string("X-Page-Size", "10"))
+        .andExpect(MockMvcResultMatchers.header().string("X-Total-Count", "100"))
+        .andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(10))).andReturn();
+
+    // this uses a TypeReference to inform Jackson about the Lists's generic type
+    List<Memoria> actual = mapper.readValue(requestResult.getResponse().getContentAsString(),
+        new TypeReference<List<Memoria>>() {
+        });
+
+    // containing titulo='Memoria031' to 'Memoria040'
+    for (int i = 0, j = 31; i < 10; i++, j++) {
+      Memoria memoria = actual.get(i);
+      Assertions.assertThat(memoria.getTitulo()).isEqualTo("Memoria" + String.format("%03d", j));
+    }
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-PEV-VR-INV" })
+  public void findAllMemoriasEvaluacionByPersonaRef_ReturnsNoContent() throws Exception {
+    // given: Memorias empty
+    List<MemoriaPeticionEvaluacion> memoriasPeticionEvaluacion = new ArrayList<>();
+
+    BDDMockito
+        .given(memoriaService.findAllMemoriasWithPersonaRefCreadorPeticionesEvaluacionOrResponsableMemoria(
+            ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any(), ArgumentMatchers.anyString()))
+        .willReturn(new PageImpl<>(memoriasPeticionEvaluacion));
+
+    // when: find unlimited
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(MEMORIA_CONTROLLER_BASE_PATH + PATH_PARAMETER_PERSONA)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).accept(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print())
+        // then: Devuelve error No Content
+        .andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-EVC-V", "ETI-EVC-VR", "ETI-EVC-VR-INV", "ETI-EVC-EVAL",
+      "ETI-EVC-EVALR", "ETI-EVC-EVALR-INV" })
+  public void getDocumentacionesTipoEvaluacionValid() throws Exception {
+    // given: Datos existentes de memoria con documentacion
+    Long idMemoria = 3L;
+    Long idTipoEvaluacion = 1L;
+
+    final String url = new StringBuilder(MEMORIA_CONTROLLER_BASE_PATH).append(PATH_PARAMETER_ID)
+        .append(PATH_PARAMETER_BY_DOCUMENTACION).append("/{idTipoEvaluacion}").toString();
+
+    TipoDocumento tipoDocumento = generarMockTipoDocumento(1L);
+    List<DocumentacionMemoria> documentacionMemorias = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      Memoria memoria = generarMockMemoria(Long.valueOf(i), "numRef-55" + String.valueOf(i),
+          "Memoria" + String.format("%03d", i), i);
+      DocumentacionMemoria documentacionMemoria = generarMockDocumentacionMemoria(Long.valueOf(i), memoria,
+          tipoDocumento);
+      documentacionMemorias.add(documentacionMemoria);
+    }
+
+    BDDMockito
+        .given(documentacionMemoriaService.findByMemoriaIdAndTipoEvaluacion(ArgumentMatchers.anyLong(),
+            ArgumentMatchers.anyLong(), ArgumentMatchers.<Pageable>any()))
+        .willAnswer(new Answer<Page<DocumentacionMemoria>>() {
+          @Override
+          public Page<DocumentacionMemoria> answer(InvocationOnMock invocation) throws Throwable {
+            List<DocumentacionMemoria> content = new ArrayList<>();
+            for (DocumentacionMemoria evaluacion : documentacionMemorias) {
+              content.add(evaluacion);
+            }
+            Page<DocumentacionMemoria> page = new PageImpl<>(content);
+            return page;
+          }
+        });
+    // when: Se buscan todos los datos
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(url, idMemoria, idTipoEvaluacion)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()).contentType(MediaType.APPLICATION_JSON))
+        .andDo(MockMvcResultHandlers.print())
+        // then: Se recuperan todos los documentos relacionados
+        .andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(100))).andReturn();
+  }
+
+  @Test
+  @WithMockUser(username = "user", authorities = { "ETI-EVC-V", "ETI-EVC-VR", "ETI-EVC-VR-INV", "ETI-EVC-EVAL",
+      "ETI-EVC-EVALR", "ETI-EVC-EVALR-INV" })
+  public void getDocumentacionesTipoEvaluacion_ReturnsNoContent() throws Exception {
+    // given: Documentacion empty
+    Long idMemoria = 3L;
+    Long idTipoEvaluacion = 1L;
+    final String url = new StringBuilder(MEMORIA_CONTROLLER_BASE_PATH).append(PATH_PARAMETER_ID)
+        .append(PATH_PARAMETER_BY_DOCUMENTACION).append("/{idTipoEvaluacion}").toString();
+
+    BDDMockito
+        .given(documentacionMemoriaService.findByMemoriaIdAndTipoEvaluacion(ArgumentMatchers.anyLong(),
+            ArgumentMatchers.anyLong(), ArgumentMatchers.<Pageable>any()))
+        .willReturn(new PageImpl<>(Collections.emptyList()));
+
+    // when: Se buscan todos los datos
+    mockMvc
+        .perform(MockMvcRequestBuilders.get(url, idMemoria, idTipoEvaluacion)
+            .with(SecurityMockMvcRequestPostProcessors.csrf()))
+        .andDo(MockMvcResultHandlers.print())
+        // then: Se recupera lista vacía
+        .andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
   /**
    * Función que devuelve un objeto Memoria.
    * 
@@ -1243,7 +1343,7 @@ public class MemoriaControllerTest extends BaseControllerTest {
 
     return new MemoriaPeticionEvaluacion(id, numReferencia, titulo, generarMockComite(id, "comite" + id, true),
         generarMockTipoEstadoMemoria(1L, "En elaboración", Boolean.TRUE), false, null,
-        LocalDateTime.of(2020, 7, 15, 0, 0, 1), LocalDate.now(), false);
+        LocalDateTime.of(2020, 7, 15, 0, 0, 1), LocalDate.now(), false, true);
   }
 
   /**
@@ -1501,11 +1601,16 @@ public class MemoriaControllerTest extends BaseControllerTest {
   }
 
   public Informe generarMockInforme(Long id, Memoria memoria) {
+    TipoEvaluacion tipoEvaluacion = new TipoEvaluacion();
+    tipoEvaluacion.setId(1L);
+    tipoEvaluacion.setActivo(true);
+    tipoEvaluacion.setNombre("Memoria");
 
     Informe informe = new Informe();
     informe.setId(id);
     informe.setDocumentoRef("TipoDocumento" + id);
     informe.setMemoria(memoria);
+    informe.setTipoEvaluacion(tipoEvaluacion);
 
     return informe;
   }

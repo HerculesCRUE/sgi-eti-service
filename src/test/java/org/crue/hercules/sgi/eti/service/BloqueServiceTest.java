@@ -12,12 +12,10 @@ import org.crue.hercules.sgi.eti.repository.BloqueRepository;
 import org.crue.hercules.sgi.eti.service.impl.BloqueServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -28,7 +26,6 @@ import org.springframework.data.jpa.domain.Specification;
 /**
  * BloqueServiceTest
  */
-@ExtendWith(MockitoExtension.class)
 public class BloqueServiceTest extends BaseServiceTest {
 
   @Mock
@@ -122,6 +119,30 @@ public class BloqueServiceTest extends BaseServiceTest {
       Bloque Bloque = page.getContent().get(i);
       Assertions.assertThat(Bloque.getNombre()).isEqualTo("Bloque" + String.format("%03d", j));
     }
+  }
+
+  @Test
+  public void findAllByFormularioId_ReturnsBloques() {
+
+    // given: Datos existentes con convocatoriaReunionId = 1
+    Long formularioId = 1L;
+    // given: 1 Bloque y 1 Formulario
+    List<Bloque> bloques = new ArrayList<>();
+    for (int i = 1; i <= 10; i++) {
+      bloques.add(generarMockBloque(Long.valueOf(i), "Bloque" + String.format("%03d", i)));
+    }
+
+    BDDMockito.given(bloqueRepository.findByFormularioId(ArgumentMatchers.anyLong(), ArgumentMatchers.<Pageable>any()))
+        .willReturn(new PageImpl<>(bloques));
+
+    // when: Se buscan todos las datos
+    Page<Bloque> result = bloqueService.findByFormularioId(formularioId, Pageable.unpaged());
+
+    // then: Se recuperan todos los datos
+    Assertions.assertThat(result.getContent()).isEqualTo(bloques);
+    Assertions.assertThat(result.getSize()).isEqualTo(10);
+    Assertions.assertThat(result.getSize()).isEqualTo(bloques.size());
+    Assertions.assertThat(result.getTotalElements()).isEqualTo(bloques.size());
   }
 
   /**

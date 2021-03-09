@@ -8,15 +8,12 @@ import org.crue.hercules.sgi.eti.repository.ConfiguracionRepository;
 import org.crue.hercules.sgi.eti.service.impl.ConfiguracionServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
  * ConfiguracionServiceTest
  */
-@ExtendWith(MockitoExtension.class)
 public class ConfiguracionServiceTest extends BaseServiceTest {
 
   @Mock

@@ -19,12 +19,22 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Test de integracion de Retrospectiva.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off  
+  "classpath:scripts/estado_retrospectiva.sql", 
+  "classpath:scripts/retrospectiva.sql" 
+// @formatter:on
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class RetrospectivaIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -41,8 +51,6 @@ public class RetrospectivaIT extends BaseIT {
     return request;
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void create_ReturnsRetrospectiva() throws Exception {
 
@@ -64,14 +72,12 @@ public class RetrospectivaIT extends BaseIT {
     Assertions.assertThat(retrospectiva).isEqualTo(newRetrospectiva);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void update_WithExistingId_ReturnsRetrospectiva() throws Exception {
 
     // given: Entidad existente que se va a actualizar
-    final Retrospectiva updatedRetrospectiva = getMockData(2L);
-    updatedRetrospectiva.setId(1L);
+    final Retrospectiva updatedRetrospectiva = getMockData(3L);
+    updatedRetrospectiva.setId(4L);
 
     final String url = new StringBuilder(RETROSPECTIVA_CONTROLLER_BASE_PATH)//
         .append(PATH_PARAMETER_ID)//
@@ -86,13 +92,11 @@ public class RetrospectivaIT extends BaseIT {
     Assertions.assertThat(response.getBody()).isEqualTo(updatedRetrospectiva);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void delete_WithExistingId_Return204() throws Exception {
 
     // given: Entidad existente
-    Long id = 1L;
+    Long id = 3L;
 
     final String url = new StringBuilder(RETROSPECTIVA_CONTROLLER_BASE_PATH)//
         .append(PATH_PARAMETER_ID)//
@@ -112,13 +116,11 @@ public class RetrospectivaIT extends BaseIT {
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findById_WithExistingId_ReturnsRetrospectiva() throws Exception {
 
     // given: Entidad con un determinado Id
-    final Retrospectiva retrospectiva = getMockData(1L);
+    final Retrospectiva retrospectiva = getMockData(3L);
 
     final String url = new StringBuilder(RETROSPECTIVA_CONTROLLER_BASE_PATH)//
         .append(PATH_PARAMETER_ID)//
@@ -133,12 +135,11 @@ public class RetrospectivaIT extends BaseIT {
     Assertions.assertThat(response.getBody()).isEqualTo(retrospectiva);
   }
 
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findById_WithNotExistingId_Returns404() throws Exception {
 
     // given: No existe entidad con el id indicado
-    Long id = 1L;
+    Long id = 8L;
     final String url = new StringBuilder(RETROSPECTIVA_CONTROLLER_BASE_PATH)//
         .append(PATH_PARAMETER_ID)//
         .toString();
@@ -151,15 +152,16 @@ public class RetrospectivaIT extends BaseIT {
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_Unlimited_ReturnsFullRetrospectivaList() throws Exception {
 
     // given: Datos existentes
     List<Retrospectiva> response = new LinkedList<>();
-    response.add(getMockData(1L));
-    response.add(getMockData(2L));
+    response.add(getMockData(3L));
+    response.add(getMockData(4L));
+    response.add(getMockData(5L));
+    response.add(getMockData(6L));
+    response.add(getMockData(7L));
 
     final String url = new StringBuilder(RETROSPECTIVA_CONTROLLER_BASE_PATH).toString();
 
@@ -173,14 +175,12 @@ public class RetrospectivaIT extends BaseIT {
     Assertions.assertThat(result.getBody()).isEqualTo(response);
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPaging_ReturnsRetrospectivaSubList() throws Exception {
 
     // given: Datos existentes
     List<Retrospectiva> response = new LinkedList<>();
-    response.add(getMockData(5L));
+    response.add(getMockData(7L));
 
     // página 2 con 2 elementos por página
     HttpHeaders headers = new HttpHeaders();
@@ -205,18 +205,16 @@ public class RetrospectivaIT extends BaseIT {
     Assertions.assertThat(result.getHeaders().getFirst("X-Total-Count")).isEqualTo("5");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSearchQuery_ReturnsFilteredRetrospectivaList() throws Exception {
 
     // given: Datos existentes
     List<Retrospectiva> response = new LinkedList<>();
-    response.add(getMockData(3L));
+    response.add(getMockData(5L));
 
     // search by codigo like, id equals
-    Long id = 3L;
-    String query = "fechaRetrospectiva<=2020-07-03,id:" + id;
+    Long id = 5L;
+    String query = "fechaRetrospectiva=le=2020-07-05;id==" + id;
 
     URI uri = UriComponentsBuilder.fromUriString(RETROSPECTIVA_CONTROLLER_BASE_PATH).queryParam("q", query).build(false)
         .toUri();
@@ -237,15 +235,13 @@ public class RetrospectivaIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSortQuery_ReturnsOrderedRetrospectivaList() throws Exception {
 
     // given: Datos existentes
 
     // sort by id desc
-    String sort = "id-";
+    String sort = "id,desc";
 
     URI uri = UriComponentsBuilder.fromUriString(RETROSPECTIVA_CONTROLLER_BASE_PATH).queryParam("s", sort).build(false)
         .toUri();
@@ -257,8 +253,8 @@ public class RetrospectivaIT extends BaseIT {
 
     // then: Se recuperan los datos filtrados, ordenados y paginados
     Assertions.assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-    Assertions.assertThat(result.getBody().get(0).getId()).isEqualTo(5L);
-    Assertions.assertThat(result.getBody().get(4).getId()).isEqualTo(1L);
+    Assertions.assertThat(result.getBody().get(0).getId()).isEqualTo(7L);
+    Assertions.assertThat(result.getBody().get(4).getId()).isEqualTo(3L);
     Assertions.assertThat(result.getHeaders().getFirst("X-Page")).isEqualTo("0");
     Assertions.assertThat(result.getHeaders().getFirst("X-Page-Size")).isEqualTo("5");
     Assertions.assertThat(result.getHeaders().getFirst("X-Page-Total-Count")).isEqualTo("5");
@@ -266,14 +262,12 @@ public class RetrospectivaIT extends BaseIT {
     Assertions.assertThat(result.getHeaders().getFirst("X-Total-Count")).isEqualTo("5");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPagingSortingAndFiltering_ReturnsRetrospectivaSubList() throws Exception {
 
     // given: Datos existentes
     List<Retrospectiva> response = new LinkedList<>();
-    response.add(getMockData(1L));
+    response.add(getMockData(3L));
 
     // página 1 con 2 elementos por página
     HttpHeaders headers = new HttpHeaders();
@@ -281,10 +275,10 @@ public class RetrospectivaIT extends BaseIT {
     headers.add("X-Page-Size", "2");
 
     // sort
-    String sort = "id-";
+    String sort = "id,desc";
 
     // search
-    String query = "estadoRetrospectiva.nombre~Retrospectiva0%";
+    String query = "estadoRetrospectiva.nombre=ke=Retrospectiva0";
 
     URI uri = UriComponentsBuilder.fromUriString(RETROSPECTIVA_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .queryParam("q", query).build(false).toUri();

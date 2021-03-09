@@ -10,15 +10,12 @@ import org.crue.hercules.sgi.eti.model.Comite;
 import org.crue.hercules.sgi.eti.model.Formulario;
 import org.crue.hercules.sgi.eti.repository.ComiteRepository;
 import org.crue.hercules.sgi.eti.service.impl.ComiteServiceImpl;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -29,7 +26,6 @@ import org.springframework.data.jpa.domain.Specification;
 /**
  * ComiteServiceTest
  */
-@ExtendWith(MockitoExtension.class)
 public class ComiteServiceTest extends BaseServiceTest {
   @Mock
   private ComiteRepository comiteRepository;
@@ -76,13 +72,11 @@ public class ComiteServiceTest extends BaseServiceTest {
     List<Comite> comiteResponseList = new ArrayList<Comite>();
 
     // given: Una lista vacía
-    BDDMockito
-        .given(comiteService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(), ArgumentMatchers.<Pageable>any()))
+    BDDMockito.given(comiteService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any()))
         .willReturn(new PageImpl<>(comiteResponseList));
 
     // when: Se realiza la búsqueda de comites
-    Page<Comite> comiteList = comiteService.findAll(ArgumentMatchers.<List<QueryCriteria>>any(),
-        ArgumentMatchers.<Pageable>any());
+    Page<Comite> comiteList = comiteService.findAll(ArgumentMatchers.<String>any(), ArgumentMatchers.<Pageable>any());
 
     // then: Recuperamos la lista vacía
     Assertions.assertThat(comiteList);
@@ -233,6 +227,23 @@ public class ComiteServiceTest extends BaseServiceTest {
   }
 
   @Test
+  public void deleteAll_DeleteAllComite() {
+    // given: One hundred Comites
+    List<Comite> comites = new ArrayList<>();
+    for (int i = 1; i <= 100; i++) {
+      comites.add(generarMockComite(Long.valueOf(i), String.format("Comite%03d", i), Boolean.TRUE));
+    }
+
+    BDDMockito.doNothing().when(comiteRepository).deleteAll();
+
+    Assertions.assertThatCode(
+        // when: Delete all
+        () -> comiteService.deleteAll())
+        // then: No se lanza ninguna excepción
+        .doesNotThrowAnyException();
+  }
+
+  @Test
   public void findAll_WithPaging_ReturnsPage() {
 
     // given: Cien Comite
@@ -274,5 +285,18 @@ public class ComiteServiceTest extends BaseServiceTest {
       Comite comite = page.getContent().get(i);
       Assertions.assertThat(comite.getComite()).isEqualTo("Comite" + String.format("%03d", j));
     }
+  }
+
+  /**
+   * Función que devuelve un objeto comité.
+   * 
+   * @param id     identificador del comité.
+   * @param comite comité.
+   * @param activo indicador de activo.
+   */
+  private Comite generarMockComite(Long id, String comite, Boolean activo) {
+    Formulario formulario = new Formulario(1L, "M10", "Descripcion");
+    return new Comite(id, comite, formulario, activo);
+
   }
 }

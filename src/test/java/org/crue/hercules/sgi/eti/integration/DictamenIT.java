@@ -17,12 +17,22 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.context.jdbc.SqlMergeMode.MergeMode;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Test de integracion de Dictamen.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(scripts = {
+// @formatter:off      
+  "classpath:scripts/tipo_evaluacion.sql",
+  "classpath:scripts/dictamen.sql" 
+// @formatter:on    
+})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
+@SqlMergeMode(MergeMode.MERGE)
 public class DictamenIT extends BaseIT {
 
   private static final String PATH_PARAMETER_ID = "/{id}";
@@ -42,8 +52,6 @@ public class DictamenIT extends BaseIT {
     return request;
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void getDictamen_WithId_ReturnsDictamen() throws Exception {
     final ResponseEntity<Dictamen> response = restTemplate.exchange(DICTAMEN_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID,
@@ -57,8 +65,6 @@ public class DictamenIT extends BaseIT {
     Assertions.assertThat(dictamen.getNombre()).isEqualTo("Favorable");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void addDictamen_ReturnsDictamen() throws Exception {
 
@@ -81,8 +87,6 @@ public class DictamenIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeDictamen_Success() throws Exception {
 
@@ -96,22 +100,18 @@ public class DictamenIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void removeDictamen_DoNotGetDictamen() throws Exception {
     restTemplate.exchange(DICTAMEN_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID, HttpMethod.DELETE,
-        buildRequest(null, null), Dictamen.class, 1L);
+        buildRequest(null, null), Dictamen.class, 7L);
 
     final ResponseEntity<Dictamen> response = restTemplate.exchange(DICTAMEN_CONTROLLER_BASE_PATH + PATH_PARAMETER_ID,
-        HttpMethod.DELETE, buildRequest(null, null), Dictamen.class, 1L);
+        HttpMethod.DELETE, buildRequest(null, null), Dictamen.class, 7L);
 
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void replaceDictamen_ReturnsDictamen() throws Exception {
 
@@ -131,8 +131,6 @@ public class DictamenIT extends BaseIT {
     Assertions.assertThat(dictamen.getActivo()).isEqualTo(replaceDictamen.getActivo());
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPaging_ReturnsDictamenSubList() throws Exception {
     // when: Obtiene la page=3 con pagesize=10
@@ -153,20 +151,18 @@ public class DictamenIT extends BaseIT {
     Assertions.assertThat(dictamenes.size()).isEqualTo(2);
     Assertions.assertThat(response.getHeaders().getFirst("X-Page")).isEqualTo("1");
     Assertions.assertThat(response.getHeaders().getFirst("X-Page-Size")).isEqualTo("2");
-    Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("4");
+    Assertions.assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("6");
 
     // Contiene de nombre='Pendiente de correcciones' y 'No procede evaluar'
     Assertions.assertThat(dictamenes.get(0).getNombre()).isEqualTo("Pendiente de correcciones");
     Assertions.assertThat(dictamenes.get(1).getNombre()).isEqualTo("No procede evaluar");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSearchQuery_ReturnsFilteredDictamenList() throws Exception {
     // when: Búsqueda por nombre like e id equals
     Long id = 2L;
-    String query = "nombre~favorable%,id:" + id;
+    String query = "nombre=ke=Favorable;id==" + id;
 
     URI uri = UriComponentsBuilder.fromUriString(DICTAMEN_CONTROLLER_BASE_PATH).queryParam("q", query).build(false)
         .toUri();
@@ -185,12 +181,10 @@ public class DictamenIT extends BaseIT {
     Assertions.assertThat(dictamenes.get(0).getNombre()).startsWith("Favorable");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithSortQuery_ReturnsOrderedDictamenList() throws Exception {
     // when: Ordenación por nombre desc
-    String query = "nombre-";
+    String query = "nombre,desc";
 
     URI uri = UriComponentsBuilder.fromUriString(DICTAMEN_CONTROLLER_BASE_PATH).queryParam("s", query).build(false)
         .toUri();
@@ -204,15 +198,13 @@ public class DictamenIT extends BaseIT {
     // correcta en el header
     Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     final List<Dictamen> dictamenes = response.getBody();
-    Assertions.assertThat(dictamenes.size()).isEqualTo(4);
+    Assertions.assertThat(dictamenes.size()).isEqualTo(6);
     Assertions.assertThat(dictamenes.get(0).getId()).isEqualTo(3);
     Assertions.assertThat(dictamenes.get(0).getNombre()).isEqualTo("Pendiente de correcciones");
     Assertions.assertThat(dictamenes.get(3).getId()).isEqualTo(1);
     Assertions.assertThat(dictamenes.get(3).getNombre()).isEqualTo("Favorable");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAll_WithPagingSortingAndFiltering_ReturnsDictamenSubList() throws Exception {
     // when: Obtiene page=3 con pagesize=10
@@ -220,9 +212,9 @@ public class DictamenIT extends BaseIT {
     headers.add("X-Page", "0");
     headers.add("X-Page-Size", "3");
     // when: Ordena por nombre desc
-    String sort = "nombre-";
+    String sort = "nombre,desc";
     // when: Filtra por nombre like
-    String filter = "nombre~%pendiente%";
+    String filter = "nombre=ik=pendiente";
 
     URI uri = UriComponentsBuilder.fromUriString(DICTAMEN_CONTROLLER_BASE_PATH).queryParam("s", sort)
         .queryParam("q", filter).build(false).toUri();
@@ -247,8 +239,6 @@ public class DictamenIT extends BaseIT {
 
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAllByMemoriaRevisionMinima_ReturnsDictamenList() throws Exception {
 
@@ -269,8 +259,6 @@ public class DictamenIT extends BaseIT {
     Assertions.assertThat(dictamenes.get(1).getNombre()).isEqualTo("Favorable pendiente de revisión mínima");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAllByMemoriaNoRevisionMinima_ReturnsDictamenList() throws Exception {
 
@@ -294,8 +282,6 @@ public class DictamenIT extends BaseIT {
     Assertions.assertThat(dictamenes.get(3).getNombre()).isEqualTo("No procede evaluar");
   }
 
-  @Sql
-  @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = "classpath:cleanup.sql")
   @Test
   public void findAllByRetrospectiva_ReturnsDictamenList() throws Exception {
 

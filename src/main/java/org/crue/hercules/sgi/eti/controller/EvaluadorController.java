@@ -1,7 +1,5 @@
 package org.crue.hercules.sgi.eti.controller;
 
-import java.util.List;
-
 import javax.validation.Valid;
 
 import org.crue.hercules.sgi.eti.model.ConflictoInteres;
@@ -10,7 +8,6 @@ import org.crue.hercules.sgi.eti.model.Evaluador;
 import org.crue.hercules.sgi.eti.service.ConflictoInteresService;
 import org.crue.hercules.sgi.eti.service.EvaluacionService;
 import org.crue.hercules.sgi.eti.service.EvaluadorService;
-import org.crue.hercules.sgi.framework.data.search.QueryCriteria;
 import org.crue.hercules.sgi.framework.web.bind.annotation.RequestPageable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -66,21 +63,21 @@ public class EvaluadorController {
   /**
    * Devuelve una lista paginada y filtrada {@link Evaluador}.
    * 
-   * @param query  filtro de {@link QueryCriteria}.
+   * @param query  filtro de búsqueda.
    * @param paging pageable
    */
   @GetMapping()
   @PreAuthorize("hasAnyAuthorityForAnyUO('ETI-EVR-V')")
-  ResponseEntity<Page<Evaluador>> findAll(@RequestParam(name = "q", required = false) List<QueryCriteria> query,
+  ResponseEntity<Page<Evaluador>> findAll(@RequestParam(name = "q", required = false) String query,
       @RequestPageable(sort = "s") Pageable paging) {
-    log.debug("findAll(List<QueryCriteria> query,Pageable paging) - start");
+    log.debug("findAll(String query,Pageable paging) - start");
     Page<Evaluador> page = evaluadorService.findAll(query, paging);
 
     if (page.isEmpty()) {
-      log.debug("findAll(List<QueryCriteria> query,Pageable paging) - end");
+      log.debug("findAll(String query,Pageable paging) - end");
       return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
-    log.debug("findAll(List<QueryCriteria> query,Pageable paging) - end");
+    log.debug("findAll(String query,Pageable paging) - end");
     return new ResponseEntity<>(page, HttpStatus.OK);
   }
 
@@ -88,7 +85,7 @@ public class EvaluadorController {
    * Devuelve una lista paginada de {@link Evaluador} de un comite sin conflictos
    * de intereses con una memoria.
    * 
-   * @param query  filtro de {@link QueryCriteria}.
+   * @param query  filtro de búsqueda.
    * @param paging pageable
    */
   @GetMapping("comite/{idComite}/sinconflictointereses/{idMemoria}")
@@ -171,20 +168,19 @@ public class EvaluadorController {
    * Devuelve una lista paginada y filtrada {@link Evaluacion} según su
    * {@link Evaluador}.
    * 
-   * @param query          filtro de {@link QueryCriteria}.
+   * @param query          filtro de búsqueda.
    * @param pageable       pageable
    * @param Authentication authorization
    * @return la lista de entidades {@link Evaluacion} paginadas.
    */
   @GetMapping("/evaluaciones")
   @PreAuthorize("hasAnyAuthorityForAnyUO('ETI-EVC-V','ETI-EVC-VR', 'ETI-EVC-VR-INV', 'ETI-EVC-EVAL', 'ETI-EVC-EVALR', 'ETI-EVC-EVALR-INV')")
-  ResponseEntity<Page<Evaluacion>> getEvaluaciones(
-      @RequestParam(name = "q", required = false) List<QueryCriteria> query,
+  ResponseEntity<Page<Evaluacion>> getEvaluaciones(@RequestParam(name = "q", required = false) String query,
       @RequestPageable(sort = "s") Pageable pageable, Authentication authorization) {
-    log.debug("getEvaluaciones(List<QueryCriteria> query, Pageable pageable) - start");
+    log.debug("getEvaluaciones(String query, Pageable pageable) - start");
     String personaRef = authorization.getName();
     Page<Evaluacion> page = evaluacionService.findByEvaluador(personaRef, query, pageable);
-    log.debug("getEvaluaciones(List<QueryCriteria> query, Pageable pageable) - end");
+    log.debug("getEvaluaciones(String query, Pageable pageable) - end");
     if (page.isEmpty()) {
       return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
@@ -197,7 +193,7 @@ public class EvaluadorController {
    * "En secretaría seguimiento final aclaraciones" (id = 13), paginadas asociadas
    * a un evaluador
    * 
-   * @param query          filtro de {@link QueryCriteria}.
+   * @param query          filtro de búsqueda.
    * @param pageable       pageable
    * @param Authentication authorization
    * @return la lista de entidades {@link Evaluacion} paginadas y/o filtradas.
@@ -205,12 +201,12 @@ public class EvaluadorController {
   @GetMapping("/evaluaciones-seguimiento")
   @PreAuthorize("hasAnyAuthorityForAnyUO('ETI-EVC-V', 'ETI-EVC-VR', 'ETI-EVC-VR-INV', 'ETI-EVC-EVAL', 'ETI-EVC-EVALR', 'ETI-EVC-EVALR-INV')")
   ResponseEntity<Page<Evaluacion>> findEvaluacionesEnSeguimiento(
-      @RequestParam(name = "q", required = false) List<QueryCriteria> query,
-      @RequestPageable(sort = "s") Pageable pageable, Authentication authorization) {
-    log.debug("findEvaluacionesEnSeguimiento(List<QueryCriteria> query, Pageable pageable) - start");
+      @RequestParam(name = "q", required = false) String query, @RequestPageable(sort = "s") Pageable pageable,
+      Authentication authorization) {
+    log.debug("findEvaluacionesEnSeguimiento(String query, Pageable pageable) - start");
     String personaRef = authorization.getName();
     Page<Evaluacion> page = evaluacionService.findEvaluacionesEnSeguimientosByEvaluador(personaRef, query, pageable);
-    log.debug("findEvaluacionesEnSeguimiento(List<QueryCriteria> query, Pageable pageable) - end");
+    log.debug("findEvaluacionesEnSeguimiento(String query, Pageable pageable) - end");
     if (page.isEmpty()) {
       return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
